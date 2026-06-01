@@ -1,0 +1,32 @@
+:root{
+  --primary:150 70% 40%;
+  --primary-foreground:0 0% 100%;
+  --secondary:150 35% 92%;
+  --secondary-foreground:160 15% 15%;
+  --accent:160 80% 45%;
+  --accent-foreground:0 0% 100%;
+  --heading-foreground:160 20% 15%;
+  --border:160 20% 92%;
+  --input-background:150 15% 96%;
+  --surface:160 8% 96%;
+  --surface-light:160 8% 98%;
+  --clay:160 10% 94%;
+  --font-body:'Inter';
+  --font-heading:'Orbitron';
+  --h1-font-size:2.25rem;
+  --h1-line-height:2.25rem;
+  --h1-font-weight:800;
+}
+.theme-dark{
+  --primary:150 70% 45%;
+  --secondary:160 20% 20%;
+  --background:160 15% 9%;
+  --foreground:160 35% 96%;
+  --border:160 10% 20%;
+  --heading-foreground:0 0% 100%;
+  --input-background:160 12% 15%;
+  --surface:160 12% 14%;
+  --surface-light:160 10% 18%;
+  --clay:160 12% 14%;
+}
+

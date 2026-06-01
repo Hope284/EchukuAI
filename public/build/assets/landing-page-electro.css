@@ -1,0 +1,57 @@
+:root{
+  --background:150 20% 98%;
+  --foreground:160 10% 20%;
+  --heading-background:0 0% 100%;
+  --heading-foreground:160 20% 15%;
+
+  --primary:150 70% 40%;
+  --primary-foreground:0 0% 100%;
+  --secondary:150 35% 92%;
+  --secondary-foreground:160 15% 15%;
+  --accent:160 80% 45%;
+  --accent-foreground:0 0% 100%;
+
+  --gradient-from:150 80% 35%;
+  --gradient-via:160 75% 45%;
+  --gradient-to:165 70% 55%;
+
+  --font-body:'Inter';
+  --font-heading:'Orbitron';
+
+  --headings-line-height:1.25rem;
+  --headings-font-weight:700;
+  --headings-letter-spacing:0.01em;
+  --headings-color:hsl(var(--heading-foreground));
+
+  --h1-font-size:4rem;
+  --h1-line-height:1;
+  --h1-letter-spacing:-0.04em;
+  --h1-font-weight:800;
+
+  --h2-font-size:2.75rem;
+  --h2-line-height:1.1;
+  --h2-letter-spacing:-0.02em;
+  --h2-font-weight:800;
+
+  --h3-font-size:2rem;
+  --h3-line-height:1.1;
+  --h3-font-weight:700;
+}
+
+.theme-dark{
+  --primary:150 70% 45%;
+  --background:216 19% 11%;
+  --foreground:210 40% 98%;
+  --border:223 9% 15%;
+  --heading-background:220 8% 15%;
+  --heading-foreground:0 0% 100%;
+}
+
+.electro-gradient{
+  background-image:linear-gradient(120deg,
+    hsl(var(--gradient-from)) 0%,
+    hsl(var(--gradient-via)) 50%,
+    hsl(var(--gradient-to)) 100%
+  );
+}
+
