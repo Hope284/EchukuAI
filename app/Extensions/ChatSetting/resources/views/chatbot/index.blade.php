@@ -11,7 +11,7 @@
     </x-button>
 @endsection
 
-@section('titlebar_subtitle', __('Train MagicAI on your own data (website or PDF) and make your AI content exclusive.'))
+@section('titlebar_subtitle', __('Train DZEVA on your own data (website or PDF) and make your AI content exclusive.'))
 
 @section('content')
 

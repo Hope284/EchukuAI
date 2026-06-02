@@ -135,7 +135,7 @@
                 x-show="embeddings.filter(e => e.type === 'qa').length"
                 ::disabled="fetching"
             >
-                @lang('Train GPT')
+                @lang('Train DZEVA')
             </x-button>
         </div>
     </form>

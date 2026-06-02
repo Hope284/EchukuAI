@@ -624,8 +624,8 @@
                     <img
                         width="16"
                         height="16"
-                        src="https://demo.magicproject.ai/themes/default/assets/img/logo/magicAI-logo-Collapsed.png"
-                        alt="MagicAI"
+                        src="{{ custom_theme_url($setting->logo_collapsed_path, true) }}"
+                        alt="DZEVA"
                     >
                     <p>
                         @lang('Powered by')
@@ -633,7 +633,7 @@
                             <a
                                 href="#"
                                 target="_blank"
-                            >MagicAI</a>
+                            >DZEVA</a>
                         </u>
                     </p>
                 </div>

@@ -61,6 +61,6 @@
             type="button"
             size="lg"
     >
-        @lang('Train GPT')
+        @lang('Train DZEVA')
     </x-button>
 @endif

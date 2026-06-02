@@ -44,7 +44,7 @@
 		x-show="activeChatbot.is_shop && activeChatbot.shop_source === 'woocommerce'"
 	>
 		<a
-			href="https://api.liquid-themes.com/magicai-wordpress/magicai-woocommerce-extension.zip"
+			href="{{ asset('downloads/dzeva-woocommerce-extension.zip') }}"
 			target="_blank"
 		>
 			{{ __('An addon is required for WooCommerce. Please install the addon and activate it on your site.') }}

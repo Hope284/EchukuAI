@@ -92,7 +92,7 @@
     </form>
 
     <p class="mb-9 font-medium">
-        @lang('Simply select the source and MagicAI will do the rest to train your GPT in seconds.')
+        @lang('Simply select the source and DZEVA will train your assistant in seconds.')
     </p>
 
     <div x-data="{
