@@ -33,9 +33,10 @@ jobs:
             php artisan route:clear
             php artisan view:clear
             php artisan theme:refresh-cache || true
-            sudo chown -R ubuntu:www-data storage bootstrap/cache
-            sudo find storage bootstrap/cache -type d -exec chmod 2775 {} \;
-            sudo find storage bootstrap/cache -type f -exec chmod 664 {} \;
+            sudo install -d -o ubuntu -g www-data -m 2775 public/uploads public/uploads/media public/uploads/media/images public/uploads/media/videos public/uploads/media/other public/uploads/media/others public/uploads/media/voices public/uploads/guest public/uploads/thumbnail/default
+            sudo chown -R ubuntu:www-data storage bootstrap/cache public/uploads
+            sudo find storage bootstrap/cache public/uploads -type d -exec chmod 2775 {} \;
+            sudo find storage bootstrap/cache public/uploads -type f -exec chmod 664 {} \;
             php artisan queue:restart || true
             sudo supervisorctl restart dzeva-worker:* || true
             sudo systemctl reload nginx
