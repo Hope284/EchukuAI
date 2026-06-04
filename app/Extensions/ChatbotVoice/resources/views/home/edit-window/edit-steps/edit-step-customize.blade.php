@@ -120,7 +120,7 @@
             <p class="mb-5 w-full text-sm">
                 @lang('Choose an voice that represents your brand.')
             </p>
-            <div class="grid grid-cols-1">
+            <div class="grid grid-cols-1 gap-3">
                 <x-forms.input
                     class="max-sm:text-[9px]"
                     id="voice"

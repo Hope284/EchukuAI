@@ -76,7 +76,7 @@ class ChatbotVoiceTrainController extends Controller
 
         $chatbot = $this->service->query()->findOrFail($request->validated('id'));
 
-        /** @var \Illuminate\Http\UploadedFile $file */
+        /** @var UploadedFile $file */
         $file = $request->file('file');
 
         $defaultDisk = 'public';

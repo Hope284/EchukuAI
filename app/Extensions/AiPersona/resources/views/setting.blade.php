@@ -13,10 +13,7 @@
         action="{{ route('dashboard.admin.settings.heygen.update') }}"
     >
         @csrf
-        <x-card
-            class="mb-2 max-md:text-center"
-            szie="lg"
-        >
+        <x-card class="mb-2 max-md:text-center">
 
             <div
                 class="form-control mb-3 border-none p-0 [&_.select2-selection--multiple]:!rounded-[--tblr-border-radius] [&_.select2-selection--multiple]:!border-[--tblr-border-color] [&_.select2-selection--multiple]:!p-[1em_1.23em]">
@@ -50,9 +47,7 @@
             </div>
 
         </x-card>
-        <button
-            class="btn btn-primary w-full"
-        >
+        <button class="btn btn-primary w-full">
             {{ __('Save') }}
         </button>
     </form>

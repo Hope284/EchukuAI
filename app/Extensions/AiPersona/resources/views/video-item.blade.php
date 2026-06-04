@@ -1,76 +1,141 @@
 @php
-	$dataIndex = isset($loop) ? $loop->index : random_int(10000, 90000);
+    $entryId = is_array($entry) ? $entry['id'] : $entry->id;
+    $status = is_array($entry) ? $entry['status'] : $entry->status;
+    $videoUrl = is_array($entry) ? $entry['video_url'] ?? '' : $entry->video_url ?? '';
+    $input_text = is_array($entry) ? $entry['input_text'] ?? '' : $entry->input_text ?? '';
+    $errorMessage = is_array($entry) ? $entry['error_message'] ?? '' : $entry->error_message ?? '';
+    $createdAt = is_array($entry) ? $entry['created_at'] ?? '' : $entry->created_at ?? '';
+    $durationSeconds = is_array($entry) ? $entry['duration_seconds'] ?? null : $entry->duration_seconds ?? null;
+    $selectionGroup = $selectionGroup ?? 'selectedToday';
 @endphp
 
-<x-card
-	class="image-result group flex text-center shadow-[0_2px_2px_hsla(0,0%,0%,0.07)]"
-	class:body="flex flex-col grow p-9"
-	id="video-{{ $entry['video_id'] }}"
-	data-index="{{ $dataIndex }}"
-	data-video-src="{{ isset($entry['video_url']) ?? '' }}"
-	x-ref="image-result-{{ $dataIndex }}"
+<div
+    class="lqd-video-pro-item group/item relative"
+    id="video-{{ $entryId }}"
+    :class="{ 'selected': {{ $selectionGroup }}.includes('{{ $entryId }}') }"
 >
-	@if ($entry['status'] === 'completed')
-		<p class="mb-2.5 text-2xs font-medium text-heading-foreground">
-			{{ isset($entry['duration']) ? substr($entry['duration'], 0, 4) : '0:00:00' }}
-		</p>
-		<img
-			src="{{ $entry['gif_url'] }}"
-			alt=""
-		>
-		<p class="text-2xs font-medium opacity-60">
-			@lang('Created') {{ \Carbon\Carbon::parse($entry['created_at'])->diffForHumans() }}
-		</p>
+    @if ($status === 'complete')
+        <div
+            class="relative aspect-square overflow-hidden rounded-md bg-foreground/[3%]"
+            x-data="{ hovering: false }"
+            @mousemove="if (!hovering) { hovering = true; $refs.video?.play().catch(() => {}); }"
+            @mouseleave="hovering = false; if ($refs.video) { $refs.video.pause(); }"
+        >
+            {{-- Video --}}
+            <video
+                class="size-full object-cover"
+                x-ref="video"
+                src="{{ $videoUrl }}"
+                preload="metadata"
+                muted
+                loop
+                playsinline
+                loading="lazy"
+            ></video>
 
-		<div class="lqd-image-result-actions mt-auto flex w-full items-center justify-center gap-3">
-			<x-button
-				class="lqd-image-result-view gallery size-9 rounded-full bg-background text-foreground hover:bg-background hover:bg-emerald-400 hover:text-white"
-				variant="ghost-shadow"
-				size="none"
-				href="#"
-				@click.prevent="setVideoSrc('{{ $entry['video_url'] ?? '' }}'); setActiveIndex({ index: {{ $dataIndex }} })"
-			>
-				<x-tabler-player-play class="size-4"/>
-			</x-button>
-			<x-button
-				class="lqd-image-result-download download size-9 rounded-full bg-background text-foreground hover:bg-background hover:bg-emerald-400 hover:text-white"
-				variant="ghost-shadow"
-				size="none"
-				:download="basename($entry['video_url'] ?? 'unknown.mp4')"
-				:href="$entry['video_url'] ?? '#'"
-				:disabled="!$entry['video_url']"
-			>
-				<x-tabler-circle-chevron-down class="size-5"/>
-			</x-button>
-			<x-button
-				class="lqd-image-result-delete delete size-9 rounded-full bg-background text-foreground hover:bg-background hover:bg-red-500 hover:text-white"
-				variant="ghost-shadow"
-				size="none"
-				onclick="return confirm('{{ __('Are you sure? This action is permanent and will delete the AI Persona related document for the user.') }}')"
-				:href="LaravelLocalization::localizeUrl(route('dashboard.user.ai-persona.delete', $entry['video_id']))"
-			>
-				<x-tabler-x class="size-4"/>
-			</x-button>
-		</div>
-	@else
-		<div class="px-5 py-9">
-			<svg
-				class="mx-auto mb-3 size-7 animate-spin"
-				width="28"
-				height="28"
-				viewBox="0 0 28 28"
-				fill="none"
-				xmlns="http://www.w3.org/2000/svg"
-			>
-				<path
-					d="M14.0013 27.3333C6.65464 27.3333 0.667969 21.3467 0.667969 14C0.667969 11.5067 1.3613 9.08 2.66797 6.97333C3.05464 6.34667 3.8813 6.16 4.50797 6.54667C5.13464 6.93333 5.3213 7.75999 4.93464 8.38665C3.89464 10.0667 3.33464 12.0133 3.33464 14C3.33464 19.88 8.1213 24.6667 14.0013 24.6667C19.8813 24.6667 24.668 19.88 24.668 14C24.668 8.12 19.8813 3.33333 14.0013 3.33333C13.268 3.33333 12.668 2.73333 12.668 2C12.668 1.26667 13.268 0.666666 14.0013 0.666666C21.348 0.666666 27.3346 6.65333 27.3346 14C27.3346 21.3467 21.348 27.3333 14.0013 27.3333Z"
-					fill="url(#loader-spinner-gradient)"
-				/>
-			</svg>
-			<span class="inline-block bg-gradient-to-r from-gradient-from to-gradient-to bg-clip-text text-sm font-semibold text-transparent">
-                @lang('Processing...')<br>
-                @lang('This may take a few minutes')
+            <div
+                class="pointer-events-none absolute inset-0 z-0 translate-y-5 bg-gradient-to-t from-black/90 from-10% to-transparent to-40% opacity-0 transition group-hover/item:translate-y-0 group-hover/item:opacity-100">
+            </div>
+
+            <div class="absolute inset-0 flex flex-col justify-between gap-1 p-3">
+                <div class="flex items-center justify-between gap-2">
+                    <label
+                        class="relative z-3 inline-grid size-6 cursor-pointer place-items-center rounded bg-white/90 opacity-0 backdrop-blur-sm transition group-hover/item:opacity-100 group-[&.selected]/item:bg-primary group-[&.selected]/item:text-primary-foreground group-[&.selected]/item:opacity-100"
+                    >
+                        <input
+                            class="hidden"
+                            type="checkbox"
+                            :checked="{{ $selectionGroup }}.includes('{{ $entryId }}')"
+                            @change="{{ $selectionGroup }}.includes('{{ $entryId }}') ? {{ $selectionGroup }} = {{ $selectionGroup }}.filter(id => id !== '{{ $entryId }}') : {{ $selectionGroup }}.push('{{ $entryId }}')"
+                        />
+                        <x-tabler-check class="size-3.5 opacity-0 group-[&.selected]/item:opacity-100" />
+                    </label>
+
+                    {{-- Duration badge --}}
+                    @if ($durationSeconds)
+                        <p class="m-0 text-4xs font-medium text-white opacity-0 mix-blend-difference transition group-hover/item:opacity-100">
+                            {{ sprintf('%02d:%02d', intdiv($durationSeconds, 60), $durationSeconds % 60) }}
+                        </p>
+                    @endif
+                </div>
+
+                <div class="pointer-events-none relative z-3 flex items-center justify-between gap-2 text-white opacity-0 transition group-hover/item:opacity-100">
+                    <p class="m-0 truncate text-2xs font-medium">
+                        {{ Str::limit($input_text, 60, '...') }}
+                    </p>
+
+                    <a
+                        class="pointer-events-auto inline-flex size-7 shrink-0 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur-sm transition-colors hover:scale-110 hover:bg-white hover:text-black"
+                        href="{{ $videoUrl }}"
+                        download="{{ basename($videoUrl) }}"
+                        title="{{ __('Download') }}"
+                    >
+                        <x-tabler-download class="size-4" />
+                    </a>
+                </div>
+            </div>
+
+            {{-- Clickable area for modal --}}
+            <x-button
+                class="absolute inset-0 z-2 !min-h-0 cursor-pointer !rounded-card hover:!bg-transparent focus:!bg-transparent"
+                variant="none"
+                hover-variant="none"
+                size="none"
+                type="button"
+                @click="$dispatch('open-video-detail', { id: '{{ $entryId }}' })"
+            ></x-button>
+        </div>
+    @elseif ($status === 'error')
+        <div
+            class="relative flex aspect-square flex-col items-center justify-center overflow-hidden rounded-card border border-card-border bg-card-background p-5 text-center shadow-sm">
+            {{-- Selection checkbox --}}
+            <div
+                class="absolute start-2 top-2 z-10 opacity-0 transition-opacity group-hover/item:opacity-100"
+                :class="{ '!opacity-100': {{ $selectionGroup }}.includes('{{ $entryId }}') }"
+            >
+                <label
+                    class="flex size-6 cursor-pointer items-center justify-center rounded-md border-2 border-foreground/30 bg-foreground/10 backdrop-blur-sm transition-colors"
+                    :class="{ 'bg-primary border-primary': {{ $selectionGroup }}.includes('{{ $entryId }}') }"
+                >
+                    <input
+                        class="hidden"
+                        type="checkbox"
+                        :checked="{{ $selectionGroup }}.includes('{{ $entryId }}')"
+                        x-on:change="{{ $selectionGroup }}.includes('{{ $entryId }}') ? {{ $selectionGroup }} = {{ $selectionGroup }}.filter(id => id !== '{{ $entryId }}') : {{ $selectionGroup }}.push('{{ $entryId }}')"
+                    />
+                    <x-tabler-check
+                        class="size-3.5 text-white"
+                        x-show="{{ $selectionGroup }}.includes('{{ $entryId }}')"
+                        x-cloak
+                    />
+                </label>
+            </div>
+
+            <div class="mx-auto mb-3 inline-grid size-9 place-items-center rounded-full bg-red-100 text-red-600">
+                <x-tabler-alert-circle class="size-5" />
+            </div>
+            <span class="inline-block text-sm font-semibold text-red-600">
+                @lang('Failed')
             </span>
-		</div>
-	@endif
-</x-card>
+            <p class="mt-2 text-2xs font-medium text-heading-foreground/70">
+                {{ \Illuminate\Support\Str::limit($errorMessage ?: __('Video generation failed.'), 100) }}
+            </p>
+
+            {{-- Clickable area for modal --}}
+            <x-button
+                class="absolute inset-0 z-[5] !min-h-0 cursor-pointer !rounded-card hover:!bg-transparent focus:!bg-transparent"
+                variant="none"
+                hover-variant="none"
+                size="none"
+                type="button"
+                @click="$dispatch('open-video-detail', { id: '{{ $entryId }}' })"
+            ></x-button>
+        </div>
+    @else
+        <div class="flex aspect-square flex-col items-center justify-center rounded-md bg-foreground/[3%] p-5 text-center">
+            <x-shimmer-text class="text-xs">
+                @lang('Generating Video...')
+            </x-shimmer-text>
+        </div>
+    @endif
+</div>

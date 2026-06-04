@@ -51,7 +51,7 @@ class CloudflareServiceProvider extends ServiceProvider implements ExtensionRegi
                     ->middleware('admin')
                     ->group(function (Router $router) {
                         $router->get('cloudflare-r2', 'index')
-                            ->middleware('healthy: ' . $this->registerKey())
+                            ->middleware('healthy:' . $this->registerKey())
                             ->name('cloudflare-r2');
                         $router->post('cloudflare-r2', 'update');
                     });

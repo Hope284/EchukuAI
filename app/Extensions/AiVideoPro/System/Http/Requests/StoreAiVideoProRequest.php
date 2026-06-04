@@ -175,8 +175,10 @@ class StoreAiVideoProRequest extends FormRequest
                 case 'file':
                     if ($input['multiple'] ?? false) {
                         $inputRules[] = 'array';
-                        $inputRules[] = 'min:1';
-                        $inputRules[] = 'max:3';
+                        $minFiles = $input['min_files'] ?? 1;
+                        $maxFiles = $input['max_files'] ?? 3;
+                        $inputRules[] = "min:{$minFiles}";
+                        $inputRules[] = "max:{$maxFiles}";
 
                         // Strip [] from name for the .* rule
                         $baseName = rtrim($name, '[]');
@@ -208,6 +210,9 @@ class StoreAiVideoProRequest extends FormRequest
         } elseif (str_contains($accept, 'video')) {
             $rules[] = 'mimes:mp4,mov,avi,wmv,flv,webm';
             $rules[] = 'max:51200'; // 50MB
+        } elseif (str_contains($accept, 'audio')) {
+            $rules[] = 'mimes:mp3,wav,ogg,flac,aac,m4a';
+            $rules[] = 'max:15360'; // 15MB
         }
 
         return $rules;
@@ -230,6 +235,14 @@ class StoreAiVideoProRequest extends FormRequest
             'image_urls[].*.mimes'       => 'Images must be in jpeg, jpg, png, or webp format.',
             'image_urls.*.max'           => 'Each image must not exceed 10MB.',
             'image_urls[].*.max'         => 'Each image must not exceed 10MB.',
+            'video_urls.*.mimes'         => 'Videos must be in mp4, mov, avi, wmv, flv, or webm format.',
+            'video_urls[].*.mimes'       => 'Videos must be in mp4, mov, avi, wmv, flv, or webm format.',
+            'video_urls.*.max'           => 'Each video must not exceed 50MB.',
+            'video_urls[].*.max'         => 'Each video must not exceed 50MB.',
+            'audio_urls.*.mimes'         => 'Audio files must be in mp3, wav, ogg, flac, aac, or m4a format.',
+            'audio_urls[].*.mimes'       => 'Audio files must be in mp3, wav, ogg, flac, aac, or m4a format.',
+            'audio_urls.*.max'           => 'Each audio file must not exceed 15MB.',
+            'audio_urls[].*.max'         => 'Each audio file must not exceed 15MB.',
             '*.required'                 => 'This field is required.',
             '*.boolean'                  => 'This field must be true or false.',
             '*.image'                    => 'The file must be an image.',

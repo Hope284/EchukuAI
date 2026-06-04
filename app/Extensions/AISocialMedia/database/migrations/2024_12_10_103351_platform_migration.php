@@ -2,6 +2,7 @@
 
 use App\Extensions\AISocialMedia\System\Enums\Platform;
 use App\Extensions\AISocialMedia\System\Models\AutomationPlatform;
+use App\Extensions\AISocialMedia\System\Models\LinkedinTokens;
 use App\Extensions\AISocialMedia\System\Models\TwitterSettings;
 use Illuminate\Database\Migrations\Migration;
 
@@ -33,7 +34,7 @@ return new class extends Migration
                     ]);
             });
 
-        \App\Extensions\AISocialMedia\System\Models\LinkedinTokens::query()->get()
+        LinkedinTokens::query()->get()
             ->map(function ($token) {
                 AutomationPlatform::query()
                     ->create([

@@ -7,6 +7,7 @@ use App\Extensions\SocialMedia\System\Helpers\Instagram;
 use App\Extensions\SocialMedia\System\Http\Controllers\Oauth\Traits\HasBackRoute;
 use App\Extensions\SocialMedia\System\Http\Controllers\Oauth\Traits\HasSaveImage;
 use App\Extensions\SocialMedia\System\Models\SocialMediaPlatform;
+use App\Extensions\SocialMediaAutomation\System\Services\WebhookProcessor;
 use App\Helpers\Classes\Helper;
 use App\Http\Controllers\Controller;
 use Exception;
@@ -176,8 +177,8 @@ class InstagramController extends Controller
         // POST: Process incoming webhook events
         if ($request->isMethod('POST')) {
             try {
-                if (class_exists(\App\Extensions\SocialMediaAutomation\System\Services\WebhookProcessor::class)) {
-                    $processor = app(\App\Extensions\SocialMediaAutomation\System\Services\WebhookProcessor::class);
+                if (class_exists(WebhookProcessor::class)) {
+                    $processor = app(WebhookProcessor::class);
 
                     $appSecret = setting('INSTAGRAM_APP_SECRET');
 

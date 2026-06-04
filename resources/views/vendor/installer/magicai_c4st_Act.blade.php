@@ -1,5 +1,5 @@
 @props([
-    'site_name' => isset($site_name) ? $site_name : 'MagicAi',
+    'site_name' => isset($site_name) ? $site_name : 'DZEVA',
     'return_url' => isset($return_url) ? $return_url :  url('/'). '/activate?callback=true',
     'target' => isset($target) ? $target : '_blank',
     'text' => isset($text) ? $text : 'Activate',

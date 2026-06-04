@@ -8,6 +8,7 @@ use App\Domains\Entity\Facades\Entity;
 use App\Extensions\AISocialMedia\System\Models\AutomationCampaign;
 use App\Extensions\AISocialMedia\System\Models\ScheduledPost;
 use App\Extensions\AISocialMedia\System\Services\AutomationService;
+use App\Helpers\Classes\ApiHelper;
 use App\Helpers\Classes\Helper;
 use App\Http\Controllers\Controller;
 use App\Models\Company;

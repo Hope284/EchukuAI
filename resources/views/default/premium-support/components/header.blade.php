@@ -16,7 +16,7 @@
             <img
                 class="h-auto"
                 src="{{ custom_theme_url('/assets/img/logo/magicAI-logo-dark.svg') }}"
-                alt="MagicAI Premium Support"
+                alt="DZEVA Premium Support"
             >
         </a>
 

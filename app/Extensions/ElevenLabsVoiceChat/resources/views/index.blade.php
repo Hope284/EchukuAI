@@ -95,6 +95,7 @@
                         </option>
                     @endforeach
                 </x-forms.input>
+
                 <template
                     x-for="(error, index) in formErrors.voice_id"
                     :key="'error-' + index"
@@ -148,7 +149,7 @@
         </form>
 
         <h2 class="my-9 font-semibold">
-            @lang('Simply select the source and MagicAI will do the rest to train your GPT in seconds.')
+            @lang('Simply select the source and DZEVA will do the rest to train your GPT in seconds.')
         </h2>
 
         <div x-data="trainVoiceChatbotData">

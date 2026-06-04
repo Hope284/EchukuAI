@@ -57,13 +57,13 @@
 <div>
     <form action="{{route('installer.envEditor.save')}}" method="POST">
         @csrf
-        <h2 style="text-align: center;">MagicAI Installer</h2>
+        <h2 style="text-align: center;">DZEVA Installer</h2>
         <hr>
         <h4>General</h4>
         <label for="app_url">App URL</label>
         <input type="text" id="app_url" name="app_url" placeholder="https://liquid-themes.com" value="{{env('APP_URL')}}">
         <label for="app_url">App Name</label>
-        <input type="text" id="app_name" name="app_name" placeholder="MagicAI" value="{{env('APP_NAME')}}">
+        <input type="text" id="app_name" name="app_name" placeholder="DZEVA" value="{{env('APP_NAME')}}">
         <hr>
         <section id="radioButtons">
             <label for="app_debug">App Environment</label>

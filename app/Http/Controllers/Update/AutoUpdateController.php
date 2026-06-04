@@ -166,7 +166,7 @@ class AutoUpdateController extends Controller
         }
 
         // Create the log message
-        $message = sprintf('MagicAI New Updater - [%s]: %s %s', $type, $messageContent, $appendMsg);
+        $message = sprintf('DZEVA New Updater - [%s]: %s %s', $type, $messageContent, $appendMsg);
         $this->responseHtml .= $message . '<br>';
 
         // Log the message based on its type

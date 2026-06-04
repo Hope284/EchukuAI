@@ -14,6 +14,29 @@ class AiPersona extends Model
         'user_id',
         'avatar_id',
         'status',
+        'input_text',
+        'voice_type',
+        'avatar_style',
+        'matting',
+        'caption',
+        'circle_background_color',
+        'voice_id',
+        'audio_asset_id',
+        'voice_speed',
+        'voice_pitch',
+        'voice_emotion',
+        'locale',
+        'dimension_width',
+        'dimension_height',
+    ];
+
+    protected $casts = [
+        'matting'          => 'boolean',
+        'caption'          => 'boolean',
+        'voice_speed'      => 'float',
+        'voice_pitch'      => 'integer',
+        'dimension_width'  => 'integer',
+        'dimension_height' => 'integer',
     ];
 
     public function user(): BelongsTo

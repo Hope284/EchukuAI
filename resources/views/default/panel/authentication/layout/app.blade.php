@@ -72,7 +72,7 @@
                     <img
                         class="translate-x-[27%] rounded-[36px] shadow-[0_24px_88px_rgba(0,0,0,0.55)]"
                         src="{{ custom_theme_url('/images/bg/dash-mockup.jpg') }}"
-                        alt="MagicAI Dashboard Mockup"
+                        alt="DZEVA Dashboard Mockup"
                     >
                 </div>
         @endif

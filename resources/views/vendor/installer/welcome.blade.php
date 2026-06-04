@@ -13,7 +13,7 @@
         <h4 class="mb-20 mt-0 font-body text-[26px]">{{ __('Welcome') }}</h4>
         <p class="mb-9 text-[75px] leading-none">🪄</p>
         <h1 class="mb-10 mt-0 font-body text-[45px]">{{ __('Let’s start.') }}</h1>
-        <p class="mb-20 text-[20px]">{{ __('Thanks for purchasing MagicAI! You can now install your product in seconds and unlock the magic of AI. Let’s get you started!') }}</p>
+        <p class="mb-20 text-[20px]">{{ __('Thanks for purchasing DZEVA! You can now install your product in seconds and unlock the magic of AI. Let’s get you started!') }}</p>
         <p class="mb-20 text-[20px]">
             {{ __('Need help?') }}
             <a

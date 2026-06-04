@@ -83,6 +83,8 @@ class SocialMediaPostController extends Controller
             'platforms'       => PlatformEnum::all(),
             'currentPlatform' => $currentPlatform,
             'userPlatforms'   => $userPlatforms,
+            'prefillVideo'    => $request->get('prefill_video'),
+            'prefillContent'  => $request->get('prefill_content'),
         ]);
     }
 

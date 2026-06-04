@@ -10,7 +10,7 @@
         ],
         [
             'q' => 'Do you offer customization?',
-            'a' => 'Yes, we offer customization services to help you tailor MagicAI to your exact needs.',
+            'a' => 'Yes, we offer customization services to help you tailor DZEVA to your exact needs.',
         ],
         [
             'q' => 'How can I join this program?',

@@ -166,7 +166,7 @@
                         @lang('Marketplace is here.')
                     </h2>
                     <p class="mb-0 text-sm font-medium text-foreground/80">
-                        @lang('Extend the capabilities of MagicAI, explore new designs and unlock new horizons.')
+                        @lang('Extend the capabilities of DZEVA, explore new designs and unlock new horizons.')
                     </p>
                 </div>
                 <figure

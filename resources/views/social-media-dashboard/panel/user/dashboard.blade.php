@@ -226,13 +226,13 @@
                                     <img
                                         class="announcement-img announcement-img-dark w-3/12 peer hidden shrink-0 dark:block"
                                         src="{{ setting('announcement_image_dark', '/upload/images/speaker.png') }}"
-                                        alt="@lang(setting('announcement_title', 'Welcome to MagicAI!'))"
+                                        alt="@lang(setting('announcement_title', 'Welcome to DZEVA!'))"
                                     >
                                 @endif
                                 <img
                                     class="announcement-img announcement-img-light shrink-0 w-3/12 dark:peer-[&.announcement-img-dark]:hidden"
                                     src="{{ setting('announcement_image', '/upload/images/speaker.png') }}"
-                                    alt="@lang(setting('announcement_title', 'Welcome to MagicAI!'))"
+                                    alt="@lang(setting('announcement_title', 'Welcome to DZEVA!'))"
                                 >
                             </div>
                         </div>

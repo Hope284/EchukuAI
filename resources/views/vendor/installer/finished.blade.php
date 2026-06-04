@@ -67,7 +67,7 @@
         class="flex items-center justify-center gap-2 rounded-xl p-2 font-medium shadow-[0_4px_10px_rgba(0,0,0,0.05)] transition-all duration-300 hover:scale-105 hover:bg-black hover:text-white"
         href="{{ url('/license') }}"
     >
-        {{ __('Explore MagicAI') }}
+        {{ __('Explore DZEVA') }}
         <svg
             xmlns="http://www.w3.org/2000/svg"
             width="18"

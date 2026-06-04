@@ -22,7 +22,22 @@ class UserFall extends Model
         'response_url',
         'model',
         'video_url',
+        'duration_seconds',
+        'resolution',
+        'aspect_ratio',
+        'thumbnail_url',
     ];
+
+    protected $casts = [
+        'created_at' => 'datetime',
+    ];
+
+    public function getFormattedDurationAttribute(): string
+    {
+        $seconds = $this->duration_seconds ?? 0;
+
+        return sprintf('%02d:%02d', intdiv($seconds, 60), $seconds % 60);
+    }
 
     // required for listing videos in documents page
     public function isFavoriteDoc(): false

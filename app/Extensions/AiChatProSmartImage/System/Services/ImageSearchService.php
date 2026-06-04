@@ -8,6 +8,7 @@ use App\Domains\Entity\Enums\EntityEnum;
 use App\Helpers\Classes\ApiHelper;
 use App\Models\SettingTwo;
 use Illuminate\Http\Client\Pool;
+use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
 use OpenAI\Laravel\Facades\OpenAI;
 use Throwable;
@@ -216,7 +217,7 @@ class ImageSearchService
 
             foreach ($pageResponses as $index => $pageResponse) {
                 try {
-                    if (! $pageResponse instanceof \Illuminate\Http\Client\Response || ! $pageResponse->successful()) {
+                    if (! $pageResponse instanceof Response || ! $pageResponse->successful()) {
                         continue;
                     }
 
@@ -259,7 +260,7 @@ class ImageSearchService
                 }
 
                 try {
-                    if (! $headResponse instanceof \Illuminate\Http\Client\Response) {
+                    if (! $headResponse instanceof Response) {
                         continue;
                     }
 

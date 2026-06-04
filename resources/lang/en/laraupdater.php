@@ -23,7 +23,7 @@ return [
     'MAINTENANCE_MODE_OFF'  => 'Maintenance mode: OFF',
     'INSTALLATION_SUCCESS'  => 'Update installed successfully.',
     'INSTALLATION_ERROR'    => 'An error occurred during the installation.',
-    'RECOVERY'              => 'MagicAI is attempting to recovery your system from backup.',
+    'RECOVERY'              => 'DZEVA is attempting to recovery your system from backup.',
     'RECOVERY_SUCCESS'      => 'Recovery completed successfully.',
     'RECOVERY_ERROR'        => 'Recovery failed, try it manually. Remember: \'php artisan up\' to disable the maintenance mode.',
     'EXCEPTION'             => 'An exception occurred: ',

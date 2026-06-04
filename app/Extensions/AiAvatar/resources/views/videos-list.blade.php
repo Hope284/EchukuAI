@@ -102,6 +102,17 @@
                     <x-tabler-chevron-right class="size-4" />
                 </button>
             </div>
+
+            <div
+                class="relative z-1 mx-auto mt-3 w-full max-w-md px-5"
+                x-show="videoSrc"
+                x-cloak
+            >
+                @includeIf('video-editor::partials.open-with-button', [
+                    'url'          => 'videoSrc',
+                    'wrapperClass' => '',
+                ])
+            </div>
         </div>
     </div>
 @endif

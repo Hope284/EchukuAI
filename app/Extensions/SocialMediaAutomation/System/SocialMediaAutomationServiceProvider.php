@@ -6,11 +6,11 @@ namespace App\Extensions\SocialMediaAutomation\System;
 
 use App\Domains\Marketplace\Contracts\ExtensionRegisterKeyProviderInterface;
 use App\Domains\Marketplace\Contracts\UninstallExtensionServiceProviderInterface;
+use App\Extensions\SocialMediaAutomation\System\Console\Commands\CleanupPendingAutomationsCommand;
+use App\Extensions\SocialMediaAutomation\System\Console\Commands\ProcessPendingAutomationsCommand;
 use App\Extensions\SocialMediaAutomation\System\Http\Controllers\AutomationBuilderController;
 use App\Extensions\SocialMediaAutomation\System\Http\Controllers\AutomationController;
 use App\Extensions\SocialMediaAutomation\System\Http\Controllers\WebhookController;
-use App\Extensions\SocialMediaAutomation\System\Console\Commands\CleanupPendingAutomationsCommand;
-use App\Extensions\SocialMediaAutomation\System\Console\Commands\ProcessPendingAutomationsCommand;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Route;

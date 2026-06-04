@@ -39,6 +39,7 @@ Route::middleware('checkInstallation')
         Route::controller(PageController::class)
             ->group(static function () {
                 Route::get('privacy-policy', 'pagePrivacy')->name('pagePrivacy');
+                Route::get('privacy', 'pagePrivacy')->name('privacy');
                 Route::get('terms', 'pageTerms')->name('pageTerms');
                 Route::get('page/{slug}', 'pageContent')->name('pageContent');
             });

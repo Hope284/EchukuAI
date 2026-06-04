@@ -8,6 +8,7 @@ use App\Domains\Engine\Services\GeminiService;
 use App\Helpers\Classes\ApiHelper;
 use Exception;
 use getID3;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Http;
 
 class LyriaMusicService
@@ -15,7 +16,7 @@ class LyriaMusicService
     /**
      * Generate music using Google Lyria models via the Gemini API.
      *
-     * @param  array<\Illuminate\Http\UploadedFile>  $images
+     * @param  array<UploadedFile>  $images
      *
      * @return array{file_url: string, duration: float, duration_seconds: int, lyrics: string|null}
      *

@@ -58,7 +58,9 @@ class AiVideoProServiceProvider extends ServiceProvider
                             ->group(function (Router $router) {
                                 $router->resource('ai-video-pro', AiVideoProController::class)->except('destroy', 'show');
                                 $router->get('ai-video-pro-delete/{id}', [AiVideoProController::class, 'delete'])->name('ai-video-pro.delete');
+                                $router->post('ai-video-pro-bulk-delete', [AiVideoProController::class, 'bulkDelete'])->name('ai-video-pro.bulk-delete');
                                 $router->get('ai-video-pro-check', [AiVideoProController::class, 'checkVideoStatus'])->name('ai-video-pro.check');
+                                $router->post('ai-video-pro-enhance-prompt', [AiVideoProController::class, 'enhancePrompt'])->name('ai-video-pro.enhance-prompt');
                             });
                     });
             });

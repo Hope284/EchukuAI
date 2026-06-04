@@ -12,7 +12,7 @@
             @lang('Available Themes')
         </h2>
         <p class="mb-8">
-            @lang('Customize the visual appearence of MagicAI with a single click and complement the design principles of your brand identity. ')
+            @lang('Customize the visual appearence of DZEVA with a single click and complement the design principles of your brand identity. ')
         </p>
         <x-alerts.payment-status :payment-status="$paymentStatus" />
         <div class="flex flex-col gap-16">

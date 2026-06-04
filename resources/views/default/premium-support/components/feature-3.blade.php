@@ -56,7 +56,7 @@
                         <span class="text-white">
                             @lang('Unlock 10 hours of complimentary customization from our expert development team.')
                         </span>
-                        @lang('Tailor MagicAI to your exact needs with personalized tweaks and enhancements, ensuring it aligns perfectly with your vision.')
+                        @lang('Tailor DZEVA to your exact needs with personalized tweaks and enhancements, ensuring it aligns perfectly with your vision.')
                     </p>
                 </div>
             </div>

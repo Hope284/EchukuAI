@@ -11,9 +11,10 @@ class ModelConfigurationService
     {
         return [
             'sora' => [
-                'label'     => __('Generate video with Sora'),
-                'isActive'  => setting('sora_active', 1) == 1,
-                'subModels' => [
+                'label'       => __('Sora'),
+                'description' => __('Best for social media'),
+                'isActive'    => setting('sora_active', 1) == 1,
+                'subModels'   => [
                     'sora2' => [
                         'isActive' => true,
                         'features' => [
@@ -21,11 +22,11 @@ class ModelConfigurationService
                                 'label'  => EntityEnum::SORA_2->label(),
                                 'inputs' => [
                                     self::promptInput(),
-                                    self::imageUpload(null, 'image_url', __('Reference Image (optional) — must match the requested width and height'), false),
+                                    self::imageUpload(null, 'image_url', __('Reference Image'), false, __('Optional - Must match the requested width and height')),
                                     self::selectInput('sora_seconds', __('Duration'), [
-                                        ['value' => '4', 'label' => '4 seconds'],
-                                        ['value' => '8', 'label' => '8 seconds'],
-                                        ['value' => '12', 'label' => '12 seconds'],
+                                        ['value' => '4', 'label' => '4s'],
+                                        ['value' => '8', 'label' => '8s'],
+                                        ['value' => '12', 'label' => '12s'],
                                     ], '4', __('Select video duration (4, 8, or 12 seconds).')),
                                     self::selectInput('sora_size', __('Size'), [
                                         ['value' => '720x1280', 'label' => '720x1280'],
@@ -39,11 +40,11 @@ class ModelConfigurationService
                                 'label'  => EntityEnum::SORA_2_PRO->label(),
                                 'inputs' => [
                                     self::promptInput(),
-                                    self::imageUpload(null, 'image_url', __('Reference Image (optional) — must match the requested width and height'), false),
+                                    self::imageUpload(null, 'image_url', __('Reference Image'), false, __('Optional - Must match the requested width and height')),
                                     self::selectInput('sora_seconds', __('Duration'), [
-                                        ['value' => '4', 'label' => '4 seconds'],
-                                        ['value' => '8', 'label' => '8 seconds'],
-                                        ['value' => '12', 'label' => '12 seconds'],
+                                        ['value' => '4', 'label' => '4s'],
+                                        ['value' => '8', 'label' => '8s'],
+                                        ['value' => '12', 'label' => '12s'],
                                     ], '4', __('Select video duration (4, 8, or 12 seconds).')),
                                     self::selectInput('sora_size', __('Size'), [
                                         ['value' => '720x1280', 'label' => '720x1280'],
@@ -58,9 +59,10 @@ class ModelConfigurationService
                 ],
             ],
             'veo' => [
-                'label'     => 'Generate video with Google VEO',
-                'isActive'  => true,
-                'subModels' => [
+                'label'       => __('Veo'),
+                'description' => __('Best for story-telling'),
+                'isActive'    => true,
+                'subModels'   => [
                     'veo2' => [
                         'isActive' => true,
                         'features' => [
@@ -107,7 +109,7 @@ class ModelConfigurationService
                             ],
                         ],
                     ],
-                    'veo3.1' => [
+                    'Veo 3.1' => [
                         'isActive' => true,
                         'features' => [
                             EntityEnum::VEO_3_1_TEXT_TO_VIDEO->value => [
@@ -191,7 +193,7 @@ class ModelConfigurationService
                                 'inputs' => [
                                     self::imageUpload(null, 'first_frame_url', __('First Frame Image')),
                                     self::imageUpload(null, 'last_frame_url', __('Last Frame Image')),
-                                    self::promptInput('Transition Description', 'Describe the transition between frames...', 3, false),
+                                    self::promptInput('Prompt', 'Describe the transition between frames...', 3),
                                     self::durationSelect('8s', ['8s']),
                                     self::selectInput('resolution', __('Resolution'), [
                                         ['value' => '720p', 'label' => '720p'],
@@ -210,7 +212,7 @@ class ModelConfigurationService
                                 'inputs' => [
                                     self::imageUpload(null, 'first_frame_url', __('First Frame Image')),
                                     self::imageUpload(null, 'last_frame_url', __('Last Frame Image')),
-                                    self::promptInput('Transition Description', 'Describe the transition between frames...', 3, false),
+                                    self::promptInput('Prompt', 'Describe the transition between frames...', 3),
                                     self::durationSelect('8s', ['8s']),
                                     self::selectInput('resolution', __('Resolution'), [
                                         ['value' => '720p', 'label' => '720p'],
@@ -237,14 +239,78 @@ class ModelConfigurationService
                                     self::checkboxInput('generate_audio', __('Generate Audio'), true, __('If disabled, video will be silent (saves 33% credits)')),
                                 ],
                             ],
+                            EntityEnum::VEO_3_1_LITE_TEXT_TO_VIDEO->value => [
+                                'label'  => EntityEnum::VEO_3_1_LITE_TEXT_TO_VIDEO->label(),
+                                'inputs' => [
+                                    self::promptInput('Prompt'),
+                                    self::durationSelect('8s', ['4s', '6s', '8s']),
+                                    self::selectInput('resolution', __('Resolution'), [
+                                        ['value' => '720p', 'label' => '720p'],
+                                        ['value' => '1080p', 'label' => '1080p'],
+                                    ], '720p', __('Video resolution quality')),
+                                    self::aspectRatioSelect([
+                                        ['value' => '16:9', 'label' => '16:9 (Landscape)'],
+                                        ['value' => '9:16', 'label' => '9:16 (Portrait)'],
+                                    ], '16:9'),
+                                    self::checkboxInput('generate_audio', __('Generate Audio'), true, __('If disabled, video will be silent (saves 33% credits)')),
+                                    self::seedInput(),
+                                    self::negativePromptInput(),
+                                    self::checkboxInput('enhance_prompt', __('Enhance Prompt'), true, __('Improves your prompt for higher-quality results'), true),
+                                    self::checkboxInput('auto_fix', __('Auto Fix Prompts'), true, __('Automatically rewrite prompts that fail content policy'), true),
+                                ],
+                            ],
+                            EntityEnum::VEO_3_1_LITE_IMAGE_TO_VIDEO->value => [
+                                'label'  => EntityEnum::VEO_3_1_LITE_IMAGE_TO_VIDEO->label(),
+                                'inputs' => [
+                                    self::imageUpload(null, 'image_url', __('Upload Image for Image-to-Video (720p or higher, up to 8MB)')),
+                                    self::promptInput('Motion Description', 'Describe how the image should animate...', 3),
+                                    self::durationSelect('8s', ['4s', '6s', '8s']),
+                                    self::selectInput('resolution', __('Resolution'), [
+                                        ['value' => '720p', 'label' => '720p'],
+                                        ['value' => '1080p', 'label' => '1080p'],
+                                    ], '720p', __('Video resolution quality')),
+                                    self::aspectRatioSelect([
+                                        ['value' => 'auto', 'label' => __('Auto (infer from image)')],
+                                        ['value' => '16:9', 'label' => '16:9 (Landscape)'],
+                                        ['value' => '9:16', 'label' => '9:16 (Portrait)'],
+                                    ], 'auto'),
+                                    self::checkboxInput('generate_audio', __('Generate Audio'), true, __('If disabled, video will be silent (saves 33% credits)')),
+                                    self::seedInput(),
+                                    self::negativePromptInput(),
+                                    self::checkboxInput('auto_fix', __('Auto Fix Prompts'), true, __('Automatically rewrite prompts that fail content policy'), true),
+                                ],
+                            ],
+                            EntityEnum::VEO_3_1_LITE_FIRST_LAST_FRAME_TO_VIDEO->value => [
+                                'label'  => EntityEnum::VEO_3_1_LITE_FIRST_LAST_FRAME_TO_VIDEO->label(),
+                                'inputs' => [
+                                    self::imageUpload(null, 'first_frame_url', __('First Frame Image (up to 8MB)')),
+                                    self::imageUpload(null, 'last_frame_url', __('Last Frame Image (up to 8MB)')),
+                                    self::promptInput('Prompt', 'Describe the transition between frames...', 3),
+                                    self::durationSelect('8s', ['8s']),
+                                    self::selectInput('resolution', __('Resolution'), [
+                                        ['value' => '720p', 'label' => '720p'],
+                                        ['value' => '1080p', 'label' => '1080p'],
+                                    ], '720p', __('Video resolution quality')),
+                                    self::aspectRatioSelect([
+                                        ['value' => 'auto', 'label' => __('Auto (infer from frames)')],
+                                        ['value' => '16:9', 'label' => '16:9 (Landscape)'],
+                                        ['value' => '9:16', 'label' => '9:16 (Portrait)'],
+                                    ], 'auto'),
+                                    self::checkboxInput('generate_audio', __('Generate Audio'), true, __('If disabled, video will be silent (saves 33% credits)')),
+                                    self::seedInput(),
+                                    self::negativePromptInput(),
+                                    self::checkboxInput('auto_fix', __('Auto Fix Prompts'), true, __('Automatically rewrite prompts that fail content policy'), true),
+                                ],
+                            ],
                         ],
                     ],
                 ],
             ],
             'luma-dream-machine' => [
-                'label'     => 'Generate video with Luma Dream Machine',
-                'isActive'  => true,
-                'subModels' => [
+                'label'       => __('Luma Dream Machine'),
+                'description' => __('Best for dynamic scenes'),
+                'isActive'    => true,
+                'subModels'   => [
                     'luma-dream-machine' => [
                         'isActive' => true,
                         'features' => [
@@ -259,9 +325,10 @@ class ModelConfigurationService
                 ],
             ],
             'kling' => [
-                'label'     => 'Generate video with Kling',
-                'isActive'  => true,
-                'subModels' => [
+                'label'       => __('Kling'),
+                'description' => __('Best for motion control'),
+                'isActive'    => true,
+                'subModels'   => [
                     'kling-v1' => [
                         'isActive' => true,
                         'features' => [
@@ -429,7 +496,7 @@ class ModelConfigurationService
                             EntityEnum::KLING_3_PRO_TTV->value => [
                                 'label'  => EntityEnum::KLING_3_PRO_TTV->label(),
                                 'inputs' => [
-                                    self::promptInput('Video Description', 'Describe your video in detail... (optional when using Multi Prompt JSON)', 5, false),
+                                    self::promptInput('Video Description', 'Describe your video in detail...', 5),
                                     self::selectInput('kling_v3_duration', __('Duration'), [
                                         ['value' => '3', 'label' => '3s'],
                                         ['value' => '4', 'label' => '4s'],
@@ -497,7 +564,7 @@ class ModelConfigurationService
                             EntityEnum::KLING_3_STANDARD_TTV->value => [
                                 'label'  => EntityEnum::KLING_3_STANDARD_TTV->label(),
                                 'inputs' => [
-                                    self::promptInput('Video Description', 'Describe your video in detail... (optional when using Multi Prompt JSON)', 5, false),
+                                    self::promptInput('Video Description', 'Describe your video in detail...', 5),
                                     self::selectInput('kling_v3_duration', __('Duration'), [
                                         ['value' => '3', 'label' => '3s'],
                                         ['value' => '4', 'label' => '4s'],
@@ -567,9 +634,10 @@ class ModelConfigurationService
                 ],
             ],
             'grok-imagine-video' => [
-                'label'     => __('Generate video with Grok Imagine'),
-                'isActive'  => true,
-                'subModels' => [
+                'label'       => __('Grok Imagine'),
+                'description' => __('AI video from xAI'),
+                'isActive'    => true,
+                'subModels'   => [
                     'grok-imagine-video' => [
                         'isActive' => true,
                         'features' => [
@@ -629,10 +697,254 @@ class ModelConfigurationService
                     ],
                 ],
             ],
+            'seedance' => [
+                'label'       => __('Seedance 2.0'),
+                'description' => __('AI video from ByteDance'),
+                'isActive'    => true,
+                'subModels'   => [
+                    'seedance-2.0' => [
+                        'isActive' => true,
+                        'features' => [
+                            EntityEnum::SEEDANCE_2_TTV->value => [
+                                'label'  => EntityEnum::SEEDANCE_2_TTV->label(),
+                                'inputs' => [
+                                    self::promptInput('Video Description', 'Describe the video you want to generate...', 5),
+                                    self::selectInput('seedance_duration', __('Duration'), [
+                                        ['value' => 'auto', 'label' => __('Auto')],
+                                        ['value' => '4', 'label' => '4s'],
+                                        ['value' => '5', 'label' => '5s'],
+                                        ['value' => '6', 'label' => '6s'],
+                                        ['value' => '7', 'label' => '7s'],
+                                        ['value' => '8', 'label' => '8s'],
+                                        ['value' => '9', 'label' => '9s'],
+                                        ['value' => '10', 'label' => '10s'],
+                                        ['value' => '11', 'label' => '11s'],
+                                        ['value' => '12', 'label' => '12s'],
+                                        ['value' => '13', 'label' => '13s'],
+                                        ['value' => '14', 'label' => '14s'],
+                                        ['value' => '15', 'label' => '15s'],
+                                    ], 'auto', __('Video duration (auto or 4-15 seconds)')),
+                                    self::aspectRatioSelect([
+                                        ['value' => 'auto', 'label' => __('Auto')],
+                                        ['value' => '21:9', 'label' => '21:9 (Ultra-wide)'],
+                                        ['value' => '16:9', 'label' => '16:9 (Landscape)'],
+                                        ['value' => '4:3', 'label' => '4:3'],
+                                        ['value' => '1:1', 'label' => '1:1 (Square)'],
+                                        ['value' => '3:4', 'label' => '3:4'],
+                                        ['value' => '9:16', 'label' => '9:16 (Portrait)'],
+                                    ], 'auto'),
+                                    self::selectInput('seedance_resolution', __('Resolution'), [
+                                        ['value' => '720p', 'label' => '720p'],
+                                        ['value' => '480p', 'label' => '480p'],
+                                    ], '720p', __('Video resolution quality')),
+                                    self::checkboxInput('generate_audio', __('Generate Audio'), true, __('Enable synchronized audio generation including sound effects and lip-synced speech')),
+                                    self::seedInput(),
+                                ],
+                            ],
+                            EntityEnum::SEEDANCE_2_ITV->value => [
+                                'label'  => EntityEnum::SEEDANCE_2_ITV->label(),
+                                'inputs' => [
+                                    self::imageUpload(null, 'image_url', __('Upload Start Image')),
+                                    self::imageUpload(null, 'end_image_url', __('End Frame Image (optional)'), false),
+                                    self::promptInput('Motion Description', 'Describe the desired motion and action...', 4),
+                                    self::selectInput('seedance_duration', __('Duration'), [
+                                        ['value' => 'auto', 'label' => __('Auto')],
+                                        ['value' => '4', 'label' => '4s'],
+                                        ['value' => '5', 'label' => '5s'],
+                                        ['value' => '6', 'label' => '6s'],
+                                        ['value' => '7', 'label' => '7s'],
+                                        ['value' => '8', 'label' => '8s'],
+                                        ['value' => '9', 'label' => '9s'],
+                                        ['value' => '10', 'label' => '10s'],
+                                        ['value' => '11', 'label' => '11s'],
+                                        ['value' => '12', 'label' => '12s'],
+                                        ['value' => '13', 'label' => '13s'],
+                                        ['value' => '14', 'label' => '14s'],
+                                        ['value' => '15', 'label' => '15s'],
+                                    ], 'auto', __('Video duration (auto or 4-15 seconds)')),
+                                    self::aspectRatioSelect([
+                                        ['value' => 'auto', 'label' => __('Auto')],
+                                        ['value' => '21:9', 'label' => '21:9 (Ultra-wide)'],
+                                        ['value' => '16:9', 'label' => '16:9 (Landscape)'],
+                                        ['value' => '4:3', 'label' => '4:3'],
+                                        ['value' => '1:1', 'label' => '1:1 (Square)'],
+                                        ['value' => '3:4', 'label' => '3:4'],
+                                        ['value' => '9:16', 'label' => '9:16 (Portrait)'],
+                                    ], 'auto'),
+                                    self::selectInput('seedance_resolution', __('Resolution'), [
+                                        ['value' => '720p', 'label' => '720p'],
+                                        ['value' => '480p', 'label' => '480p'],
+                                    ], '720p', __('Video resolution quality')),
+                                    self::checkboxInput('generate_audio', __('Generate Audio'), true, __('Enable synchronized audio generation including sound effects and lip-synced speech')),
+                                    self::seedInput(),
+                                ],
+                            ],
+                            EntityEnum::SEEDANCE_2_RTV->value => [
+                                'label'  => EntityEnum::SEEDANCE_2_RTV->label(),
+                                'inputs' => [
+                                    self::multipleImageUpload('image_urls[]', __('Reference Images (up to 9)'), false, 0, 9),
+                                    self::multipleVideoUpload('video_urls[]', __('Reference Videos (up to 3, optional)')),
+                                    self::multipleAudioUpload('audio_urls[]', __('Reference Audio (up to 3, optional)')),
+                                    self::promptInput('Video Description', 'Describe what to generate, use @Image1, @Image2 to reference uploaded images...', 5),
+                                    self::selectInput('seedance_duration', __('Duration'), [
+                                        ['value' => 'auto', 'label' => __('Auto')],
+                                        ['value' => '4', 'label' => '4s'],
+                                        ['value' => '5', 'label' => '5s'],
+                                        ['value' => '6', 'label' => '6s'],
+                                        ['value' => '7', 'label' => '7s'],
+                                        ['value' => '8', 'label' => '8s'],
+                                        ['value' => '9', 'label' => '9s'],
+                                        ['value' => '10', 'label' => '10s'],
+                                        ['value' => '11', 'label' => '11s'],
+                                        ['value' => '12', 'label' => '12s'],
+                                        ['value' => '13', 'label' => '13s'],
+                                        ['value' => '14', 'label' => '14s'],
+                                        ['value' => '15', 'label' => '15s'],
+                                    ], 'auto', __('Video duration (auto or 4-15 seconds)')),
+                                    self::aspectRatioSelect([
+                                        ['value' => 'auto', 'label' => __('Auto')],
+                                        ['value' => '21:9', 'label' => '21:9 (Ultra-wide)'],
+                                        ['value' => '16:9', 'label' => '16:9 (Landscape)'],
+                                        ['value' => '4:3', 'label' => '4:3'],
+                                        ['value' => '1:1', 'label' => '1:1 (Square)'],
+                                        ['value' => '3:4', 'label' => '3:4'],
+                                        ['value' => '9:16', 'label' => '9:16 (Portrait)'],
+                                    ], 'auto'),
+                                    self::selectInput('seedance_resolution', __('Resolution'), [
+                                        ['value' => '720p', 'label' => '720p'],
+                                        ['value' => '480p', 'label' => '480p'],
+                                    ], '720p', __('Video resolution quality')),
+                                    self::checkboxInput('generate_audio', __('Generate Audio'), true, __('Enable synchronized audio generation including sound effects and lip-synced speech')),
+                                    self::seedInput(),
+                                ],
+                            ],
+                        ],
+                    ],
+                    'seedance-2.0-fast' => [
+                        'isActive' => true,
+                        'features' => [
+                            EntityEnum::SEEDANCE_2_FAST_TTV->value => [
+                                'label'  => EntityEnum::SEEDANCE_2_FAST_TTV->label(),
+                                'inputs' => [
+                                    self::promptInput('Video Description', 'Describe the video you want to generate...', 5),
+                                    self::selectInput('seedance_duration', __('Duration'), [
+                                        ['value' => 'auto', 'label' => __('Auto')],
+                                        ['value' => '4', 'label' => '4s'],
+                                        ['value' => '5', 'label' => '5s'],
+                                        ['value' => '6', 'label' => '6s'],
+                                        ['value' => '7', 'label' => '7s'],
+                                        ['value' => '8', 'label' => '8s'],
+                                        ['value' => '9', 'label' => '9s'],
+                                        ['value' => '10', 'label' => '10s'],
+                                        ['value' => '11', 'label' => '11s'],
+                                        ['value' => '12', 'label' => '12s'],
+                                        ['value' => '13', 'label' => '13s'],
+                                        ['value' => '14', 'label' => '14s'],
+                                        ['value' => '15', 'label' => '15s'],
+                                    ], 'auto', __('Video duration (auto or 4-15 seconds)')),
+                                    self::aspectRatioSelect([
+                                        ['value' => 'auto', 'label' => __('Auto')],
+                                        ['value' => '21:9', 'label' => '21:9 (Ultra-wide)'],
+                                        ['value' => '16:9', 'label' => '16:9 (Landscape)'],
+                                        ['value' => '4:3', 'label' => '4:3'],
+                                        ['value' => '1:1', 'label' => '1:1 (Square)'],
+                                        ['value' => '3:4', 'label' => '3:4'],
+                                        ['value' => '9:16', 'label' => '9:16 (Portrait)'],
+                                    ], 'auto'),
+                                    self::selectInput('seedance_resolution', __('Resolution'), [
+                                        ['value' => '720p', 'label' => '720p'],
+                                        ['value' => '480p', 'label' => '480p'],
+                                    ], '720p', __('Video resolution quality')),
+                                    self::checkboxInput('generate_audio', __('Generate Audio'), true, __('Enable synchronized audio generation including sound effects and lip-synced speech')),
+                                    self::seedInput(),
+                                ],
+                            ],
+                            EntityEnum::SEEDANCE_2_FAST_ITV->value => [
+                                'label'  => EntityEnum::SEEDANCE_2_FAST_ITV->label(),
+                                'inputs' => [
+                                    self::imageUpload(null, 'image_url', __('Upload Start Image')),
+                                    self::imageUpload(null, 'end_image_url', __('End Frame Image (optional)'), false),
+                                    self::promptInput('Motion Description', 'Describe the desired motion and action...', 4),
+                                    self::selectInput('seedance_duration', __('Duration'), [
+                                        ['value' => 'auto', 'label' => __('Auto')],
+                                        ['value' => '4', 'label' => '4s'],
+                                        ['value' => '5', 'label' => '5s'],
+                                        ['value' => '6', 'label' => '6s'],
+                                        ['value' => '7', 'label' => '7s'],
+                                        ['value' => '8', 'label' => '8s'],
+                                        ['value' => '9', 'label' => '9s'],
+                                        ['value' => '10', 'label' => '10s'],
+                                        ['value' => '11', 'label' => '11s'],
+                                        ['value' => '12', 'label' => '12s'],
+                                        ['value' => '13', 'label' => '13s'],
+                                        ['value' => '14', 'label' => '14s'],
+                                        ['value' => '15', 'label' => '15s'],
+                                    ], 'auto', __('Video duration (auto or 4-15 seconds)')),
+                                    self::aspectRatioSelect([
+                                        ['value' => 'auto', 'label' => __('Auto')],
+                                        ['value' => '21:9', 'label' => '21:9 (Ultra-wide)'],
+                                        ['value' => '16:9', 'label' => '16:9 (Landscape)'],
+                                        ['value' => '4:3', 'label' => '4:3'],
+                                        ['value' => '1:1', 'label' => '1:1 (Square)'],
+                                        ['value' => '3:4', 'label' => '3:4'],
+                                        ['value' => '9:16', 'label' => '9:16 (Portrait)'],
+                                    ], 'auto'),
+                                    self::selectInput('seedance_resolution', __('Resolution'), [
+                                        ['value' => '720p', 'label' => '720p'],
+                                        ['value' => '480p', 'label' => '480p'],
+                                    ], '720p', __('Video resolution quality')),
+                                    self::checkboxInput('generate_audio', __('Generate Audio'), true, __('Enable synchronized audio generation including sound effects and lip-synced speech')),
+                                    self::seedInput(),
+                                ],
+                            ],
+                            EntityEnum::SEEDANCE_2_FAST_RTV->value => [
+                                'label'  => EntityEnum::SEEDANCE_2_FAST_RTV->label(),
+                                'inputs' => [
+                                    self::multipleImageUpload('image_urls[]', __('Reference Images (up to 9)'), false, 0, 9),
+                                    self::multipleVideoUpload('video_urls[]', __('Reference Videos (up to 3, optional)')),
+                                    self::multipleAudioUpload('audio_urls[]', __('Reference Audio (up to 3, optional)')),
+                                    self::promptInput('Video Description', 'Describe what to generate, use @Image1, @Image2 to reference uploaded images...', 5),
+                                    self::selectInput('seedance_duration', __('Duration'), [
+                                        ['value' => 'auto', 'label' => __('Auto')],
+                                        ['value' => '4', 'label' => '4s'],
+                                        ['value' => '5', 'label' => '5s'],
+                                        ['value' => '6', 'label' => '6s'],
+                                        ['value' => '7', 'label' => '7s'],
+                                        ['value' => '8', 'label' => '8s'],
+                                        ['value' => '9', 'label' => '9s'],
+                                        ['value' => '10', 'label' => '10s'],
+                                        ['value' => '11', 'label' => '11s'],
+                                        ['value' => '12', 'label' => '12s'],
+                                        ['value' => '13', 'label' => '13s'],
+                                        ['value' => '14', 'label' => '14s'],
+                                        ['value' => '15', 'label' => '15s'],
+                                    ], 'auto', __('Video duration (auto or 4-15 seconds)')),
+                                    self::aspectRatioSelect([
+                                        ['value' => 'auto', 'label' => __('Auto')],
+                                        ['value' => '21:9', 'label' => '21:9 (Ultra-wide)'],
+                                        ['value' => '16:9', 'label' => '16:9 (Landscape)'],
+                                        ['value' => '4:3', 'label' => '4:3'],
+                                        ['value' => '1:1', 'label' => '1:1 (Square)'],
+                                        ['value' => '3:4', 'label' => '3:4'],
+                                        ['value' => '9:16', 'label' => '9:16 (Portrait)'],
+                                    ], 'auto'),
+                                    self::selectInput('seedance_resolution', __('Resolution'), [
+                                        ['value' => '720p', 'label' => '720p'],
+                                        ['value' => '480p', 'label' => '480p'],
+                                    ], '720p', __('Video resolution quality')),
+                                    self::checkboxInput('generate_audio', __('Generate Audio'), true, __('Enable synchronized audio generation including sound effects and lip-synced speech')),
+                                    self::seedInput(),
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+            ],
             'minimax' => [
-                'label'     => 'Generate video with Minimax',
-                'isActive'  => true,
-                'subModels' => [
+                'label'       => __('Minimax'),
+                'description' => __('Fast and low-cost'),
+                'isActive'    => true,
+                'subModels'   => [
                     'minimax' => [
                         'isActive' => true,
                         'features' => [
@@ -641,6 +953,30 @@ class ModelConfigurationService
                                 'inputs' => [
                                     self::promptInput('Video Description', 'Enter your video prompt...'),
                                     self::negativePromptInput(),
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+            'background-removal' => [
+                'label'       => __('Background Removal'),
+                'description' => __('Remove video backgrounds'),
+                'isActive'    => true,
+                'subModels'   => [
+                    'veed' => [
+                        'isActive' => true,
+                        'features' => [
+                            EntityEnum::VIDEO_BACKGROUND_REMOVAL->value => [
+                                'label'  => EntityEnum::VIDEO_BACKGROUND_REMOVAL->label(),
+                                'inputs' => [
+                                    self::videoUpload('video_url', __('Upload Video')),
+                                    self::selectInput('output_codec', __('Output Codec'), [
+                                        ['value' => 'vp9', 'label' => 'VP9 (WebM with alpha)'],
+                                        ['value' => 'h264', 'label' => 'H264 (RGB + alpha)'],
+                                    ], 'vp9', __('VP9 outputs a single video with transparency. H264 outputs two separate videos.')),
+                                    self::checkboxInput('refine_foreground_edges', __('Refine Foreground Edges'), true, __('Improves the quality of the extracted object\'s edges')),
+                                    self::checkboxInput('subject_is_person', __('Subject is Person'), true, __('Set to off if the subject is not a person')),
                                 ],
                             ],
                         ],
@@ -793,7 +1129,8 @@ class ModelConfigurationService
         ?int $maxSize = null,
         string $name = 'image_url',
         string $label = 'Upload Image',
-        bool $required = true
+        bool $required = true,
+        ?string $tooltip = null,
     ): array {
         $input = [
             'type'     => 'file',
@@ -801,6 +1138,7 @@ class ModelConfigurationService
             'label'    => $label,
             'accept'   => 'image/*',
             'required' => $required,
+            'tooltip'  => $tooltip,
         ];
 
         if ($maxSize !== null) {
@@ -810,22 +1148,74 @@ class ModelConfigurationService
         return $input;
     }
 
-    private static function multipleImageUpload(string $name, string $label): array
-    {
+    private static function multipleImageUpload(
+        string $name,
+        string $label,
+        bool $required = true,
+        int $minFiles = 1,
+        int $maxFiles = 3,
+        ?string $tooltip = null
+    ): array {
         return [
             'type'      => 'file',
             'name'      => $name,
             'label'     => $label,
             'accept'    => 'image/*',
             'multiple'  => true,
-            'required'  => true,
-            'min_files' => 1,
-            'max_files' => 3,
+            'required'  => $required,
+            'min_files' => $minFiles,
+            'max_files' => $maxFiles,
+            'tooltip'   => $tooltip,
         ];
     }
 
-    private static function videoUpload(string $name, string $label): array
-    {
+    private static function multipleVideoUpload(
+        string $name,
+        string $label,
+        bool $required = false,
+        int $maxFiles = 3,
+        ?string $tooltip = null
+    ): array {
+        return [
+            'type'                => 'file',
+            'name'                => $name,
+            'label'               => $label,
+            'accept'              => 'video/*',
+            'multiple'            => true,
+            'required'            => $required,
+            'min_files'           => 0,
+            'max_files'           => $maxFiles,
+            'excludeMediaManager' => true,
+            'tooltip'             => $tooltip,
+        ];
+    }
+
+    private static function multipleAudioUpload(
+        string $name,
+        string $label,
+        bool $required = false,
+        int $maxFiles = 3,
+        ?string $tooltip = null
+    ): array {
+        return [
+            'type'      => 'file',
+            'name'      => $name,
+            'label'     => $label,
+            'accept'    => 'audio/*',
+            'multiple'  => true,
+            'required'  => $required,
+            'min_files' => 0,
+            'max_files' => $maxFiles,
+            'tooltip'   => $tooltip,
+
+        ];
+    }
+
+    private static function videoUpload(
+        string $name,
+        string $label,
+        ?string $tooltip = null
+    ): array {
         return [
             'type'                => 'file',
             'name'                => $name,
@@ -833,11 +1223,14 @@ class ModelConfigurationService
             'accept'              => 'video/*',
             'required'            => true,
             'excludeMediaManager' => true,
+            'tooltip'             => $tooltip,
         ];
     }
 
-    private static function seedInput(?int $min = null, ?int $max = null): array
-    {
+    private static function seedInput(
+        ?int $min = null,
+        ?int $max = null
+    ): array {
         return self::numberInput(
             'seed',
             __('Seed'),
@@ -853,8 +1246,11 @@ class ModelConfigurationService
 
     // ============== SPECIALIZED INPUT BUILDERS ==============
 
-    private static function durationSelect(string $default, array $options): array
-    {
+    private static function durationSelect(
+        string $default,
+        array $options,
+        ?string $tooltip = null,
+    ): array {
         $formattedOptions = array_map(fn ($d) => [
             'value' => $d,
             'label' => $d,
@@ -867,8 +1263,11 @@ class ModelConfigurationService
         return self::selectInput('duration', __('Duration'), $formattedOptions, $default, $tooltip);
     }
 
-    private static function aspectRatioSelect(string|array $optionsOrEnum, ?string $default = null): array
-    {
+    private static function aspectRatioSelect(
+        string|array $optionsOrEnum,
+        ?string $default = null,
+        ?string $tooltip = null
+    ): array {
         // If enum class string is passed, build options from it
         if (is_string($optionsOrEnum) && class_exists($optionsOrEnum) && method_exists($optionsOrEnum, 'cases')) {
             $options = [];
@@ -887,7 +1286,7 @@ class ModelConfigurationService
             __('Aspect Ratio'),
             $options,
             $default,
-            __('Aspect ratio of the output video')
+            $tooltip
         );
     }
 }

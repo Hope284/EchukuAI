@@ -11,6 +11,7 @@ use App\Helpers\Classes\Helper;
 use App\Http\Controllers\Controller;
 use Exception;
 use Illuminate\Contracts\View\View;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class AiAvatarController extends Controller
@@ -154,7 +155,7 @@ class AiAvatarController extends Controller
         return back()->with(['message' => __('Delete Failed'), 'type' => 'danger']);
     }
 
-    public function checkVideoStatus(Request $request): \Illuminate\Http\JsonResponse
+    public function checkVideoStatus(Request $request): JsonResponse
     {
         $ids = AiAvatar::query()->where('status', 'in_progress')->pluck('avatar_id')->toArray();
 

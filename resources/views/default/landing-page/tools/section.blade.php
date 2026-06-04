@@ -5,7 +5,7 @@
             <x-section-header
                 mb="14"
                 title="{{ __($fSectSettings->tools_title) }}"
-                subtitle="{{ __($fSectSettings->tools_description) ?? __('MagicAI has all the tools you need to create and manage your SaaS platform.') }}"
+                subtitle="{{ __($fSectSettings->tools_description) ?? __('DZEVA has all the tools you need to create and manage your SaaS platform.') }}"
             />
             <div class="grid grid-cols-3 gap-3 max-lg:grid-cols-2 max-md:grid-cols-1">
                 @foreach ($tools as $item)

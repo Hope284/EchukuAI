@@ -52,7 +52,7 @@
 		conversation_deleted_successfully: @json(__('Conversation deleted successfully.')),
 		analyze_file_begin: @json(__('Analyzing uploaded file.')),
 		analyze_file_finish: @json(__('Analyzing file is done. You can start the conversation.')),
-		please_active_magicai: @json(__('Please Active The MagicAI')),
+		please_active_magicai: @json(__('Please Active The DZEVA')),
 		please_enter_url: @json(__('Please enter the URL')),
 		you_cannot_withdrawal: @json(__('You cannot withdrawal with this amount. Please check')),
 		error_while_sending: @json(__('Error while sending information. Please contact us.')),

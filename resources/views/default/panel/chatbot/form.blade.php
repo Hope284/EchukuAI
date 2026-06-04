@@ -68,8 +68,8 @@
                                     id="title"
                                     type="text"
                                     name="title"
-                                    value="{{ $chatbotData != null ? $chatbotData->title : 'MagicAI Bot' }}"
-                                    placeholder="{{ __('MagicAI Bot') }}"
+                                    value="{{ $chatbotData != null ? $chatbotData->title : 'DZEVA Bot' }}"
+                                    placeholder="{{ __('DZEVA Bot') }}"
                             >
                         </div>
 
@@ -144,7 +144,7 @@
                                     type="text"
                                     rows="5"
                                     name="instructions"
-                                    placeholder="{{ __('You are a assistant and your name is MagicAI.') }}"
+                                    placeholder="{{ __('You are a assistant and your name is DZEVA.') }}"
                             >{{ $chatbotData != null ? $chatbotData->instructions : 'Your name is John Doe. Remember that you are an assistant who only gives information about wordpress and don\'t give any other information.' }}</textarea>
                         </div>
 

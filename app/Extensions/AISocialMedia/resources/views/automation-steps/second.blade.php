@@ -70,7 +70,6 @@
 				type="select"
 				size="lg"
 				multiple
-				required
 			>
 				<x-slot:label-extra>
 					<x-modal title="{{ __('Choose a company') }}">
@@ -142,14 +141,18 @@
 			// Attach an event handler to the company select element
 			companySelect.on('change', function() {
 				var selectedCompany = $(this).val();
+				var rawSelect = productSelect[0];
 
-				// Make an AJAX request to get products for the selected company
 				$.get('/dashboard/user/automation/company/get-products/' + selectedCompany, function(data) {
-
 					productSelect.empty();
 					$.each(data, function(key, product) {
 						productSelect.append('<option value="' + product.id + '">' + product.name + '</option>');
 					});
+					if (rawSelect.tomselect) {
+						rawSelect.tomselect.clearOptions();
+						rawSelect.tomselect.addOptions(data.map(function(p) { return { value: p.id, text: p.name }; }));
+						rawSelect.tomselect.refreshOptions(false);
+					}
 				});
 			});
 

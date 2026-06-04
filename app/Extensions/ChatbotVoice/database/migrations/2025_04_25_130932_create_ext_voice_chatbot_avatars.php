@@ -3,6 +3,7 @@
 use App\Extensions\ChatbotVoice\System\Models\ExtVoicechatbotAvatar;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 
@@ -34,7 +35,7 @@ return new class extends Migration
 
                 $image = Storage::disk('extension')->path('ChatbotVoice/resources/assets/avatars/' . $avatar);
 
-                if (\Illuminate\Support\Facades\File::exists($image) === false) {
+                if (File::exists($image) === false) {
                     continue;
                 }
 
@@ -45,7 +46,7 @@ return new class extends Migration
                     'created_at' => now(),
                 ]);
             }
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
 
         }
 

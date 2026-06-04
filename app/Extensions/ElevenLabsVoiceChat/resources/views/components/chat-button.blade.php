@@ -6,6 +6,7 @@
 @endphp
 @if (setting('realtime_voice_chat', 0))
     <div @class([
+        'group-[&.prompt-filled]/chats-wrap:hidden group-[&.submitting]/chats-wrap:hidden',
         'pointer-events-auto flex items-center max-md:flex-col max-md:items-start max-md:gap-4' => $compact,
         'grid place-items-center absolute inset-0 pointer-events-none' => !$compact,
     ])>
@@ -17,7 +18,7 @@
                     'data-[compact=true]:[&.conversation-not-started]:hidden data-[compact=false]:[&.conversation-started]:hidden' => !$visible,
                     'conversation-not-started' => count($messages) <= 1,
                     'conversation-started' => count($messages) > 1,
-                    'md:bg-secondary md:text-secondary-foreground md:hover:bg-primary md:hover:text-primary-foreground [&.active]:hover:bg-red-500 [&.active]:hover:text-white' => $compact,
+                    'size-[34px] border lg:size-11 [&.active]:hover:bg-red-500 [&.active]:hover:text-white' => $compact,
                     'flex size-48 flex-col items-center gap-3 bg-background/80 backdrop-blur-lg text-center text-heading-foreground shadow-[0_2px_55px_hsl(var(--heading-foreground)/10%)] hover:translate-y-0 hover:scale-105 hover:bg-background hover:text-heading-foreground active:scale-95 md:size-[200px] [&.active]:invisible [&.active]:scale-90 [&.active]:opacity-0 hover:shadow-[0_5px_65px_hsl(var(--heading-foreground)/7%)] motion-scale-in-[0.8] motion-blur-in-[12px] motion-duration-[0.45s] motion-ease-spring-bouncier' => !$compact,
                 ])
                 size="none"
@@ -25,6 +26,7 @@
                 x-data="elevenlabsRealtime('{{ $elevenlabsAgentId }}')"
                 @click.prevent="!$store.realtimeChatStatus.active ? start() : stop()"
                 @audio-vis.window="$data[$event.detail.action]()"
+                title="{{ __('Real-Time Chat') }}"
             >
                 <span @class([
                     'grid place-content-center place-items-center',
@@ -123,7 +125,7 @@
                 ])
                 size="none"
                 variant="ghost"
-                x-data="openaiRealtime('{{ $apikeyPart1 }}', '{{ $apikeyPart2 }}', '{{ $apikeyPart3 }}')"
+                x-data="openaiRealtime()"
                 @click.prevent="!$store.realtimeChatStatus.active ? start() : stop()"
                 @audio-vis.window="$data[$event.detail.action]()"
             >
@@ -201,11 +203,7 @@
                         <path d="M7 5l10 14" />
                     </svg>
                 </span>
-                @if ($compact)
-                    <span class="md:hidden">
-                        @lang('Real-Time Chat')
-                    </span>
-                @else
+                @if (!$compact)
                     <span class="text-xs font-medium">
                         @lang('Start Voice Chat')
                     </span>

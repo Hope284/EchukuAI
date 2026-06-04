@@ -20,10 +20,10 @@
     $campaign_id = '';
     $is_personalized_content = '';
     $tone = 'default';
-    $content = '';
+    $content = $prefillContent ?? '';
     $link = '';
     $postImage = '';
-    $video = '';
+    $video = $prefillVideo ?? '';
     $is_repeated = false;
     $repeat_period = '';
     $repeat_start_date = '';

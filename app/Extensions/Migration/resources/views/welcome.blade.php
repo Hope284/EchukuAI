@@ -1,15 +1,15 @@
 @extends('migration::partials.layouts.master')
 
 @section('template_title')
-   @lang('MagicAI Migration')
+   @lang('DZEVA Migration')
 @endsection
 
 @section('container')
     <div class="mx-auto w-4/5">
-        <h4 class="mb-20 mt-0 font-body text-[26px]">{{ __('Welcome to MagicAI Migrator') }}</h4>
+        <h4 class="mb-20 mt-0 font-body text-[26px]">{{ __('Welcome to DZEVA Migrator') }}</h4>
         <p class="mb-9 text-[75px] leading-none">🪄</p>
         <h1 class="mb-10 mt-0 font-body text-[45px]">{{ __('Let’s start.') }}</h1>
-		<p class="mb-10 text-[20px]">{{ __('Thanks choosing MagicAI! You will be able to migrate your data in seconds and unlock the magic of AI. Let’s get you started!') }}</p>
+		<p class="mb-10 text-[20px]">{{ __('Thanks choosing DZEVA! You will be able to migrate your data in seconds and unlock the magic of AI. Let’s get you started!') }}</p>
 		<p class="mb-10 text-[20px]">
             {{ __('Need help?') }}
             <a

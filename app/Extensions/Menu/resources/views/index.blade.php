@@ -104,7 +104,7 @@
             @lang('Menu')
         </h2>
         <p class="mb-8">
-            @lang('With the MagicAI menu creator, you can edit menu labels, change icons, switch between user and admin menus, and hide specific menu items.')
+            @lang('With the DZEVA menu creator, you can edit menu labels, change icons, switch between user and admin menus, and hide specific menu items.')
         </p>
         <div class="lqd-user-menu-list">
             <ol class="lqd-menu-list flex flex-col gap-4">

@@ -1,7 +1,7 @@
 @extends('migration::partials.layouts.master')
 
 @section('template_title')
-	@lang('MagicAI Migration')
+	@lang('DZEVA Migration')
 @endsection
 
 @section('container')

@@ -34,7 +34,8 @@
                 </x-button>
             </div>
 
-            <div class="mx-auto mb-10 grid h-[160px] w-[min(100%,740px)] place-items-start rounded-[22px] bg-background shadow-[0_4px_55px_hsl(0_0%_0%/6%)]">
+            <div
+                class="mx-auto mb-10 grid h-[160px] w-[min(100%,740px)] place-items-start rounded-[22px] border border-transparent bg-background shadow-[0_4px_55px_hsl(0_0%_0%/6%)] dark:border-foreground/[2%]">
                 <div
                     class="w-full min-w-0 max-w-full"
                     x-show="activeTab === 'ai-template'"

@@ -17,10 +17,10 @@
 		<div class="w-full mb-20">
 			<div class="mx-auto mb-16 w-full text-center lg:w-1/2">
 				<h2 class="mb-5 text-[52px] leading-[0.94em]">
-					@lang('Get the MagicAI mobile app for free.')
+					@lang('Get the DZEVA mobile app for free.')
 				</h2>
 				<p class="text-[19px] leading-[1.42em]">
-					@lang("Exclusively for Premium users: Get the MagicAI mobile app (iOS and Android) completely free in your fourth month—valued at $3,000, with no extra cost.")
+					@lang("Exclusively for Premium users: Get the DZEVA mobile app (iOS and Android) completely free in your fourth month—valued at $3,000, with no extra cost.")
 				</p>
 			</div>
 			<div class="relative mx-auto w-full overflow-hidden rounded-lg">

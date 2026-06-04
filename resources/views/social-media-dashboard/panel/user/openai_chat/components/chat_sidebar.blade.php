@@ -69,7 +69,7 @@
                                     href="javascript:void(0);"
                                     onclick="{!! $disable_actions
                                         ? 'return toastr.info(\'{{ __('This feature is disabled in Demo version.') }}\')'
-                                        : 'return startNewChat(\'{{ $category->id }}\', \'{{ LaravelLocalization::getCurrentLocale() }}\')' !!}"
+                                        : 'return startNewChat(\'{{ $category?->id }}\', \'{{ LaravelLocalization::getCurrentLocale() }}\')' !!}"
                                 >
                                     {{ __('New Chat') }}
                                     <x-tabler-plus class="size-4" />
@@ -91,7 +91,7 @@
                             <x-forms.input
                                 class="navbar-search-input peer h-12 !rounded-[calc(var(--input-rounded)*var(--input-rounded-multiplier,1))] bg-heading-foreground/5 ps-10 !text-base lg:h-16"
                                 id="chat_search_word"
-                                data-category-id="{{ $category->id }}"
+                                data-category-id="{{ $category?->id }}"
                                 type="search"
                                 onkeydown="return event.key != 'Enter';"
                                 placeholder="{{ __('Search') }}"

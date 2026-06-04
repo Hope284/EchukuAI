@@ -6,7 +6,7 @@
     <div class="container">
         <x-section-header
             title="{!! __($fSectSettings->features_title) !!}"
-            subtitle="{!! __($fSectSettings->features_description) ?? __('MagicAI is designed to help you generate high-quality content instantly, without breaking a sweat.') !!}"
+            subtitle="{!! __($fSectSettings->features_description) ?? __('DZEVA is designed to help you generate high-quality content instantly, without breaking a sweat.') !!}"
         />
         <div class="grid grid-cols-3 justify-between gap-x-20 gap-y-9 max-lg:grid-cols-2 max-lg:gap-x-10 max-md:grid-cols-1">
             @foreach ($futures as $item)

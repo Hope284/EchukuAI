@@ -87,7 +87,7 @@
                         @lang('Customize Appearance')
                     </h3>
                     <p class="text-sm">
-                        @lang('Customize the visual appearence of MagicAI with a single click and complement the design principles of your brand identity. ')
+                        @lang('Customize the visual appearence of DZEVA with a single click and complement the design principles of your brand identity. ')
                     </p>
                 </div>
 

@@ -575,7 +575,7 @@
                                     </p>
                                 </div>
                                 <div class="lqd-ext-chatbot-premium-window-conversation-message-time">
-                                    MagicAI Help, just now
+                                    DZEVA Help, just now
                                 </div>
                             </div>
                         </div>

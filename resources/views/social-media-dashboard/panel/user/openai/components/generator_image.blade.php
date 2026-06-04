@@ -155,6 +155,21 @@
                     {{ __('GPT-IMAGE-1.5') }}
                 </x-button>
             @endif
+            @if (setting('enabled_gpt_image_2', '0') != '0')
+                <x-button
+                    class="lqd-image-generator-tabs-trigger active py-2 text-2xs font-bold text-heading-foreground hover:shadow-none [&.active]:bg-foreground/10"
+                    data-generator-name="gpt-image-2"
+                    tag="button"
+                    type="button"
+                    variant="ghost"
+                    x-data="{}"
+                    ::class="{ 'active': activeGenerator === 'gpt_image_2' }"
+                    x-bind:data-active="activeGenerator === 'gpt_image_2'"
+                    @click="changeActiveGenerator('gpt_image_2')"
+                >
+                    {{ __('GPT-IMAGE-2') }}
+                </x-button>
+            @endif
             @if (setting('stable_hidden', 0) != 1)
                 <x-button
                     class="lqd-image-generator-tabs-trigger py-2 text-2xs font-bold text-heading-foreground hover:shadow-none [&.active]:bg-foreground/10"

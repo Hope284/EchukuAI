@@ -1,5 +1,5 @@
 @props([
-    'site_name' => isset($site_name) ? $site_name : 'MagicAi'
+    'site_name' => isset($site_name) ? $site_name : 'DZEVA'
 ])
 
 <x-card

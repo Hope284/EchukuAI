@@ -55,7 +55,7 @@
     >
         {{-- Panel --}}
         <div
-            class="fixed bottom-0 end-0 top-[--header-h] z-50 flex w-[var(--entity-panel-width)] flex-col border-t bg-background transition-all max-md:top-auto max-md:max-h-[80vh] max-md:translate-y-full max-md:pb-[--bottom-menu-height] md:translate-x-full md:rounded-ss-[10px] md:border-s max-md:[&.is-open]:translate-y-0 md:[&.is-open]:translate-x-0"
+            class="fixed bottom-0 end-0 top-[--header-h] z-50 flex w-[var(--entity-panel-width)] flex-col border-t bg-background transition-all max-md:top-auto max-md:max-h-[80vh] max-md:translate-y-full max-md:pb-[--bottom-menu-height] md:translate-x-full md:rounded-ss-[10px] md:border-s rtl:md:-translate-x-full max-md:[&.is-open]:translate-y-0 md:[&.is-open]:translate-x-0 rtl:md:[&.is-open]:translate-x-0"
             x-ref="panel"
             :class="{
                 'is-open': isOpen

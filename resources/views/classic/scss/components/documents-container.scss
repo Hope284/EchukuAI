@@ -1,0 +1,15 @@
+.lqd-docs-container {
+
+	&[data-view-mode=list] {
+
+		> div {
+			@apply bg-table-background rounded-none shadow-table;
+		}
+	}
+	&[data-view-mode=grid] {
+
+		> div {
+			@apply bg-transparent border-none pt-0 shadow-none;
+		}
+	}
+}

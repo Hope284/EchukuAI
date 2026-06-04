@@ -6,12 +6,16 @@ use App\Domains\Engine\Services\FalAIService;
 use App\Domains\Entity\Enums\EntityEnum;
 use App\Domains\Entity\Facades\Entity;
 use App\Extensions\AiVideoPro\System\Http\Requests\StoreAiVideoProRequest;
+use App\Extensions\AiVideoPro\System\Jobs\DownloadVideoToLocalJob;
 use App\Extensions\AiVideoPro\System\Models\UserFall;
 use App\Extensions\AiVideoPro\System\Services\ModelConfigurationService;
 use App\Extensions\AiVideoPro\System\Services\SoraService;
+use App\Extensions\SocialMedia\System\Models\SocialMediaPlatform;
 use App\Helpers\Classes\ApiHelper;
 use App\Helpers\Classes\Helper;
+use App\Helpers\Classes\MarketplaceHelper;
 use App\Http\Controllers\Controller;
+use App\Models\Setting;
 use App\Packages\FalAI\FalAIService as PackageFalAIService;
 use Exception;
 use Illuminate\Contracts\View\View;
@@ -22,11 +26,14 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use OpenAI\Laravel\Facades\OpenAI;
 use RuntimeException;
 
 class AiVideoProController extends Controller
 {
     private const UPLOAD_DISK = 'public';
+
+    private bool $isAjax = false;
 
     private const RANDOM_STRING_LENGTH = 12;
 
@@ -42,15 +49,49 @@ class AiVideoProController extends Controller
      */
     public function index(): View
     {
-        $list = UserFall::query()->where('user_id', auth()->user()->id)->get()->toArray();
+        $videos = UserFall::query()
+            ->where('user_id', auth()->id())
+            ->orderByDesc('created_at')
+            ->get();
 
-        $inProgress = collect($list)->filter(function ($entry) {
-            return in_array($entry['status'], ['IN_QUEUE', 'queued']);
-        })->pluck('id')->toArray();
+        $todayVideos = $videos->filter(fn ($v) => $v->created_at->isToday())->values();
+        $previousVideos = $videos->filter(fn ($v) => ! $v->created_at->isToday())->values();
+
+        $inProgress = $videos->filter(fn ($v) => in_array($v->status, ['IN_QUEUE', 'queued']))->pluck('id')->toArray();
+
+        $completedVideos = $videos->filter(fn ($v) => $v->status === 'complete')->values();
+        $videosJson = $completedVideos->map(fn ($v) => [
+            'id'                 => $v->id,
+            'prompt'             => $v->prompt,
+            'video_url'          => $v->video_url,
+            'model'              => $v->model,
+            'duration_seconds'   => $v->duration_seconds,
+            'created_at'         => $v->created_at->toIso8601String(),
+            'formatted_duration' => $v->formatted_duration,
+            'resolution'         => $v->resolution,
+            'aspect_ratio'       => $v->aspect_ratio,
+        ])->values();
 
         $models = ModelConfigurationService::getConfig();
 
-        return view('ai-video-pro::index', compact(['list', 'inProgress', 'models']));
+        // Keep $list for backwards compatibility with video-item partial
+        $list = $videos->toArray();
+
+        $socialMediaRegistered = MarketplaceHelper::isRegistered('social-media');
+        $connectedVideoPlatforms = collect();
+
+        if ($socialMediaRegistered && class_exists(SocialMediaPlatform::class)) {
+            $connectedVideoPlatforms = SocialMediaPlatform::query()
+                ->where('user_id', auth()->id())
+                ->connected()
+                ->whereIn('platform', ['tiktok', 'youtube', 'youtube-shorts'])
+                ->get();
+        }
+
+        return view('ai-video-pro::index', compact(
+            'list', 'todayVideos', 'previousVideos', 'inProgress', 'models', 'videosJson',
+            'socialMediaRegistered', 'connectedVideoPlatforms'
+        ));
     }
 
     public function delete(string $id): RedirectResponse
@@ -66,11 +107,34 @@ class AiVideoProController extends Controller
         return back()->with(['message' => 'Deleted Successfully.', 'type' => 'success']);
     }
 
+    public function bulkDelete(Request $request): JsonResponse
+    {
+        if (Helper::appIsDemo()) {
+            return response()->json(['message' => __('This feature is disabled in demo mode.')], 403);
+        }
+
+        $validated = $request->validate([
+            'ids'   => ['required', 'array', 'min:1'],
+            'ids.*' => ['required', 'integer'],
+        ]);
+
+        $deleted = UserFall::query()
+            ->where('user_id', auth()->id())
+            ->whereIn('id', $validated['ids'])
+            ->delete();
+
+        return response()->json([
+            'message' => __('Deleted :count video(s) successfully.', ['count' => $deleted]),
+        ]);
+    }
+
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreAiVideoProRequest $request): RedirectResponse
+    public function store(StoreAiVideoProRequest $request): RedirectResponse|JsonResponse
     {
+        $this->isAjax = $request->expectsJson() || $request->ajax();
+
         if (Helper::appIsDemo()) {
             return $this->errorResponse(__('This feature is disabled in demo mode.'));
         }
@@ -108,7 +172,7 @@ class AiVideoProController extends Controller
         }
     }
 
-    private function processGeneration(array $validated, EntityEnum $entityEnum, $driver): RedirectResponse
+    private function processGeneration(array $validated, EntityEnum $entityEnum, $driver): RedirectResponse|JsonResponse
     {
         $handlers = [
             'sora'                => 'handleSora',
@@ -117,6 +181,8 @@ class AiVideoProController extends Controller
             'luma-dream-machine'  => 'handleLumaDreamMachine',
             'minimax'             => 'handleMinimax',
             'grok-imagine-video'  => 'handleGrokImagineVideo',
+            'seedance'            => 'handleSeedance',
+            'background-removal'  => 'handleBackgroundRemoval',
         ];
 
         $action = $validated['action'];
@@ -139,7 +205,7 @@ class AiVideoProController extends Controller
         return Entity::driver($entityEnum)->inputVideoCount(1)->calculateCredit();
     }
 
-    private function handleSora(array $validated, EntityEnum $entityEnum, $driver): RedirectResponse
+    private function handleSora(array $validated, EntityEnum $entityEnum, $driver): RedirectResponse|JsonResponse
     {
         // Don't upload yet - pass the UploadedFile object directly
         $imageFile = $validated['image_url'] ?? null;
@@ -163,20 +229,24 @@ class AiVideoProController extends Controller
         // Only upload for database record after successful generation
         $uploadedImageUrl = $imageFile ? $this->uploadSingleFile($validated, 'image_url', true) : null;
 
-        $this->createUserFall(
+        $entry = $this->createUserFall(
             auth()->id(),
             $validated['prompt'],
             $entityEnum->value,
             $response,
-            $uploadedImageUrl
+            $uploadedImageUrl,
+            [
+                'duration_seconds' => (int) ($validated['sora_seconds'] ?? 4),
+                'resolution'       => $validated['sora_size'] ?? null,
+            ]
         );
 
         $driver->decreaseCredit();
 
-        return $this->successResponse(__('Created Successfully.'));
+        return $this->successResponse(__('Created Successfully.'), ['video_id' => $entry->id]);
     }
 
-    private function handleVeo(array $validated, EntityEnum $entityEnum, $driver): RedirectResponse
+    private function handleVeo(array $validated, EntityEnum $entityEnum, $driver): RedirectResponse|JsonResponse
     {
         $legacyFeatures = ['veo2'];
 
@@ -192,47 +262,57 @@ class AiVideoProController extends Controller
             return $this->errorResponse($resData->message ?? __('VEO generation failed'));
         }
 
-        $this->createUserFall(
+        $entry = $this->createUserFall(
             auth()->id(),
             $validated['prompt'],
             $validated['feature'],
-            (array) $resData->resData
+            (array) $resData->resData,
+            null,
+            [
+                'duration_seconds' => isset($validated['duration']) ? (int) rtrim($validated['duration'], 's') : null,
+                'resolution'       => $validated['resolution'] ?? null,
+                'aspect_ratio'     => $validated['aspect_ratio'] ?? null,
+            ]
         );
 
         $driver->decreaseCredit();
 
-        return $this->successResponse(__('Video generation started successfully.'));
+        return $this->successResponse(__('Video generation started successfully.'), ['video_id' => $entry->id]);
     }
 
-    private function handleLegacyVeo(array $validated, EntityEnum $entityEnum, $driver): RedirectResponse
+    private function handleLegacyVeo(array $validated, EntityEnum $entityEnum, $driver): RedirectResponse|JsonResponse
     {
         $payload = $this->buildVeoPayload($validated);
         $response = FalAIService::veo2Generate($payload['prompt']);
         if ($response->failed()) {
-            return back()->with([
-                'message' => $response->status() . ' ' . $response->reason() . ': ' .
-                    $response->json('detail', __('Unknown error occurred')),
-                'type' => 'error',
-            ]);
+            return $this->errorResponse(
+                $response->status() . ' ' . $response->reason() . ': ' .
+                $response->json('detail', __('Unknown error occurred'))
+            );
         }
         $jsonRes = $response->json();
         if (isset($jsonRes['status']) && $jsonRes['status'] === 'error') {
-            return back()->with(['message' => $jsonRes['message'], 'type' => 'error']);
+            return $this->errorResponse($jsonRes['message']);
         }
 
-        $this->createUserFall(
+        $entry = $this->createUserFall(
             auth()->id(),
             $validated['prompt'],
             $validated['feature'],
-            (array) $jsonRes
+            (array) $jsonRes,
+            null,
+            [
+                'duration_seconds' => isset($validated['duration']) ? (int) rtrim($validated['duration'], 's') : null,
+                'aspect_ratio'     => $validated['aspect_ratio'] ?? null,
+            ]
         );
 
         $driver->decreaseCredit();
 
-        return $this->successResponse(__('Video generation started successfully.'));
+        return $this->successResponse(__('Video generation started successfully.'), ['video_id' => $entry->id]);
     }
 
-    private function handleKling(array $validated, EntityEnum $entityEnum, $driver): RedirectResponse
+    private function handleKling(array $validated, EntityEnum $entityEnum, $driver): RedirectResponse|JsonResponse
     {
         $legacyFeatures = ['kling', 'klingImage', 'klingV21', 'kling-video'];
         $kling26ProFeatures = [
@@ -263,7 +343,7 @@ class AiVideoProController extends Controller
         return $this->handleKling25($validated, $entityEnum, $driver);
     }
 
-    private function handleLegacyKling(array $validated, EntityEnum $entityEnum, $driver): RedirectResponse
+    private function handleLegacyKling(array $validated, EntityEnum $entityEnum, $driver): RedirectResponse|JsonResponse
     {
         $feature = $validated['feature'];
         $url = null;
@@ -285,7 +365,7 @@ class AiVideoProController extends Controller
             return $this->errorResponse($response['message'] ?? __('Generation Failed'));
         }
 
-        $this->createUserFall(
+        $entry = $this->createUserFall(
             auth()->id(),
             $validated['prompt'],
             $feature,
@@ -295,10 +375,10 @@ class AiVideoProController extends Controller
 
         $driver->decreaseCredit();
 
-        return $this->successResponse(__('Created Successfully.'));
+        return $this->successResponse(__('Created Successfully.'), ['video_id' => $entry->id]);
     }
 
-    private function handleKling25(array $validated, EntityEnum $entityEnum, $driver): RedirectResponse
+    private function handleKling25(array $validated, EntityEnum $entityEnum, $driver): RedirectResponse|JsonResponse
     {
         $payload = $this->buildKling25Payload($validated);
 
@@ -309,20 +389,24 @@ class AiVideoProController extends Controller
             return $this->errorResponse($resData->message ?? __('Kling generation failed'));
         }
 
-        $this->createUserFall(
+        $entry = $this->createUserFall(
             auth()->id(),
             $validated['prompt'] ?? null,
             $validated['feature'],
             (array) $resData->resData,
-            $payload['image_url'] ?? null
+            $payload['image_url'] ?? null,
+            [
+                'duration_seconds' => (int) ($validated['kling25turbo_duration'] ?? 5),
+                'aspect_ratio'     => $validated['kling25turbo_aspect_ratio'] ?? null,
+            ]
         );
 
         $driver->decreaseCredit();
 
-        return $this->successResponse(__('Kling video generation started successfully.'));
+        return $this->successResponse(__('Kling video generation started successfully.'), ['video_id' => $entry->id]);
     }
 
-    private function handleKling26Pro(array $validated, EntityEnum $entityEnum, $driver): RedirectResponse
+    private function handleKling26Pro(array $validated, EntityEnum $entityEnum, $driver): RedirectResponse|JsonResponse
     {
         $payload = $this->buildKling26ProPayload($validated);
 
@@ -333,20 +417,24 @@ class AiVideoProController extends Controller
             return $this->errorResponse($resData->message ?? __('Kling generation failed'));
         }
 
-        $this->createUserFall(
+        $entry = $this->createUserFall(
             auth()->id(),
             $validated['prompt'],
             $validated['feature'],
             (array) $resData->resData,
-            $payload['image_url'] ?? null
+            $payload['image_url'] ?? null,
+            [
+                'duration_seconds' => (int) ($validated['kling26pro_duration'] ?? 5),
+                'aspect_ratio'     => $validated['kling26pro_aspect_ratio'] ?? null,
+            ]
         );
 
         $driver->decreaseCredit();
 
-        return $this->successResponse(__('Kling video generation started successfully.'));
+        return $this->successResponse(__('Kling video generation started successfully.'), ['video_id' => $entry->id]);
     }
 
-    private function handleKlingV3(array $validated, EntityEnum $entityEnum, $driver): RedirectResponse
+    private function handleKlingV3(array $validated, EntityEnum $entityEnum, $driver): RedirectResponse|JsonResponse
     {
         $payload = $this->buildKlingV3Payload($validated);
         $promptForStorage = trim((string) ($validated['prompt'] ?? ''));
@@ -361,20 +449,24 @@ class AiVideoProController extends Controller
             return $this->errorResponse($resData->message ?? __('Kling generation failed'));
         }
 
-        $this->createUserFall(
+        $entry = $this->createUserFall(
             auth()->id(),
             $promptForStorage,
             $validated['feature'],
             (array) $resData->resData,
-            $payload['start_image_url'] ?? null
+            $payload['start_image_url'] ?? null,
+            [
+                'duration_seconds' => (int) ($validated['kling_v3_duration'] ?? 5),
+                'aspect_ratio'     => $validated['kling_v3_aspect_ratio'] ?? null,
+            ]
         );
 
         $driver->decreaseCredit();
 
-        return $this->successResponse(__('Kling video generation started successfully.'));
+        return $this->successResponse(__('Kling video generation started successfully.'), ['video_id' => $entry->id]);
     }
 
-    private function handleLumaDreamMachine(array $validated, EntityEnum $entityEnum, $driver): RedirectResponse
+    private function handleLumaDreamMachine(array $validated, EntityEnum $entityEnum, $driver): RedirectResponse|JsonResponse
     {
         $response = FalAIService::minimaxGenerate($validated['prompt']);
 
@@ -382,7 +474,7 @@ class AiVideoProController extends Controller
             return $this->errorResponse($response['message'] ?? __('Generation Failed'));
         }
 
-        $this->createUserFall(
+        $entry = $this->createUserFall(
             auth()->id(),
             $validated['prompt'],
             $validated['feature'],
@@ -391,10 +483,10 @@ class AiVideoProController extends Controller
 
         $driver->decreaseCredit();
 
-        return $this->successResponse(__('Created Successfully.'));
+        return $this->successResponse(__('Created Successfully.'), ['video_id' => $entry->id]);
     }
 
-    private function handleMinimax(array $validated, EntityEnum $entityEnum, $driver): RedirectResponse
+    private function handleMinimax(array $validated, EntityEnum $entityEnum, $driver): RedirectResponse|JsonResponse
     {
         $response = FalAIService::minimaxGenerate($validated['prompt']);
 
@@ -402,7 +494,7 @@ class AiVideoProController extends Controller
             return $this->errorResponse($response['message'] ?? __('Generation Failed'));
         }
 
-        $this->createUserFall(
+        $entry = $this->createUserFall(
             auth()->id(),
             $validated['prompt'],
             $validated['feature'],
@@ -411,10 +503,10 @@ class AiVideoProController extends Controller
 
         $driver->decreaseCredit();
 
-        return $this->successResponse(__('Created Successfully.'));
+        return $this->successResponse(__('Created Successfully.'), ['video_id' => $entry->id]);
     }
 
-    private function handleGrokImagineVideo(array $validated, EntityEnum $entityEnum, $driver): RedirectResponse
+    private function handleGrokImagineVideo(array $validated, EntityEnum $entityEnum, $driver): RedirectResponse|JsonResponse
     {
         $payload = $this->buildGrokImagineVideoPayload($validated);
 
@@ -425,17 +517,87 @@ class AiVideoProController extends Controller
             return $this->errorResponse($resData->message ?? __('Grok Imagine Video generation failed'));
         }
 
-        $this->createUserFall(
+        $entry = $this->createUserFall(
             auth()->id(),
             $validated['prompt'],
             $validated['feature'],
             (array) $resData->resData,
-            $payload['image_url'] ?? null
+            $payload['image_url'] ?? null,
+            [
+                'duration_seconds' => isset($validated['grok_video_duration']) ? (int) $validated['grok_video_duration'] : null,
+                'resolution'       => $validated['grok_video_resolution'] ?? null,
+                'aspect_ratio'     => $validated['aspect_ratio'] ?? null,
+            ]
         );
 
         $driver->decreaseCredit();
 
-        return $this->successResponse(__('Grok Imagine Video generation started successfully.'));
+        return $this->successResponse(__('Grok Imagine Video generation started successfully.'), ['video_id' => $entry->id]);
+    }
+
+    private function handleSeedance(array $validated, EntityEnum $entityEnum, $driver): RedirectResponse|JsonResponse
+    {
+        $payload = $this->buildSeedancePayload($validated);
+
+        $response = $this->falAIService->textToVideoModel($entityEnum)->submit($payload);
+        $resData = $response->getData();
+
+        if (isset($resData->status) && $resData->status === 'error') {
+            return $this->errorResponse($resData->message ?? __('Seedance 2.0 video generation failed'));
+        }
+
+        $entry = $this->createUserFall(
+            auth()->id(),
+            $validated['prompt'],
+            $validated['feature'],
+            (array) $resData->resData,
+            $payload['image_url'] ?? null,
+            [
+                'duration_seconds' => isset($validated['seedance_duration']) && $validated['seedance_duration'] !== 'auto'
+                    ? (int) $validated['seedance_duration']
+                    : null,
+                'resolution'       => $validated['seedance_resolution'] ?? null,
+                'aspect_ratio'     => $validated['aspect_ratio'] ?? null,
+            ]
+        );
+
+        $driver->decreaseCredit();
+
+        return $this->successResponse(__('Seedance 2.0 video generation started successfully.'), ['video_id' => $entry->id]);
+    }
+
+    private function handleBackgroundRemoval(array $validated, EntityEnum $entityEnum, $driver): RedirectResponse|JsonResponse
+    {
+        $videoUrl = $this->uploadSingleFile($validated, 'video_url', true);
+
+        if (! $videoUrl) {
+            return $this->errorResponse(__('Video file is required.'));
+        }
+
+        $payload = [
+            'video_url'               => $videoUrl,
+            'output_codec'            => $validated['output_codec'] ?? 'vp9',
+            'refine_foreground_edges' => (bool) ($validated['refine_foreground_edges'] ?? true),
+            'subject_is_person'       => (bool) ($validated['subject_is_person'] ?? true),
+        ];
+
+        $response = $this->falAIService->textToVideoModel($entityEnum)->submit($payload);
+        $resData = $response->getData();
+
+        if (isset($resData->status) && $resData->status === 'error') {
+            return $this->errorResponse($resData->message ?? __('Video background removal failed'));
+        }
+
+        $entry = $this->createUserFall(
+            auth()->id(),
+            __('Video Background Removal'),
+            $validated['feature'],
+            (array) $resData->resData,
+        );
+
+        $driver->decreaseCredit();
+
+        return $this->successResponse(__('Video background removal started successfully.'), ['video_id' => $entry->id]);
     }
 
     // ============== PAYLOAD BUILDERS ==============
@@ -680,6 +842,60 @@ class AiVideoProController extends Controller
 
         return $this->removeEmptyValues($payload);
     }
+
+    private function buildSeedancePayload(array $validated): array
+    {
+        $payload = ['prompt' => $validated['prompt']];
+        $feature = $validated['feature'];
+
+        if (isset($validated['seedance_duration'])) {
+            $payload['duration'] = $validated['seedance_duration'];
+        }
+
+        if (isset($validated['aspect_ratio'])) {
+            $payload['aspect_ratio'] = $validated['aspect_ratio'];
+        }
+
+        if (isset($validated['seedance_resolution'])) {
+            $payload['resolution'] = $validated['seedance_resolution'];
+        }
+
+        if (isset($validated['generate_audio'])) {
+            $payload['generate_audio'] = filter_var($validated['generate_audio'], FILTER_VALIDATE_BOOLEAN);
+        }
+
+        if (isset($validated['seed']) && $validated['seed'] !== '') {
+            $payload['seed'] = (int) $validated['seed'];
+        }
+
+        // Image-to-Video: single image + optional end image
+        if (str_contains($feature, 'image-to-video')) {
+            $payload['image_url'] = $this->uploadSingleFile($validated, 'image_url', true);
+            $endImageUrl = $this->uploadSingleFile($validated, 'end_image_url', true);
+            if ($endImageUrl) {
+                $payload['end_image_url'] = $endImageUrl;
+            }
+        }
+
+        // Reference-to-Video: multiple images, videos, audio
+        if (str_contains($feature, 'reference-to-video')) {
+            $imageUrls = $this->uploadMultipleFiles($validated, 'image_urls');
+            if (! empty($imageUrls)) {
+                $payload['image_urls'] = $imageUrls;
+            }
+            $videoUrls = $this->uploadMultipleFiles($validated, 'video_urls');
+            if (! empty($videoUrls)) {
+                $payload['video_urls'] = $videoUrls;
+            }
+            $audioUrls = $this->uploadMultipleFiles($validated, 'audio_urls');
+            if (! empty($audioUrls)) {
+                $payload['audio_urls'] = $audioUrls;
+            }
+        }
+
+        return $this->removeEmptyValues($payload);
+    }
+
     // ============== FILE UPLOAD HELPERS ==============
 
     private function uploadSingleFile(array $validated, string $fieldName, bool $returnUrl = false): ?string
@@ -770,30 +986,42 @@ class AiVideoProController extends Controller
         });
     }
 
-    private function successResponse(string $message): RedirectResponse
+    private function successResponse(string $message, array $extra = []): RedirectResponse|JsonResponse
     {
+        if ($this->isAjax) {
+            return response()->json(array_merge(['success' => true, 'message' => $message], $extra));
+        }
+
         return back()->with([
             'message' => $message,
             'type'    => 'success',
         ]);
     }
 
-    private function errorResponse(string $message): RedirectResponse
+    private function errorResponse(string $message): RedirectResponse|JsonResponse
     {
+        if ($this->isAjax) {
+            return response()->json(['success' => false, 'message' => $message], 422);
+        }
+
         return back()->with([
             'message' => $message,
             'type'    => 'error',
         ]);
     }
 
+    /**
+     * @param  array{duration_seconds?: int|null, resolution?: string|null, aspect_ratio?: string|null}  $metadata
+     */
     private function createUserFall(
         int $userId,
         ?string $prompt,
         string $action,
         array $response,
-        ?string $imageUrl = null
-    ): void {
-        UserFall::create([
+        ?string $imageUrl = null,
+        array $metadata = []
+    ): UserFall {
+        return UserFall::create([
             'user_id'          => $userId,
             'prompt'           => $prompt,
             'prompt_image_url' => $imageUrl,
@@ -801,6 +1029,9 @@ class AiVideoProController extends Controller
             'request_id'       => $response['request_id'] ?? $response['id'] ?? null,
             'response_url'     => $response['response_url'] ?? null,
             'model'            => $action,
+            'duration_seconds' => $metadata['duration_seconds'] ?? null,
+            'resolution'       => $metadata['resolution'] ?? null,
+            'aspect_ratio'     => $metadata['aspect_ratio'] ?? null,
         ]);
     }
 
@@ -830,6 +1061,8 @@ class AiVideoProController extends Controller
                 str_starts_with($entry->model ?? '', 'kling-video/v3/pro/')           => $this->handleKlingV3Entry($entry),
                 str_starts_with($entry->model ?? '', 'kling-video/v3/standard/')      => $this->handleKlingV3Entry($entry),
                 str_starts_with($entry->model ?? '', 'xai/grok-imagine-video/')       => $this->handleGrokImagineVideoEntry($entry),
+                str_starts_with($entry->model ?? '', 'bytedance/seedance-2.0/')       => $this->handleSeedanceEntry($entry),
+                str_starts_with($entry->model ?? '', 'veed/')                         => $this->handleVeedEntry($entry),
                 default                                                               => $this->handleFalEntry($entry),
             };
 
@@ -885,9 +1118,7 @@ class AiVideoProController extends Controller
         if (($result->status ?? null) === 'success') {
             $videoUrl = $result->resData->video->url ?? null;
             if ($videoUrl) {
-                $entry->update(['status' => 'complete', 'video_url' => $videoUrl, 'error_message' => null]);
-
-                return $this->renderVideoItem($entry, $videoUrl);
+                return $this->completeWithRemoteUrlAndQueueDownload($entry, $videoUrl, 'veo');
             }
 
             return $this->markEntryAsError($entry, __('VEO completed but no video URL was returned.'));
@@ -922,9 +1153,7 @@ class AiVideoProController extends Controller
         if (($result->status ?? null) === 'success') {
             $videoUrl = $result->resData->video->url ?? null;
             if ($videoUrl) {
-                $entry->update(['status' => 'complete', 'video_url' => $videoUrl, 'error_message' => null]);
-
-                return $this->renderVideoItem($entry, $videoUrl);
+                return $this->completeWithRemoteUrlAndQueueDownload($entry, $videoUrl, 'kling25');
             }
 
             return $this->markEntryAsError($entry, __('Kling completed but no video URL was returned.'));
@@ -967,9 +1196,7 @@ class AiVideoProController extends Controller
         if (($result->status ?? null) === 'success') {
             $videoUrl = $result->resData->video->url ?? null;
             if ($videoUrl) {
-                $entry->update(['status' => 'complete', 'video_url' => $videoUrl, 'error_message' => null]);
-
-                return $this->renderVideoItem($entry, $videoUrl);
+                return $this->completeWithRemoteUrlAndQueueDownload($entry, $videoUrl, 'kling26');
             }
 
             return $this->markEntryAsError($entry, __('Kling completed but no video URL was returned.'));
@@ -1002,9 +1229,7 @@ class AiVideoProController extends Controller
         if (($result->status ?? null) === 'success') {
             $videoUrl = $result->resData->video->url ?? null;
             if ($videoUrl) {
-                $entry->update(['status' => 'complete', 'video_url' => $videoUrl, 'error_message' => null]);
-
-                return $this->renderVideoItem($entry, $videoUrl);
+                return $this->completeWithRemoteUrlAndQueueDownload($entry, $videoUrl, 'kling3');
             }
 
             return $this->markEntryAsError($entry, __('Kling completed but no video URL was returned.'));
@@ -1037,9 +1262,7 @@ class AiVideoProController extends Controller
         if (($result->status ?? null) === 'success') {
             $videoUrl = $result->resData->video->url ?? null;
             if ($videoUrl) {
-                $entry->update(['status' => 'complete', 'video_url' => $videoUrl, 'error_message' => null]);
-
-                return $this->renderVideoItem($entry, $videoUrl);
+                return $this->completeWithRemoteUrlAndQueueDownload($entry, $videoUrl, 'grok');
             }
 
             return $this->markEntryAsError($entry, __('Grok Imagine Video completed but no video URL was returned.'));
@@ -1052,15 +1275,80 @@ class AiVideoProController extends Controller
         return null;
     }
 
+    private function handleSeedanceEntry($entry): ?array
+    {
+        $entity = EntityEnum::SEEDANCE_2_TTV;
+
+        $check = $this->falAIService->textToVideoModel($entity)->checkStatus($entry->request_id)->getData();
+        $status = strtoupper((string) ($check->resData->status ?? ''));
+
+        if ($this->isFailedStatus($status)) {
+            return $this->markEntryAsError($entry, $this->extractErrorMessage($check, __('Seedance 2.0 generation failed.')));
+        }
+
+        if ($status !== 'COMPLETED') {
+            return null;
+        }
+
+        $result = $this->falAIService->textToVideoModel($entity)->getResult($entry->request_id)->getData();
+
+        if (($result->status ?? null) === 'success') {
+            $videoUrl = $result->resData->video->url ?? null;
+            if ($videoUrl) {
+                return $this->completeWithRemoteUrlAndQueueDownload($entry, $videoUrl, 'seedance');
+            }
+
+            return $this->markEntryAsError($entry, __('Seedance 2.0 completed but no video URL was returned.'));
+        }
+
+        if (in_array(($result->status ?? null), ['failed', 'error'])) {
+            return $this->markEntryAsError($entry, $this->extractErrorMessage($result, __('Seedance 2.0 generation failed.')));
+        }
+
+        return null;
+    }
+
+    private function handleVeedEntry($entry): ?array
+    {
+        $entity = EntityEnum::VIDEO_BACKGROUND_REMOVAL;
+
+        $check = $this->falAIService->textToVideoModel($entity)->checkStatus($entry->request_id)->getData();
+        $status = strtoupper((string) ($check->resData->status ?? ''));
+
+        if ($this->isFailedStatus($status)) {
+            return $this->markEntryAsError($entry, $this->extractErrorMessage($check, __('Video background removal failed.')));
+        }
+
+        if ($status !== 'COMPLETED') {
+            return null;
+        }
+
+        $result = $this->falAIService->textToVideoModel($entity)->getResult($entry->request_id)->getData();
+
+        if (($result->status ?? null) === 'success') {
+            $videos = $result->resData->video ?? [];
+            $videoUrl = is_array($videos) && ! empty($videos) ? ($videos[0]->url ?? null) : null;
+
+            if ($videoUrl) {
+                return $this->completeWithRemoteUrlAndQueueDownload($entry, $videoUrl, 'veed');
+            }
+
+            return $this->markEntryAsError($entry, __('Video background removal completed but no video URL was returned.'));
+        }
+
+        if (in_array(($result->status ?? null), ['failed', 'error'])) {
+            return $this->markEntryAsError($entry, $this->extractErrorMessage($result, __('Video background removal failed.')));
+        }
+
+        return null;
+    }
+
     private function handleFalEntry($entry): ?array
     {
         $response = FalAIService::getStatus($entry->response_url);
 
         if (! empty($response['video']['url'])) {
-            $url = $response['video']['url'];
-            $entry->update(['status' => 'complete', 'video_url' => $url, 'error_message' => null]);
-
-            return $this->renderVideoItem($entry, $url);
+            return $this->completeWithRemoteUrlAndQueueDownload($entry, $response['video']['url'], 'fal');
         }
 
         $detail = $response['detail'] ?? null;
@@ -1082,6 +1370,19 @@ class AiVideoProController extends Controller
         return null;
     }
 
+    private function completeWithRemoteUrlAndQueueDownload($entry, string $remoteUrl, string $prefix): array
+    {
+        $entry->update([
+            'status'        => 'complete',
+            'video_url'     => $remoteUrl,
+            'error_message' => null,
+        ]);
+
+        DownloadVideoToLocalJob::dispatch($entry->id, $remoteUrl, $prefix);
+
+        return $this->renderVideoItem($entry, $remoteUrl);
+    }
+
     private function renderVideoItem($entry, string $url): array
     {
         $entry->video_url = $url;
@@ -1089,8 +1390,19 @@ class AiVideoProController extends Controller
         $entry->error_message = null;
 
         return [
-            'divId' => "video-{$entry->id}",
-            'html'  => view('ai-video-pro::partials.video-item', ['entry' => $entry])->render(),
+            'divId'     => "video-{$entry->id}",
+            'html'      => view('ai-video-pro::partials.video-item', ['entry' => $entry])->render(),
+            'videoData' => [
+                'id'                 => $entry->id,
+                'prompt'             => $entry->prompt,
+                'video_url'          => $entry->video_url,
+                'model'              => $entry->model,
+                'duration_seconds'   => $entry->duration_seconds,
+                'created_at'         => $entry->created_at?->toIso8601String(),
+                'formatted_duration' => $entry->formatted_duration,
+                'resolution'         => $entry->resolution,
+                'aspect_ratio'       => $entry->aspect_ratio,
+            ],
         ];
     }
 
@@ -1193,7 +1505,49 @@ class AiVideoProController extends Controller
             'first-last-frame-to-video-fast' => EntityEnum::VEO_3_1_FIRST_LAST_FRAME_TO_VIDEO_FAST,
             'reference-to-video'             => EntityEnum::VEO_3_1_REFERENCE_TO_VIDEO,
             'text-to-video-fast'             => EntityEnum::VEO_3_1_TEXT_TO_VIDEO_FAST,
+            'lite'                           => EntityEnum::VEO_3_1_LITE_TEXT_TO_VIDEO,
+            'lite/image-to-video'            => EntityEnum::VEO_3_1_LITE_IMAGE_TO_VIDEO,
+            'lite/first-last-frame-to-video' => EntityEnum::VEO_3_1_LITE_FIRST_LAST_FRAME_TO_VIDEO,
             default                          => EntityEnum::VEO_3_1_TEXT_TO_VIDEO,
         };
+    }
+
+    public function enhancePrompt(Request $request): JsonResponse
+    {
+        $request->validate([
+            'prompt' => 'required|string|max:5000',
+        ]);
+
+        try {
+            Helper::setOpenAiKey();
+
+            $setting = Setting::getCache();
+            $model = EntityEnum::fromSlug($setting->openai_default_model ?: EntityEnum::GPT_4_O->value);
+
+            $driver = Entity::driver($model);
+            $driver->redirectIfNoCreditBalance();
+
+            $completion = OpenAI::chat()->create([
+                'model'    => $model,
+                'messages' => [
+                    [
+                        'role'    => 'system',
+                        'content' => 'You are an expert at writing prompts for AI video generation. Enhance the given video description to be more detailed, cinematic, and descriptive while keeping the original intent. Add details about camera movements, lighting, mood, and visual style where appropriate. Keep the enhanced prompt concise (under 500 characters). Return only the enhanced prompt text, nothing else.',
+                    ],
+                    [
+                        'role'    => 'user',
+                        'content' => $request->input('prompt'),
+                    ],
+                ],
+            ]);
+
+            $result = $completion['choices'][0]['message']['content'];
+
+            $driver->input($result)->calculateCredit()->decreaseCredit();
+
+            return response()->json(['result' => $result]);
+        } catch (Exception $e) {
+            return response()->json(['message' => $e->getMessage()], 500);
+        }
     }
 }

@@ -11,6 +11,7 @@ use App\Extensions\AISocialMedia\System\Services\ScheduledPostService;
 use App\Http\Controllers\Controller;
 use App\Models\Company;
 use Illuminate\Contracts\View\View;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
@@ -94,7 +95,7 @@ class AutomationStepController extends Controller
         return view('ai-social-media::automation-steps.last', $this->data($data));
     }
 
-    public function storeScheduledPost(Request $request): \Illuminate\Http\RedirectResponse
+    public function storeScheduledPost(Request $request): RedirectResponse
     {
         $data = self::setCache($request);
 

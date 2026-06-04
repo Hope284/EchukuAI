@@ -5,6 +5,7 @@ namespace App\Extensions\AISocialMedia\System\Helpers;
 use Exception;
 use Illuminate\Foundation\Application;
 use Illuminate\Http\Client\PendingRequest;
+use Illuminate\Http\Client\Response;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Routing\Redirector;
 use Illuminate\Support\Facades\Http;
@@ -73,7 +74,7 @@ class Instagram
         return redirect($authUri);
     }
 
-    public function getAccessToken(string $code): \Illuminate\Http\Client\Response
+    public function getAccessToken(string $code): Response
     {
         $redirect_uri = $this->apiUrl('/oauth/access_token', [
             'code'          => $code,
@@ -85,7 +86,7 @@ class Instagram
         return Http::post($redirect_uri);
     }
 
-    public function refreshAccessToken(): \Illuminate\Http\Client\Response
+    public function refreshAccessToken(): Response
     {
         $apiUrl = $this->apiUrl('/oauth/access_token', [
             'client_id'         => $this->config['app_id'],
@@ -97,7 +98,7 @@ class Instagram
         return Http::post($apiUrl);
     }
 
-    public function getAccountInfo(?array $fields = null): \Illuminate\Http\Client\Response
+    public function getAccountInfo(?array $fields = null): Response
     {
         $redirect_uri = $this->apiUrl('/me/accounts', [
             'access_token' => $this->accessToken,
@@ -107,7 +108,7 @@ class Instagram
         return Http::get($redirect_uri);
     }
 
-    public function getInstagramInfo(string $igId, ?array $fields = null): \Illuminate\Http\Client\Response
+    public function getInstagramInfo(string $igId, ?array $fields = null): Response
     {
         $redirect_uri = $this->apiUrl('/' . $igId);
 
@@ -116,7 +117,7 @@ class Instagram
         ]);
     }
 
-    public function publishSingleMediaPost(string $igId, array $postData): \Illuminate\Http\Client\Response
+    public function publishSingleMediaPost(string $igId, array $postData): Response
     {
         $apiUrl = $this->apiUrl("$igId/media");
 
@@ -133,7 +134,7 @@ class Instagram
         return $this->publishContainer($igId, $uploadMediaRes->json('id'));
     }
 
-    public function publishCarouselPost(string $igId, array $files, string $mediaType = 'image', string $caption = ''): \Illuminate\Http\Client\Response
+    public function publishCarouselPost(string $igId, array $files, string $mediaType = 'image', string $caption = ''): Response
     {
         $containerIds = [];
         foreach ($files as $fileUrl) {
@@ -218,7 +219,7 @@ class Instagram
         ];
     }
 
-    private function getMediaStatus(string $mediaId): \Illuminate\Http\Client\Response
+    private function getMediaStatus(string $mediaId): Response
     {
         $apiUrl = $this->apiUrl($mediaId, [
             'fields' => 'status',
@@ -228,7 +229,7 @@ class Instagram
     }
 
     // analytics
-    public function getPostAnalytics(string $postId, array $fields = []): \Illuminate\Http\Client\Response
+    public function getPostAnalytics(string $postId, array $fields = []): Response
     {
         return Http::withToken($this->accessToken)
             ->get($this->apiUrl($postId, [

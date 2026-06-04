@@ -6,8 +6,11 @@ namespace App\Extensions\AiVideoPro\System\Services;
 
 use App\Helpers\Classes\ApiHelper;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use RuntimeException;
+use Throwable;
 
 class SoraService
 {
@@ -88,5 +91,44 @@ class SoraService
 
         // Return full public URL to video
         return Storage::disk('uploads')->url($relativePath);
+    }
+
+    public static function downloadFromUrl(string $url, int $userId, ?string $requestId, string $prefix): ?string
+    {
+        set_time_limit(0);
+        ini_set('max_execution_time', 440);
+
+        $id = $requestId ?? Str::uuid()->toString();
+        $fileName = "{$prefix}_video_{$id}.mp4";
+        $relativePath = "media/videos/u-{$userId}/{$fileName}";
+        $absolutePath = Storage::disk('uploads')->path($relativePath);
+
+        try {
+            if (! is_dir(dirname($absolutePath)) && ! mkdir($concurrentDirectory = dirname($absolutePath), 0755, true) && ! is_dir($concurrentDirectory)) {
+                throw new RuntimeException(sprintf('Directory "%s" was not created', $concurrentDirectory));
+            }
+
+            $response = Http::timeout(300)->sink($absolutePath)->get($url);
+
+            if (! $response->successful()) {
+                Log::warning('AiVideoPro: Failed to download video from URL', [
+                    'url'      => $url,
+                    'user_id'  => $userId,
+                    'status'   => $response->status(),
+                ]);
+
+                return null;
+            }
+
+            return Storage::disk('uploads')->url($relativePath);
+        } catch (Throwable $e) {
+            Log::warning('AiVideoPro: Video download failed', [
+                'url'     => $url,
+                'user_id' => $userId,
+                'error'   => $e->getMessage(),
+            ]);
+
+            return null;
+        }
     }
 }

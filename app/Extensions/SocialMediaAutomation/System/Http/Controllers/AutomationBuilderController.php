@@ -16,6 +16,7 @@ use Illuminate\Routing\Controller;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use RuntimeException;
 use Throwable;
 
 class AutomationBuilderController extends Controller
@@ -145,7 +146,7 @@ class AutomationBuilderController extends Controller
         $response = $x->getUserTweets($userId, 50);
 
         if ($response->failed()) {
-            throw new \RuntimeException('X API error: ' . ($response->json('title') ?? $response->status()));
+            throw new RuntimeException('X API error: ' . ($response->json('title') ?? $response->status()));
         }
 
         $mediaMap = collect($response->json('includes.media', []))

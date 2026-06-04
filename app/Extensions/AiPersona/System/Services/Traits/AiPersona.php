@@ -46,4 +46,39 @@ trait AiPersona
 
         return $this->get($url);
     }
+
+    public function listLocales(): array
+    {
+        return $this->get('/v2/voices/locales');
+    }
+
+    public function generatePhotoAvatar(array $body): array
+    {
+        return $this->post('/v2/photo_avatar/photo/generate', $body);
+    }
+
+    public function checkPhotoGeneration(string $generationId): array
+    {
+        return $this->get("/v2/photo_avatar/generation/{$generationId}");
+    }
+
+    public function createAvatarGroup(array $body): array
+    {
+        return $this->post('/v2/photo_avatar/avatar_group/create', $body);
+    }
+
+    public function trainAvatarGroup(string $groupId): array
+    {
+        return $this->post('/v2/photo_avatar/train', ['group_id' => $groupId]);
+    }
+
+    public function checkTrainingStatus(string $groupId): array
+    {
+        return $this->get("/v2/photo_avatar/train/status/{$groupId}");
+    }
+
+    public function listAvatarsInGroup(string $groupId): array
+    {
+        return $this->get("/v2/avatar_group/{$groupId}/avatars");
+    }
 }

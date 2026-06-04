@@ -11,7 +11,7 @@
         @lang('Preferences')
     </h2>
     <p class="mb-8">
-        @lang('Effortlessly manage your script preferences, enhance your branding, optimize your use of AI tools, and much more with MagicAI’s advanced settings.')
+        @lang('Effortlessly manage your script preferences, enhance your branding, optimize your use of AI tools, and much more with DZEVA’s advanced settings.')
     </p>
 
     <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-2">

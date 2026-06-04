@@ -1,0 +1,12 @@
+.chats-wrap {
+
+	.lqd-chat-head,
+	.chats-container,
+	.lqd-chat-form {
+		@apply lg:ps-8;
+	}
+
+	.chats-sidebar-wrap {
+		@apply h-auto
+	}
+}

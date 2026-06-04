@@ -149,13 +149,13 @@
                                 <img
                                     class="announcement-img announcement-img-dark peer hidden w-28 shrink-0 dark:block"
                                     src="{{ setting('announcement_image_dark', '/upload/images/speaker.png') }}"
-                                    alt="@lang(setting('announcement_title', 'Welcome to MagicAI!'))"
+                                    alt="@lang(setting('announcement_title', 'Welcome to DZEVA!'))"
                                 >
                             @endif
                             <img
                                 class="announcement-img announcement-img-light w-28 shrink-0 dark:peer-[&.announcement-img-dark]:hidden"
                                 src="{{ setting('announcement_image', '/upload/images/speaker.png') }}"
-                                alt="@lang(setting('announcement_title', 'Welcome to MagicAI!'))"
+                                alt="@lang(setting('announcement_title', 'Welcome to DZEVA!'))"
                             >
                         </div>
                     </x-card>

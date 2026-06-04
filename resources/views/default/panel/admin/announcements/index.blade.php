@@ -68,7 +68,7 @@
                 <div class="flex items-center justify-between gap-4">
                     <div class="w-9/12">
                         <h3 class="mb-3">
-                            @lang(setting('announcement_title', 'Welcome to MagicAI!'))
+                            @lang(setting('announcement_title', 'Welcome to DZEVA!'))
                         </h3>
                         <p class="mb-4">
                             @lang(setting('announcement_description', 'We are excited to have you here. Explore the marketplace to find the best AI models for your needs.'))
@@ -96,13 +96,13 @@
                         <img
                             class="announcement-img announcement-img-dark peer hidden w-3/12 shrink-0 dark:block"
                             src="{{ setting('announcement_image_dark', '/upload/images/speaker.png') }}"
-                            alt="@lang(setting('announcement_title', 'Welcome to MagicAI!'))"
+                            alt="@lang(setting('announcement_title', 'Welcome to DZEVA!'))"
                         >
                     @endif
                     <img
                         class="announcement-img announcement-img-light w-3/12 shrink-0 dark:peer-[&.announcement-img-dark]:hidden"
                         src="{{ setting('announcement_image', '/upload/images/speaker.png') }}"
-                        alt="@lang(setting('announcement_title', 'Welcome to MagicAI!'))"
+                        alt="@lang(setting('announcement_title', 'Welcome to DZEVA!'))"
                     >
                 </div>
             </x-card>
@@ -124,7 +124,7 @@
                 label="{{ __('Title') }}"
                 tooltip="{{ __('The title of the announcement.') }}"
                 placeholder="{{ __('Title') }}"
-                value="{{ setting('announcement_title', 'Welcome to MagicAI!') }}"
+                value="{{ setting('announcement_title', 'Welcome to DZEVA!') }}"
                 name="announcement_title"
                 required
             />

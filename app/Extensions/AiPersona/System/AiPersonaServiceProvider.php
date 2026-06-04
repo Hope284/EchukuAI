@@ -59,7 +59,14 @@ class AiPersonaServiceProvider extends ServiceProvider
                             ->group(function (Router $router) {
                                 $router->resource('ai-persona', AiPersonaController::class)->except('destroy', 'show');
                                 $router->get('ai-persona-delete/{id}', [AiPersonaController::class, 'delete'])->name('ai-persona.delete');
+                                $router->post('ai-persona-bulk-delete', [AiPersonaController::class, 'bulkDelete'])->name('ai-persona.bulk-delete');
                                 $router->get('ai-persona-check', [AiPersonaController::class, 'checkVideoStatus'])->name('ai-persona.check');
+                                $router->get('ai-persona-videos', [AiPersonaController::class, 'videos'])->name('ai-persona.videos');
+                                $router->post('ai-persona-enhance-script', [AiPersonaController::class, 'enhanceScript'])->name('ai-persona.enhance-script');
+                                $router->post('ai-persona-avatars', [AiPersonaController::class, 'storeAvatar'])->name('ai-persona.avatars.store');
+                                $router->get('ai-persona-avatars', [AiPersonaController::class, 'listUserAvatars'])->name('ai-persona.avatars.index');
+                                $router->get('ai-persona-avatars-check', [AiPersonaController::class, 'checkAvatars'])->name('ai-persona.avatars.check');
+                                $router->delete('ai-persona-avatars/{id}', [AiPersonaController::class, 'deleteAvatar'])->whereNumber('id')->name('ai-persona.avatars.delete');
                             });
                         $router
                             ->controller(HeygenSettingController::class)

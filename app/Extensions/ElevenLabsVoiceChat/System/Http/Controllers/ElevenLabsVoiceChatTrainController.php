@@ -75,7 +75,7 @@ class ElevenLabsVoiceChatTrainController extends Controller
 
         $chatbot = $this->service->fetchVoiceChatbot();
 
-        /** @var \Illuminate\Http\UploadedFile $file */
+        /** @var UploadedFile $file */
         $file = $request->file('file');
 
         $defaultDisk = 'public';

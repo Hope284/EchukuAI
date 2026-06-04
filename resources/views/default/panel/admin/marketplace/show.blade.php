@@ -135,7 +135,7 @@
 						</svg>
 						{{-- blade-formatter-enable --}}
                         <p class="m-0">
-                            {{ __('Tested with MagicAI') }}
+                            {{ __('Tested with DZEVA') }}
                         </p>
                     </div>
 
@@ -480,7 +480,7 @@
                             </span>
                         </h3>
                         <p class="mb-6 font-medium">
-                            {{ trans('Premium membership unlocks full access to all MagicAI features and exclusive benefits. Stand out from the crowd at an affordable monthly rate.') }}
+                            {{ trans('Premium membership unlocks full access to all DZEVA features and exclusive benefits. Stand out from the crowd at an affordable monthly rate.') }}
                         </p>
 
                         <x-button

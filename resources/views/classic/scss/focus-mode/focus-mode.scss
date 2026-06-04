@@ -1,0 +1,8 @@
+@media (min-width: theme('screens.lg')) {
+
+	.focus-mode {
+
+		@import './components/chat.scss';
+		@import './components/ai-tools-dropdown.scss';
+	}
+}
