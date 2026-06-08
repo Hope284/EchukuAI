@@ -41,12 +41,17 @@ jobs:
               sudo setfacl -R -d -m u:ubuntu:rwx,u:www-data:rwx,g:www-data:rwx,m:rwx storage bootstrap/cache public/uploads
             }
             fix_laravel_permissions
+            php -m | grep -E '^pdo_mysql$'
+            php -m | grep -E '^sodium$'
             composer install --no-dev --prefer-dist --optimize-autoloader --no-interaction
             php artisan migrate --force
+            sudo -u www-data php artisan db:seed --class=DzevaPlanSeeder --force
             sudo -u www-data php artisan optimize:clear
             fix_laravel_permissions
             sudo -u www-data php artisan config:cache
             sudo -u www-data php artisan route:clear
+            sudo -u www-data php artisan route:list --path=webhooks
+            sudo -u www-data php artisan route:list --path=paystack
             sudo -u www-data php artisan view:cache
             sudo -u www-data php artisan theme:refresh-cache || true
             fix_laravel_permissions

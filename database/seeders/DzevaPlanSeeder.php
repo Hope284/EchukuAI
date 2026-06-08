@@ -11,6 +11,8 @@ use App\Enums\Plan\FrequencyEnum;
 use App\Enums\Plan\TypeEnum;
 use App\Enums\StatusEnum;
 use App\Models\Currency;
+use App\Models\Faq;
+use App\Models\FrontendGenerators;
 use App\Models\Plan;
 use App\Models\Setting;
 use App\Services\Finance\PlanService;
@@ -34,6 +36,7 @@ class DzevaPlanSeeder extends Seeder
     {
         $this->seedNgnCurrency();
         $this->seedPublicEntityLabels();
+        $this->seedPublicHomepageCopy();
         $this->seedSubscriptionPlans();
         $this->seedPrepaidCapabilityPlans();
 
@@ -74,6 +77,29 @@ class DzevaPlanSeeder extends Seeder
                     'title'          => $capability['name'] . ' - ' . $capability['capability'] . '. ' . $capability['description'],
                     'is_selected'    => true,
                     'status'         => StatusEnum::ENABLED->value,
+                ]);
+        }
+    }
+
+    private function seedPublicHomepageCopy(): void
+    {
+        if (Schema::hasTable('frontend_generators')) {
+            FrontendGenerators::query()
+                ->where('image_subtitle', 'like', '%OpenAI%')
+                ->orWhere('image_subtitle', 'like', '%Dall%')
+                ->orWhere('image_subtitle', 'like', '%GPT%')
+                ->update([
+                    'image_subtitle' => 'Powered by Dzeva.',
+                ]);
+        }
+
+        if (Schema::hasTable('faq')) {
+            Faq::query()
+                ->where('answer', 'like', '%GPT%')
+                ->orWhere('answer', 'like', '%Dall%')
+                ->orWhere('answer', 'like', '%OpenAI%')
+                ->update([
+                    'answer' => 'Dzeva uses its own public AI capability names for chat, image, document, code, voice, search, and local business tasks. Choose what you want to create, provide your prompt or business context, and Dzeva will generate the result using the model access and prepaid tokens available on your account.',
                 ]);
         }
     }
