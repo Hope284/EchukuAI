@@ -39,7 +39,7 @@ class PlanAndPricingController extends Controller
             ->sortBy('price');
 
         $plansSubscriptionLifetime = $plans->where('type', TypeEnum::SUBSCRIPTION->value)
-            ->whereIn('frequency', [FrequencyEnum::LIFETIME_YEARLY->value, FrequencyEnum::LIFETIME_MONTHLY->value])
+            ->whereIn('frequency', FrequencyEnum::lifetimeValues())
             ->sortBy('price');
 
         $plansSubscriptionAnnual = $plans->where('type', TypeEnum::SUBSCRIPTION->value)

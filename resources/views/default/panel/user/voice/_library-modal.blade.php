@@ -269,7 +269,7 @@
                             pushUnique({
                                 platform: 'openai',
                                 value: v.value,
-                                name: `${v.label} (OpenAI)`,
+                                name: `${v.label} (Dzeva Voice)`,
                                 language: primary,
                                 languageLabel: primary ? this.languageLabel(primary) : '',
                                 languages: [...allowedOpenAIList],

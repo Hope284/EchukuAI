@@ -373,6 +373,11 @@ class PaymentProcessController extends Controller
                                 $subs->auto_renewal = 1;
 
                                 break;
+                            case FrequencyEnum::LIFETIME->value:
+                                $subs->ends_at = null;
+                                $subs->auto_renewal = 0;
+
+                                break;
                             default:
                                 // FrequencyEnum::MONTHLY->value
                                 $subs->ends_at = Carbon::now()->addMonths(1);
@@ -782,8 +787,13 @@ class PaymentProcessController extends Controller
             $subscription->stripe_price = 'Not Needed';
             $subscription->quantity = 1;
             $subscription->trial_ends_at = null;
-            $subscription->ends_at = $plan->frequency === FrequencyEnum::LIFETIME_MONTHLY->value ? Carbon::now()->addMonths(1) : Carbon::now()->addYears(1);
-            $subscription->auto_renewal = 1;
+            $subscription->ends_at = match ($plan->frequency) {
+                FrequencyEnum::LIFETIME_MONTHLY->value => Carbon::now()->addMonths(1),
+                FrequencyEnum::LIFETIME_YEARLY->value  => Carbon::now()->addYears(1),
+                FrequencyEnum::LIFETIME->value         => null,
+                default                                => Carbon::now()->addYears(1),
+            };
+            $subscription->auto_renewal = $plan->frequency === FrequencyEnum::LIFETIME->value ? 0 : 1;
             $subscription->plan_id = $planID;
             $subscription->paid_with = $gatewayCode;
             $subscription->tax_rate = $taxRate;

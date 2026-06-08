@@ -5,11 +5,17 @@
     use App\Domains\Entity\Facades\Entity as EntityFacade;
     use App\Helpers\Classes\MarketplaceHelper;
     use App\Extensions\OpenRouter\System\Enums\OpenRouterEngine;
+    use App\Support\Dzeva\DzevaModelCatalog;
 
     // Initialize default engine and model
     $defaultEngineSlug = setting('default_ai_engine', EngineEnum::OPEN_AI->slug());
     $defaultEngine = EngineEnum::fromSlug($defaultEngineSlug);
     $defaultModel = $defaultEngine?->getDefaultWordModel($setting);
+    $dzevaEntityValues = collect(DzevaModelCatalog::entityMap())->map->value->values()->all();
+
+    if (!in_array($defaultModel?->value, $dzevaEntityValues, true)) {
+        $defaultModel = DzevaModelCatalog::entityMap()['ogbon'];
+    }
 
     // Get all selected models with word tokens
     $selectedModels = Entity::where('is_selected', true)
@@ -40,8 +46,14 @@
         ->merge($selectedModels)
         ->merge($openRouterModels)
         ->filter() // Remove null/empty values
+        ->map(fn($model) => $model instanceof EntityEnum ? $model : EntityEnum::tryFrom((string) ($model?->value ?? $model)))
+        ->filter(fn($model) => $model instanceof EntityEnum && in_array($model->value, $dzevaEntityValues, true))
         ->unique('value')
         ->values();
+
+    if ($fullModels->isEmpty()) {
+        $fullModels = collect([$defaultModel]);
+    }
 
     // Initialize selected model driver
     $selectedModel = null;
@@ -120,7 +132,7 @@
             </svg>
             <span>
                 <span>
-                    {{ Str::limit($selectedModel?->model()?->selected_title ?? ($selectedModel?->enum()?->value ?? __('Default Model')), 20) }}
+                    {{ Str::limit($selectedModel?->model()?->selected_title ?? ($selectedModel?->enum()?->label() ?? __('Default Model')), 20) }}
                 </span>
             </span>
         </x-slot:trigger>
@@ -179,7 +191,7 @@
                                     $modelEnum = EntityEnum::fromSlug($engine?->value);
                                     $driver = $modelDrivers->get($engine?->value);
                                     $isDefaultModel = $modelEnum?->value === $defaultModel?->value;
-                                    $modelTitle = $driver?->model()?->selected_title ?? ($modelEnum?->value ?? __('Unknown Model'));
+                                    $modelTitle = $driver?->model()?->selected_title ?? ($modelEnum?->label() ?? __('Unknown Model'));
                                     $isAccessible = $isDefaultModel || $isAuthenticated;
                                 @endphp
 
@@ -209,10 +221,10 @@
                                                     <img
                                                         class="size-6 object-contain"
                                                         src="{{ asset($driver->model()?->image) }}"
-                                                        alt="{{ $driver->model()?->selected_title ?? $model?->value }}"
+                                                        alt="{{ $driver->model()?->selected_title ?? $modelEnum?->label() }}"
                                                     >
                                                 @else
-                                                    <x-tabler-brand-openai
+                                                    <x-tabler-sparkles
                                                         class="size-6"
                                                         stroke-width="1.5"
                                                     />
@@ -273,7 +285,7 @@
                                 @php
                                     $modelEnum = EntityEnum::fromSlug($model?->value);
                                     $driver = $modelDrivers->get($model?->value);
-                                    $label = $driver?->model()?->selected_title ?? ($modelEnum?->value ?? __('Unknown Model'));
+                                    $label = $driver?->model()?->selected_title ?? ($modelEnum?->label() ?? __('Unknown Model'));
                                 @endphp
                                 <option
                                     data-label="{{ $label }}"
@@ -307,7 +319,7 @@
                 searchString: '',
                 selectedModels: [{
                     value: '{{ $defaultModel?->value ?? '' }}',
-                    label: '{{ $selectedModel?->model()?->selected_title ?? ($selectedModel?->enum()?->value ?? __('Default Model')) }}'
+                    label: '{{ $selectedModel?->model()?->selected_title ?? ($selectedModel?->enum()?->label() ?? __('Default Model')) }}'
                 }],
                 isAuthenticated: {{ $isAuthenticated ? 'true' : 'false' }},
                 councilMode: false,

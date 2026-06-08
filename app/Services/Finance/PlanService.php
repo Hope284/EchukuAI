@@ -44,10 +44,7 @@ class PlanService
     public function getLifetimeSubscriptions(): Collection
     {
         return $this->getSubscriptionPlans()
-            ->filter(fn ($plan) => in_array($plan->frequency, [
-                FrequencyEnum::LIFETIME_YEARLY->value,
-                FrequencyEnum::LIFETIME_MONTHLY->value,
-            ], true));
+            ->filter(fn ($plan) => in_array($plan->frequency, FrequencyEnum::lifetimeValues(), true));
     }
 
     public function getAnnualSubscriptions(): Collection

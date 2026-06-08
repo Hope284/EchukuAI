@@ -117,7 +117,8 @@ function getSubsPlans()
             ->where(function ($query) {
                 $query->where('price', 0)
                     ->orWhere('frequency', FrequencyEnum::LIFETIME_MONTHLY)
-                    ->orWhere('frequency', FrequencyEnum::LIFETIME_YEARLY);
+                    ->orWhere('frequency', FrequencyEnum::LIFETIME_YEARLY)
+                    ->orWhere('frequency', FrequencyEnum::LIFETIME);
             })
             ->get(),
         '_subs_plans'

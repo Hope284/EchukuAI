@@ -46,6 +46,11 @@ class PaystackLifetimeListener implements ShouldQueue
                 $orders = UserOrder::whereIn('order_id', $order_ids)->get();
                 foreach ($orders as $order) {
                     switch ($order->plan->frequency) {
+                        case FrequencyEnum::LIFETIME->value:
+                            Subscriptions::where('stripe_id', $order->order_id)->update(['stripe_status' => $status, 'ends_at' => null]);
+                            $msg = __('Lifetime access activated.');
+
+                            break;
                         case FrequencyEnum::LIFETIME_YEARLY->value :
                             Subscriptions::where('stripe_id', $order->order_id)->update(['stripe_status' => $status, 'ends_at' => Carbon::now()->addYears(1)]);
                             $msg = __('Subscription renewed for 1 year.');

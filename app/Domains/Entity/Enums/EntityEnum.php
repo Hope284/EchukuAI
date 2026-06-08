@@ -589,6 +589,10 @@ enum EntityEnum: string
 
     public function label(): string
     {
+        if ($label = \App\Support\Dzeva\DzevaModelCatalog::publicLabelForEntity($this)) {
+            return __($label);
+        }
+
         return match ($this) {
             self::BLACK_FOREST_LABS_FLUX_1_SCHNELL => __('Black Forest Labs Flux 1 Schnell'),
             self::IMAGE_TO_VIDEO                   => __('AI Video'),

@@ -53,7 +53,7 @@ class PrivatePlanController extends Controller
             ->where('frequency', FrequencyEnum::MONTHLY->value);
 
         $plansSubscriptionLifetime = $plans->where('type', TypeEnum::SUBSCRIPTION->value)
-            ->whereIn('frequency', [FrequencyEnum::LIFETIME_YEARLY->value, FrequencyEnum::LIFETIME_MONTHLY->value]);
+            ->whereIn('frequency', FrequencyEnum::lifetimeValues());
 
         $plansSubscriptionAnnual = $plans->where('type', TypeEnum::SUBSCRIPTION->value)
             ->where('frequency', FrequencyEnum::YEARLY->value);

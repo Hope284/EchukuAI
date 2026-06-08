@@ -2972,7 +2972,7 @@
             },
             {
                 value: "fr-FR-ClaudeNeural",
-                label: "Claude (Male)"
+                label: "Classic (Male)"
             },
             {
                 value: "fr-FR-CoralieNeural",
@@ -3954,7 +3954,7 @@
                                 .val(option.value)
                                 .text(option.label)
                                 .attr('platform', "openai")
-                                .attr('name', option.label + (" (OpenAI)"))
+                                .attr('name', option.label + (" (Dzeva Voice)"))
                                 .appendTo(voiceSelect);
                         });
                     }
@@ -3971,7 +3971,7 @@
                             $("<option></option>")
                                 .val(option.voice_id)
                                 .text(option.name)
-                                .attr('name', option.name + (" ({{ \App\Domains\Engine\Enums\EngineEnum::ELEVENLABS->label() }})"))
+                                .attr('name', option.name + (" (Dzeva Voice)"))
                                 .attr('platform', "{{ \App\Domains\Engine\Enums\EngineEnum::ELEVENLABS->value }}")
                                 .appendTo(voiceSelect);
                         });
@@ -4009,7 +4009,7 @@
                             .val(option.value)
                             .text(option.label)
                             .attr('platform', "openai")
-                            .attr('name', option.label + (" (OpenAI)"))
+                            .attr('name', option.label + (" (Dzeva Voice)"))
                             .appendTo(voiceSelect);
                     });
                 }
@@ -4019,7 +4019,7 @@
                         $("<option></option>")
                             .val(option.voice_id)
                             .text(option.name)
-                            .attr('name', option.name + (" ({{ \App\Domains\Engine\Enums\EngineEnum::ELEVENLABS->label() }})"))
+                            .attr('name', option.name + (" (Dzeva Voice)"))
                             .attr('platform', "{{ \App\Domains\Engine\Enums\EngineEnum::ELEVENLABS->value }}")
                             .appendTo(voiceSelect);
                     });

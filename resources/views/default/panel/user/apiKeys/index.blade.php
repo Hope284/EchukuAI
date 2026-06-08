@@ -4,7 +4,7 @@ use App\Domains\Engine\Enums\EngineEnum;
 @extends('panel.layout.app')
 @section('title', __('API Keys'))
 @section('titlebar_actions', '')
-@section('titlebar_subtitle', __('Integrate your own personal OpenAI API Key and generate AI content.'))
+@section('titlebar_subtitle', __('Integrate your own personal Dzeva API key and generate AI content.'))
 @section('additional_css')
     <link
             href="{{ custom_theme_url('/assets/libs/select2/select2.min.css') }}"
@@ -23,14 +23,14 @@ use App\Domains\Engine\Enums\EngineEnum;
                             onsubmit="return apiKeysSettingsSave();"
                             enctype="multipart/form-data"
                     >
-                        <h3 class="mb-[25px] text-[20px]">{{ __('Api Keys Setting') }}</h3>
+                        <h3 class="mb-[25px] text-[20px]">{{ __('Dzeva API Keys Setting') }}</h3>
                         @switch(setting('default_ai_engine', 'openai'))
                             @case(EngineEnum::OPEN_AI->value)
                                 <div class="row">
                                     @if ($app_is_demo)
                                         <div class="col-md-12">
                                             <div class="mb-3">
-                                                <label class="form-label">{{ __('OpenAI Api Keys Secret') }}</label>
+                                                <label class="form-label">{{ __('Dzeva API Keys Secret') }}</label>
                                                 <input
                                                         class="form-control"
                                                         id="openai_api_secret"
@@ -45,7 +45,7 @@ use App\Domains\Engine\Enums\EngineEnum;
                                         <div class="col-md-12">
                                             <div
                                                     class="form-control mb-3 border-none p-0 [&_.select2-selection--multiple]:!rounded-[--tblr-border-radius] [&_.select2-selection--multiple]:!border-[--tblr-border-color] [&_.select2-selection--multiple]:!p-[1em_1.23em]">
-                                                <label class="form-label">{{ __('OpenAI API Secret') }}</label>
+                                                <label class="form-label">{{ __('Dzeva API Secret') }}</label>
 												<select
 													class="form-control select2"
 													id="openai_api_keys"
@@ -66,7 +66,7 @@ use App\Domains\Engine\Enums\EngineEnum;
                                                 </x-alert>
                                                 <x-alert class="mt-2">
                                                     <p>
-                                                        {{ __('Please ensure that your OpenAI API key is fully functional and billing defined on your OpenAI account.') }}
+                                                        {{ __('Please ensure that your Dzeva API key is fully functional and billing is enabled on your account.') }}
                                                     </p>
                                                 </x-alert>
                                                 <a
@@ -87,7 +87,7 @@ use App\Domains\Engine\Enums\EngineEnum;
                                     @if ($app_is_demo)
                                         <div class="col-md-12">
                                             <div class="mb-3">
-                                                <label class="form-label">{{ __(EngineEnum::ANTHROPIC->label().' Api Keys Secret') }}</label>
+                                                <label class="form-label">{{ __('Dzeva API Keys Secret') }}</label>
                                                 <input
                                                         class="form-control"
                                                         id="anthropic_api_secret"
@@ -102,7 +102,7 @@ use App\Domains\Engine\Enums\EngineEnum;
                                         <div class="col-md-12">
                                             <div
                                                     class="form-control mb-3 border-none p-0 [&_.select2-selection--multiple]:!rounded-[--tblr-border-radius] [&_.select2-selection--multiple]:!border-[--tblr-border-color] [&_.select2-selection--multiple]:!p-[1em_1.23em]">
-                                                <label class="form-label">{{ __('Anthropic API Secret') }}</label>
+                                                <label class="form-label">{{ __('Dzeva API Secret') }}</label>
                                                 <select
                                                         class="form-control select2"
                                                         id="anthropic_api_keys"
@@ -124,7 +124,7 @@ use App\Domains\Engine\Enums\EngineEnum;
                                                 </x-alert>
                                                 <x-alert class="mt-2">
                                                     <p>
-                                                        {{ __('Please ensure that your Anthropic API key is fully functional and billing defined on your Anthropic account.') }}
+                                                        {{ __('Please ensure that your Dzeva API key is fully functional and billing is enabled on your account.') }}
                                                     </p>
                                                 </x-alert>
                                                 <a
@@ -145,7 +145,7 @@ use App\Domains\Engine\Enums\EngineEnum;
                                     @if ($app_is_demo)
                                         <div class="col-md-12">
                                             <div class="mb-3">
-                                                <label class="form-label">{{ __(EngineEnum::GEMINI->label().' Api Keys Secret') }}</label>
+                                                <label class="form-label">{{ __('Dzeva API Keys Secret') }}</label>
                                                 <input
                                                         class="form-control"
                                                         id="gemini_api_keys"
@@ -160,7 +160,7 @@ use App\Domains\Engine\Enums\EngineEnum;
                                         <div class="col-md-12">
                                             <div
                                                     class="form-control mb-3 border-none p-0 [&_.select2-selection--multiple]:!rounded-[--tblr-border-radius] [&_.select2-selection--multiple]:!border-[--tblr-border-color] [&_.select2-selection--multiple]:!p-[1em_1.23em]">
-                                                <label class="form-label">{{ __(EngineEnum::GEMINI->label().' API Secret') }}</label>
+                                                <label class="form-label">{{ __('Dzeva API Secret') }}</label>
                                                 <select
                                                         class="form-control select2"
                                                         id="gemini_api_keys"
@@ -182,7 +182,7 @@ use App\Domains\Engine\Enums\EngineEnum;
                                                 </x-alert>
                                                 <x-alert class="mt-2">
                                                     <p>
-                                                        {{ __('Please ensure that your Anthropic API key is fully functional and billing defined on your Anthropic account.') }}
+                                                        {{ __('Please ensure that your Dzeva API key is fully functional and billing is enabled on your account.') }}
                                                     </p>
                                                 </x-alert>
                                                 <a
@@ -202,7 +202,7 @@ use App\Domains\Engine\Enums\EngineEnum;
                                     @if ($app_is_demo)
                                         <div class="col-md-12">
                                             <div class="mb-3">
-                                                <label class="form-label">{{ __('OpenAI Api Keys Secret') }}</label>
+                                                <label class="form-label">{{ __('Dzeva API Keys Secret') }}</label>
                                                 <input
                                                         class="form-control"
                                                         id="openai_api_secret"
@@ -217,7 +217,7 @@ use App\Domains\Engine\Enums\EngineEnum;
                                         <div class="col-md-12">
                                             <div
                                                     class="form-control mb-3 border-none p-0 [&_.select2-selection--multiple]:!rounded-[--tblr-border-radius] [&_.select2-selection--multiple]:!border-[--tblr-border-color] [&_.select2-selection--multiple]:!p-[1em_1.23em]">
-                                                <label class="form-label">{{ __('OpenAI API Secret') }}</label>
+                                                <label class="form-label">{{ __('Dzeva API Secret') }}</label>
                                                 <select
                                                         class="form-control select2"
                                                         id="openai_api_keys"
@@ -239,7 +239,7 @@ use App\Domains\Engine\Enums\EngineEnum;
                                                 </x-alert>
                                                 <x-alert class="mt-2">
                                                     <p>
-                                                        {{ __('Please ensure that your OpenAI API key is fully functional and billing defined on your OpenAI account.') }}
+                                                        {{ __('Please ensure that your Dzeva API key is fully functional and billing is enabled on your account.') }}
                                                     </p>
                                                 </x-alert>
                                                 <a

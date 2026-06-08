@@ -21,11 +21,11 @@
                         <input
                             id="endpoint"
                             type="text"
-                            value="wss://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2024-10-01"
-                            placeholder="Enter resource/endpoint URL"
+                            value=""
+                            placeholder="Enter Dzeva realtime endpoint URL"
                         />
                         <div class="toggle-group">
-                            <label for="azure-toggle">Azure OpenAI</label>
+                            <label for="azure-toggle">Dzeva Realtime</label>
                             <input
                                 id="azure-toggle"
                                 type="checkbox"

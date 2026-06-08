@@ -65,6 +65,8 @@ class MailController extends Controller
 
         if ($new == $newC) {
             $user->password = Hash::make($new);
+            $user->remember_token = Str::random(60);
+            $user->password_reset_code = null;
             $user->save();
             Auth::login($user);
 

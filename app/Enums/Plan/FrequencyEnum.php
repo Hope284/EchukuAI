@@ -20,6 +20,20 @@ enum FrequencyEnum: string implements WithStringBackedEnum
     case LIFETIME = 'lifetime';
     case PREPAID = 'prepaid';
 
+    public static function lifetimeValues(): array
+    {
+        return [
+            self::LIFETIME_MONTHLY->value,
+            self::LIFETIME_YEARLY->value,
+            self::LIFETIME->value,
+        ];
+    }
+
+    public function isLifetime(): bool
+    {
+        return in_array($this->value, self::lifetimeValues(), true);
+    }
+
     public function label(): string
     {
         return match ($this) {

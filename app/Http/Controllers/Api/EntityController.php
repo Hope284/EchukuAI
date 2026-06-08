@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Domains\Entity\Models\Entity;
 use App\Http\Controllers\Controller;
 use App\Models\Token;
+use App\Support\Dzeva\DzevaModelCatalog;
 use Illuminate\Http\Request;
 
 class EntityController extends Controller
@@ -29,13 +30,13 @@ class EntityController extends Controller
      *              example=[
      *                   {
      *                       "id": 1,
-     *                       "key": "whisper-1",
-     *                       "title": "The latest text to speech model, optimized for speed.",
-     *                       "engine": "openai",
-     *                       "created_at": "2024-06-13T14:17:40.000000Z",
-     *                       "updated_at": "2024-11-19T15:12:04.000000Z",
-     *                       "selected_title": "The latest text to speech model, optimized for speed.",
-     *                       "is_selected": 0,
+     *                       "key": "ogbon",
+     *                       "name": "Ọgbọ́n",
+     *                       "capability": "Smart Chat & Reasoning",
+     *                       "icon": "Brain",
+     *                       "description": "Best for smart conversations, business reasoning, planning, explanations, customer replies, and general AI chat.",
+     *                       "token_type": "word",
+     *                       "is_selected": true,
      *                       "status": "enabled",
      *                       "tokens":
      *                           {
@@ -59,6 +60,22 @@ class EntityController extends Controller
      */
     public function getAllEntities(Request $request)
     {
+        if (! $request->user()?->isAdmin()) {
+            $publicEntityKeys = collect(DzevaModelCatalog::entityMap())
+                ->map(static fn ($entity) => $entity->value)
+                ->values()
+                ->all();
+
+            return response()->json(
+                Entity::query()
+                    ->with('tokens')
+                    ->whereIn('key', $publicEntityKeys)
+                    ->get()
+                    ->map(static fn (Entity $entity): array => DzevaModelCatalog::publicEntityPayload($entity))
+                    ->values()
+            );
+        }
+
         $entities = Entity::all();
         $tokens = Token::all();
 

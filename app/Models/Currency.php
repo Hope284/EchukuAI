@@ -13,6 +13,8 @@ class Currency extends Model
 
     protected $guarded = [];
 
+    public $timestamps = false;
+
     public static string $cacheKey = 'cache_currency';
 
     public static int $cacheTtl = 3600 * 24;

@@ -65,6 +65,22 @@ class PaystackService
 
     protected static $transaction_verify_endpoint = 'transaction/verify/';
 
+    private static function isLifetimeSubscription(Plan $plan): bool
+    {
+        return $plan->type === TypeEnum::SUBSCRIPTION->value
+            && in_array($plan->frequency, FrequencyEnum::lifetimeValues(), true);
+    }
+
+    private static function lifetimeEndsAt(Plan $plan): ?Carbon
+    {
+        return match ($plan->frequency) {
+            FrequencyEnum::LIFETIME_MONTHLY->value => Carbon::now()->addMonths(1),
+            FrequencyEnum::LIFETIME_YEARLY->value  => Carbon::now()->addYears(1),
+            FrequencyEnum::LIFETIME->value         => null,
+            default                                => Carbon::now()->addYears(1),
+        };
+    }
+
     // payment functions
     // tested
     public static function saveAllProducts()
@@ -168,7 +184,7 @@ class PaystackService
             $product->plan_name = $plan->name;
             $product->save();
             // if not lifetime or free or onetime then create priceID
-            if ($plan->price != 0 && $plan->type == TypeEnum::SUBSCRIPTION->value && $plan->frequency !== FrequencyEnum::LIFETIME_MONTHLY->value && $plan->frequency !== FrequencyEnum::LIFETIME_YEARLY->value) {
+            if ($plan->price != 0 && $plan->type == TypeEnum::SUBSCRIPTION->value && ! self::isLifetimeSubscription($plan)) {
                 $interval = $plan->frequency == FrequencyEnum::MONTHLY->value ? FrequencyEnum::MONTHLY->value : 'annually';
                 $billingPlan = self::curl_req(self::$plan_endpoint, $key, [
                     'name'        => $plan->name,
@@ -240,7 +256,7 @@ class PaystackService
                 if ($newDiscountedPrice != floor($newDiscountedPrice)) {
                     $newDiscountedPrice = number_format($newDiscountedPrice, 2);
                 }
-                if ($plan->price != 0 && $plan->type == TypeEnum::SUBSCRIPTION->value && $plan->frequency !== FrequencyEnum::LIFETIME_MONTHLY->value && $plan->frequency !== FrequencyEnum::LIFETIME_YEARLY->value) {
+                if ($plan->price != 0 && $plan->type == TypeEnum::SUBSCRIPTION->value && ! self::isLifetimeSubscription($plan)) {
                     $interval = $plan->frequency == FrequencyEnum::MONTHLY->value ? FrequencyEnum::MONTHLY->value : 'annually';
                     $billingPlan = self::curl_req(self::$plan_endpoint, $key, [
                         'name'        => 'discount_item_' . time(),
@@ -362,8 +378,8 @@ class PaystackService
                 if ($billingPlanId == 'Not Needed') {
                     $subscription->stripe_id = 'PSLS-' . strtoupper(Str::random(13));
                     $subscription->stripe_price = $product->price_id;
-                    $subscription->ends_at = $plan->frequency == FrequencyEnum::LIFETIME_MONTHLY->value ? Carbon::now()->addMonths(1) : Carbon::now()->addYears(1);
-                    $subscription->auto_renewal = 1;
+                    $subscription->ends_at = self::lifetimeEndsAt($plan);
+                    $subscription->auto_renewal = $plan->frequency === FrequencyEnum::LIFETIME->value ? 0 : 1;
                     $subscription->stripe_status = 'paystack_approved';
                 } else {
                     $bill_customer_id = $reqs['data']['customer']['id'];

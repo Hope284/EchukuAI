@@ -119,4 +119,6 @@ return [
 
     'password_timeout' => 10800,
 
+    'remember_lifetime' => env('AUTH_REMEMBER_LIFETIME', 70560),
+
 ];

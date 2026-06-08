@@ -4,9 +4,15 @@
     use App\Domains\Entity\Enums\EntityEnum;
     use App\Extensions\OpenRouter\System\Enums\OpenRouterEngine;
     use App\Helpers\Classes\MarketplaceHelper;
+    use App\Support\Dzeva\DzevaModelCatalog;
 
     $defaultEngine = EngineEnum::fromSlug(setting('default_ai_engine', EngineEnum::OPEN_AI->slug()));
     $defaultModel = $defaultEngine->getDefaultWordModel($setting);
+    $dzevaEntityValues = collect(DzevaModelCatalog::entityMap())->map->value->values()->all();
+
+    if (!in_array($defaultModel?->value, $dzevaEntityValues, true)) {
+        $defaultModel = DzevaModelCatalog::entityMap()['ogbon'];
+    }
 
     $fullModels = [$defaultModel];
     if (Entity::planModels()->count() > 0) {
@@ -26,7 +32,15 @@
         $fullModels = array_merge($fullModels, $openRouterModels);
     }
 
-    $fullModels = collect($fullModels)->unique('value')->values();
+    $fullModels = collect($fullModels)
+        ->map(fn($model) => $model instanceof EntityEnum ? $model : EntityEnum::tryFrom((string) ($model?->value ?? $model)))
+        ->filter(fn($model) => $model instanceof EntityEnum && in_array($model->value, $dzevaEntityValues, true))
+        ->unique('value')
+        ->values();
+
+    if ($fullModels->isEmpty()) {
+        $fullModels = collect([$defaultModel]);
+    }
     $activeModels = collect($fullModels)
         ->filter(function ($model) {
             $driver = \App\Domains\Entity\Facades\Entity::driver(EntityEnum::tryFrom($model?->value));
@@ -95,7 +109,7 @@
 							 : (selectedModelLabel || '@lang('None')')"
                     :title="selectedModelLabel || '@lang('None')'"
                 >
-                    {{ Str::limit($selectedModel->model()?->selected_title ?? $selectedModel->enum()?->value, 20) }}
+                    {{ Str::limit($selectedModel->model()?->selected_title ?? $selectedModel->enum()?->label(), 20) }}
                 </span>
             </span>
 
@@ -210,7 +224,7 @@
                                 <x-card
                                     class:body="md:p-7 p-5 static"
                                     data-model-value="{{ $model?->value }}"
-                                    data-model-label="{{ $driver->model()?->selected_title ?? $model?->value }}"
+                                    data-model-label="{{ $driver->model()?->selected_title ?? $model?->label() }}"
                                     @class([
                                         'lqd-model-card cursor-pointer relative data-[selected]:outline data-[selected]:outline-[3px] data-[selected]:outline-secondary [&.inactive]:pointer-events-none [&.inactive]:opacity-50',
                                         'inactive' => $is_inactive,
@@ -229,10 +243,10 @@
                                                     <img
                                                         class="size-6 object-contain"
                                                         src="{{ asset($driver->model()?->image) }}"
-                                                        alt="{{ $driver->model()?->selected_title ?? $model?->value }}"
+                                                        alt="{{ $driver->model()?->selected_title ?? $model?->label() }}"
                                                     >
                                                 @else
-                                                    <x-tabler-brand-openai
+                                                    <x-tabler-sparkles
                                                         class="size-6"
                                                         stroke-width="1.5"
                                                     />
@@ -255,7 +269,7 @@
                                         <div class="flex items-center justify-between">
                                             <div class="flex-1">
                                                 <h4 class="mb-2">
-                                                    {{ $driver->model()?->selected_title ?? $model?->value }}
+                                                    {{ $driver->model()?->selected_title ?? $model?->label() }}
                                                 </h4>
                                             </div>
                                         </div>
@@ -341,7 +355,7 @@
 
                     getLocalStorage() {
                         const defaultModelValue = '{{ $selectedModel->enum()?->value }}';
-                        const defaultModelLabel = '{{ $selectedModel->model()?->selected_title ?? $selectedModel->enum()?->value }}';
+                        const defaultModelLabel = '{{ $selectedModel->model()?->selected_title ?? $selectedModel->enum()?->label() }}';
                         const localStorageLastSelectedModels = localStorage.getItem(this.localStorageKey) ??
                             `[{ "value": "${defaultModelValue}", "label": "${defaultModelLabel}" }]`;
                         const models = JSON.parse(localStorageLastSelectedModels)
