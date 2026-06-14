@@ -16,7 +16,7 @@ class SitemapController extends Controller
             $this->urlEntry(url('/'), now(), 'daily', '1.0'),
             $this->urlEntry(route('blog.index'), now(), 'daily', '0.8'),
             $this->urlEntry(route('privacy'), now(), 'monthly', '0.3'),
-            $this->urlEntry(route('terms'), now(), 'monthly', '0.3'),
+            $this->urlEntry(route('pageTerms'), now(), 'monthly', '0.3'),
         ]);
 
         Page::query()
