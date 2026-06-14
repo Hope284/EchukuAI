@@ -12,7 +12,7 @@ function blogSave( post_id ) {
 	}
 	formData.append( 'title', $( "#title" ).val() );
 	formData.append( 'content', tinymce.activeEditor.getContent() );
-	if ( $( '#feature_image' ).val() != 'undefined' ) {
+	if ( $( '#feature_image' ).prop( 'files' ) && $( '#feature_image' ).prop( 'files' ).length > 0 ) {
 		formData.append( 'feature_image', $( '#feature_image' ).prop( 'files' )[ 0 ] );
 	}
 	formData.append( 'slug', $( "#slug" ).val() ? $( "#slug" ).val() : $( "#title" ).val() );

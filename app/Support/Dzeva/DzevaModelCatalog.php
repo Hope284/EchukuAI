@@ -170,6 +170,28 @@ class DzevaModelCatalog
         return null;
     }
 
+    public static function publicSlugForEntity(EntityEnum|string|null $entity): ?string
+    {
+        return self::capabilityKeyForEntity($entity);
+    }
+
+    public static function entityValueForPublicSlug(?string $slug): ?string
+    {
+        $slug = trim((string) $slug);
+
+        if ($slug === '') {
+            return null;
+        }
+
+        $entity = self::entityMap()[$slug] ?? null;
+
+        if ($entity instanceof EntityEnum) {
+            return $entity->value;
+        }
+
+        return EntityEnum::tryFrom($slug)?->value;
+    }
+
     /**
      * @return array<string, EntityEnum>
      */

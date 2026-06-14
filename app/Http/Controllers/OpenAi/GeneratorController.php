@@ -29,6 +29,7 @@ use App\Models\UserOpenai;
 use App\Models\UserOpenaiChat;
 use App\Models\UserOpenaiChatMessage;
 use App\Services\Stream\StreamService;
+use App\Support\Dzeva\DzevaModelCatalog;
 use App\Services\VectorService;
 use Exception;
 use GuzzleHttp\Client;
@@ -284,12 +285,12 @@ class GeneratorController extends Controller
             'pdfname'             => $request->get('pdfname', null),
             'pdfpath'             => $request->get('pdfpath', null),
             'assistant'           => $request->get('assistant', null),
-            'chatbot_front_model' => $request->get('chatbot_front_model', null),
+            'chatbot_front_model' => $this->resolveDzevaPublicModelSlug($request->get('chatbot_front_model', null)),
             'skill_ids'           => $request->get('skill_ids'),
             'highlight_context'   => $request->get('highlight_context'),
             'temp_chat_button'    => $request->get('temp_chat_button', false),
             'chat'                => $chat,
-            'openRouter'          => $this->determineOpenRouter($request->get('chatbot_front_model', null)),
+            'openRouter'          => $this->determineOpenRouter($this->resolveDzevaPublicModelSlug($request->get('chatbot_front_model', null))),
             'contain_images'      => false, // Will be determined later
         ];
 
@@ -318,6 +319,7 @@ class GeneratorController extends Controller
 
     private function determineChatBot(?string $chatbot_front_model): string
     {
+        $chatbot_front_model = $this->resolveDzevaPublicModelSlug($chatbot_front_model);
         $default_ai_engine = setting('default_ai_engine', EngineEnum::OPEN_AI->value);
 
         if ($default_ai_engine === EngineEnum::OPEN_AI->value) {
@@ -360,6 +362,7 @@ class GeneratorController extends Controller
 
     private function determineAiEngine(string $chat_bot, ?string $chatbot_front_model): string
     {
+        $chatbot_front_model = $this->resolveDzevaPublicModelSlug($chatbot_front_model);
         $default_ai_engine = setting('default_ai_engine', EngineEnum::OPEN_AI->value);
 
         if (! empty($chatbot_front_model)) {
@@ -382,13 +385,21 @@ class GeneratorController extends Controller
 
     private function determineOpenRouter(?string $chatbot_front_model): ?string
     {
+        $chatbot_front_model = $this->resolveDzevaPublicModelSlug($chatbot_front_model);
+        $entity = $chatbot_front_model ? EntityEnum::tryFrom($chatbot_front_model) : null;
+
         if (! empty($chatbot_front_model) &&
             (int) setting('open_router_status') === 1 &&
-            EntityEnum::fromSlug($chatbot_front_model)->engine() === EngineEnum::OPEN_ROUTER) {
+            $entity?->engine() === EngineEnum::OPEN_ROUTER) {
             return $chatbot_front_model;
         }
 
         return null;
+    }
+
+    private function resolveDzevaPublicModelSlug(?string $model): ?string
+    {
+        return DzevaModelCatalog::entityValueForPublicSlug($model) ?? $model;
     }
 
     private function createChatMessage($user, array $chatParams): UserOpenaiChatMessage
@@ -1141,7 +1152,7 @@ class GeneratorController extends Controller
             }
         }
 
-        $chatbot_front_model = $request->get('chatbot_front_model', null);
+        $chatbot_front_model = $this->resolveDzevaPublicModelSlug($request->get('chatbot_front_model', null));
 
         if (! empty($chatbot_front_model)) {
             $oldChatbot = $chatBot;

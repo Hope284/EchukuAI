@@ -6,6 +6,7 @@ use App\Models\Blog;
 use App\Models\Frontend\FrontendSectionsStatus;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 
@@ -66,9 +67,9 @@ class BlogController extends Controller
         $posts = Blog::where('status', 1)->orderBy('id', 'desc')->paginate($posts_per_page);
         $hero = [
             'type'        => 'blog',
-            'title'       => __($fSecSettings->blog_a_title),
-            'subtitle'    => __($fSecSettings->blog_a_subtitle),
-            'description' => __($fSecSettings->blog_a_description),
+            'title'       => __('Agentic Era for DZEVA.'),
+            'subtitle'    => __('DZEVA Updates'),
+            'description' => __('With over 1,000 features already launched, Dzeva is evolving once again. Today, we step into the future with Agentic Era for Dzeva.'),
         ];
 
         return view('blog.index', compact('posts', 'hero'));
@@ -201,7 +202,8 @@ class BlogController extends Controller
                 return response()->json($data, 419);
             }
 
-            $image->move($path, $image_name);
+            File::ensureDirectoryExists(public_path($path));
+            $image->move(public_path($path), $image_name);
 
             $feature_image = $path . $image_name;
         }

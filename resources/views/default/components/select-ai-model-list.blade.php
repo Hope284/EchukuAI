@@ -47,6 +47,14 @@
             return $driver->isUnlimitedCredit() || $driver->creditBalance() > 0;
         })
         ->values();
+    $fullModelSlugs = $fullModels
+        ->map(fn($model) => DzevaModelCatalog::publicSlugForEntity($model))
+        ->filter()
+        ->values();
+    $activeModelSlugs = $activeModels
+        ->map(fn($model) => DzevaModelCatalog::publicSlugForEntity($model))
+        ->filter()
+        ->values();
     $defaultDriver = \App\Domains\Entity\Facades\Entity::driver(EntityEnum::tryFrom($defaultModel?->value));
     $selectedModel = $defaultDriver;
     if (!$defaultDriver->isUnlimitedCredit() && $defaultDriver->creditBalance() <= 0) {
@@ -219,12 +227,14 @@
                                     $model = EntityEnum::fromSlug($engine?->value);
                                     $driver = \App\Domains\Entity\Facades\Entity::driver($model);
                                     $is_inactive = $driver->creditBalance() <= 0 && !$driver->isUnlimitedCredit();
+                                    $modelSlug = DzevaModelCatalog::publicSlugForEntity($model) ?? '';
+                                    $modelLabel = DzevaModelCatalog::publicLabelForEntity($model) ?? ($driver->model()?->selected_title ?? $model?->label());
                                 @endphp
 
                                 <x-card
                                     class:body="md:p-7 p-5 static"
-                                    data-model-value="{{ $model?->value }}"
-                                    data-model-label="{{ $driver->model()?->selected_title ?? $model?->label() }}"
+                                    data-model-value="{{ $modelSlug }}"
+                                    data-model-label="{{ $modelLabel }}"
                                     @class([
                                         'lqd-model-card cursor-pointer relative data-[selected]:outline data-[selected]:outline-[3px] data-[selected]:outline-secondary [&.inactive]:pointer-events-none [&.inactive]:opacity-50',
                                         'inactive' => $is_inactive,
@@ -278,7 +288,7 @@
                                     @if ($isMultiModelExtensionEnabled)
                                         <div
                                             class="absolute bottom-3 end-3 inline-grid size-9 place-items-center rounded-full bg-secondary text-secondary-foreground shadow-lg shadow-black/5"
-                                            x-show="selectedModels.find(model => model.value === '{{ $model?->value }}') && {{ $is_inactive ? 'false' : 'true' }}"
+                                            x-show="selectedModels.find(model => model.value === '{{ $modelSlug }}') && {{ $is_inactive ? 'false' : 'true' }}"
                                         >
                                             <x-tabler-check class="size-5" />
                                         </div>
@@ -303,11 +313,15 @@
                                 {{ __('Default Model') }}
                             </option>
                             @foreach ($fullModels as $model)
+                                @php
+                                    $modelSlug = DzevaModelCatalog::publicSlugForEntity($model) ?? '';
+                                    $modelLabel = DzevaModelCatalog::publicLabelForEntity($model) ?? ($model?->label() ?? '');
+                                @endphp
                                 <option
-                                    data-label="{{ $model?->label() ?? '' }}"
-                                    value="{{ $model?->value }}"
+                                    data-label="{{ $modelLabel }}"
+                                    value="{{ $modelSlug }}"
                                 >
-                                    {{ $model?->label() }}
+                                    {{ $modelLabel }}
                                 </option>
                             @endforeach
                         </x-forms.input>
@@ -341,8 +355,8 @@
                     selectedModelLabel: '',
                     selectedModels: [],
                     councilMode: false,
-                    fullModels: @json($fullModels),
-                    activeModels: @json($activeModels),
+                    fullModels: @json($fullModelSlugs),
+                    activeModels: @json($activeModelSlugs),
                     searchString: '',
                     localStorageKey: 'selectedChatModels',
                     councilModeStorageKey: 'chatCouncilMode',
@@ -354,8 +368,8 @@
                     isAuthenticated: {{ auth()->check() ? 'true' : 'false' }},
 
                     getLocalStorage() {
-                        const defaultModelValue = '{{ $selectedModel->enum()?->value }}';
-                        const defaultModelLabel = '{{ $selectedModel->model()?->selected_title ?? $selectedModel->enum()?->label() }}';
+                        const defaultModelValue = '{{ DzevaModelCatalog::publicSlugForEntity($selectedModel->enum()) }}';
+                        const defaultModelLabel = '{{ DzevaModelCatalog::publicLabelForEntity($selectedModel->enum()) ?? ($selectedModel->model()?->selected_title ?? $selectedModel->enum()?->label()) }}';
                         const localStorageLastSelectedModels = localStorage.getItem(this.localStorageKey) ??
                             `[{ "value": "${defaultModelValue}", "label": "${defaultModelLabel}" }]`;
                         const models = JSON.parse(localStorageLastSelectedModels)

@@ -54,6 +54,7 @@
     if ($fullModels->isEmpty()) {
         $fullModels = collect([$defaultModel]);
     }
+    $defaultModelSlug = DzevaModelCatalog::publicSlugForEntity($defaultModel) ?? '';
 
     // Initialize selected model driver
     $selectedModel = null;
@@ -191,13 +192,14 @@
                                     $modelEnum = EntityEnum::fromSlug($engine?->value);
                                     $driver = $modelDrivers->get($engine?->value);
                                     $isDefaultModel = $modelEnum?->value === $defaultModel?->value;
-                                    $modelTitle = $driver?->model()?->selected_title ?? ($modelEnum?->label() ?? __('Unknown Model'));
+                                    $modelSlug = DzevaModelCatalog::publicSlugForEntity($modelEnum) ?? '';
+                                    $modelTitle = DzevaModelCatalog::publicLabelForEntity($modelEnum) ?? ($driver?->model()?->selected_title ?? ($modelEnum?->label() ?? __('Unknown Model')));
                                     $isAccessible = $isDefaultModel || $isAuthenticated;
                                 @endphp
 
                                 <x-card
                                     class:body="md:p-7 p-5 static"
-                                    data-model-value="{{ $modelEnum?->value ?? '' }}"
+                                    data-model-value="{{ $modelSlug }}"
                                     data-model-label="{{ $modelTitle }}"
                                     @class([
                                         'lqd-model-card cursor-pointer relative transition-all duration-200 hover:shadow-lg',
@@ -285,11 +287,12 @@
                                 @php
                                     $modelEnum = EntityEnum::fromSlug($model?->value);
                                     $driver = $modelDrivers->get($model?->value);
-                                    $label = $driver?->model()?->selected_title ?? ($modelEnum?->label() ?? __('Unknown Model'));
+                                    $modelSlug = DzevaModelCatalog::publicSlugForEntity($modelEnum) ?? '';
+                                    $label = DzevaModelCatalog::publicLabelForEntity($modelEnum) ?? ($driver?->model()?->selected_title ?? ($modelEnum?->label() ?? __('Unknown Model')));
                                 @endphp
                                 <option
                                     data-label="{{ $label }}"
-                                    value="{{ $modelEnum?->value ?? '' }}"
+                                    value="{{ $modelSlug }}"
                                 >
                                     {{ $label }}
                                 </option>
@@ -318,8 +321,8 @@
                 modelList: true,
                 searchString: '',
                 selectedModels: [{
-                    value: '{{ $defaultModel?->value ?? '' }}',
-                    label: '{{ $selectedModel?->model()?->selected_title ?? ($selectedModel?->enum()?->label() ?? __('Default Model')) }}'
+                    value: '{{ $defaultModelSlug }}',
+                    label: '{{ DzevaModelCatalog::publicLabelForEntity($defaultModel) ?? ($selectedModel?->model()?->selected_title ?? ($selectedModel?->enum()?->label() ?? __('Default Model'))) }}'
                 }],
                 isAuthenticated: {{ $isAuthenticated ? 'true' : 'false' }},
                 councilMode: false,
@@ -336,7 +339,7 @@
 
                 updateSelectedModels(model) {
                     // Check authentication for non-default models
-                    if (!this.isAuthenticated && model.value !== '{{ $defaultModel?->value ?? '' }}') {
+                    if (!this.isAuthenticated && model.value !== '{{ $defaultModelSlug }}') {
                         this.showLoginToast();
                         return;
                     }
