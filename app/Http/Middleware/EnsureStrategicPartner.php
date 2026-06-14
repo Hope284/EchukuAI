@@ -30,7 +30,7 @@ class EnsureStrategicPartner
             }
 
             if ($request->routeIs('dashboard.user.strategic-partner.*')) {
-                return redirect()->route('dashboard.strategic-partners.index');
+                return redirect()->route('dashboard.admin.strategic-partners.index');
             }
 
             return $next($request);
