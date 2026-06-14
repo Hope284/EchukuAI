@@ -69,6 +69,7 @@ use App\Http\Controllers\Themes\ThemeController;
 use App\Http\Controllers\TTSController;
 use App\Http\Controllers\Voice\ElevenlabVoiceController;
 use App\Http\Middleware\CheckTemplateTypeAndPlan;
+use App\Models\ParentAffiliate;
 use App\Services\DeFi\DeFi;
 use Illuminate\Support\Facades\Route;
 use Livewire\Livewire;
@@ -892,6 +893,14 @@ Route::middleware(['auth', 'updateUserActivity'])
                         Route::get('/{strategicPartner}/edit', 'edit')->name('edit');
                         Route::put('/{strategicPartner}', 'update')->name('update');
                         Route::post('/{strategicPartner}/payment-gateways', 'saveGateways')->name('payment-gateways.save');
+                    });
+
+                Route::prefix('admin/strategic-partners')
+                    ->group(function () {
+                        Route::get('/', static fn () => redirect()->route('dashboard.strategic-partners.index'));
+                        Route::get('/create', static fn () => redirect()->route('dashboard.strategic-partners.create'));
+                        Route::get('/{strategicPartner}', static fn (ParentAffiliate $strategicPartner) => redirect()->route('dashboard.strategic-partners.show', $strategicPartner));
+                        Route::get('/{strategicPartner}/edit', static fn (ParentAffiliate $strategicPartner) => redirect()->route('dashboard.strategic-partners.edit', $strategicPartner));
                     });
             });
 

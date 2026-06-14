@@ -18,6 +18,21 @@ class EnsureStrategicPartner
         }
 
         if ($user->isAdmin()) {
+            $partner = ParentAffiliate::query()
+                ->where('user_id', $user->id)
+                ->where('status', ParentAffiliate::STATUS_APPROVED)
+                ->first();
+
+            if ($partner) {
+                $request->attributes->set('strategicPartner', $partner);
+
+                return $next($request);
+            }
+
+            if ($request->routeIs('dashboard.user.strategic-partner.*')) {
+                return redirect()->route('dashboard.strategic-partners.index');
+            }
+
             return $next($request);
         }
 

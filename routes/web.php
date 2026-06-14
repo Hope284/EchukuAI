@@ -36,7 +36,7 @@ Route::get('default', static function () {
 Route::view('account-deletion', 'default.account-deletion');
 Route::middleware('checkInstallation')
     ->group(static function () {
-        Route::get('partner/{code}', StrategicPartnerReferralController::class)->name('strategic-partner.referral');
+        Route::get('partner/{code?}', StrategicPartnerReferralController::class)->name('strategic-partner.referral');
         Route::get('', IndexController::class)->name('index');
         Route::controller(PageController::class)
             ->group(static function () {
