@@ -13,6 +13,8 @@ use App\Models\Setting;
 use App\Models\Team\TeamMember;
 use App\Models\User;
 use App\Providers\RouteServiceProvider;
+use App\Models\ParentAffiliate;
+use App\Services\StrategicPartner\StrategicPartnerService;
 use Exception;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
@@ -256,6 +258,14 @@ class AuthenticationController extends Controller
             $affCode = $affUser?->id;
         }
 
+        $strategicPartner = null;
+        if ($request->filled('partner_code')) {
+            $strategicPartner = ParentAffiliate::query()
+                ->where('referral_code', $request->partner_code)
+                ->where('status', ParentAffiliate::STATUS_APPROVED)
+                ->first();
+        }
+
         // Normalize inputs for optional fields
         $normalize = static fn ($val) => ($val === null || $val === '' || $val === 'undefined') ? null : $val;
 
@@ -278,6 +288,10 @@ class AuthenticationController extends Controller
             'affiliate_id'            => $affCode,
             'affiliate_code'          => Str::upper(Str::random(12)),
         ]);
+
+        if ($strategicPartner) {
+            StrategicPartnerService::linkChildAffiliate($strategicPartner, $user);
+        }
 
         // Update user credits
         $user->updateCredits(setting('freeCreditsUponRegistration', User::getFreshCredits()));

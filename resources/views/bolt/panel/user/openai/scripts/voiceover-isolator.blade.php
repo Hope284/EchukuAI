@@ -2944,7 +2944,7 @@
 			},
 			{
 				value: "fr-FR-ClaudeNeural",
-				label: "Claude (Male)"
+				label: "Classic Voice (Male)"
 			},
 			{
 				value: "fr-FR-CoralieNeural",
@@ -3923,7 +3923,7 @@
 								.val(option.value)
 								.text(option.label)
 								.attr("platform", "openai")
-								.attr("name", option.label + (" (OpenAI)"))
+								.attr("name", option.label + (" (Dzeva Voice)"))
 								.appendTo(voiceSelect);
 						});
 					}
@@ -3935,7 +3935,7 @@
 							$("<option></option>")
 								.val(option.voice_id)
 								.text(option.name)
-								.attr("name", option.name + (" (ElevenLabs)"))
+								.attr("name", option.name + (" (Ohùn Voice)"))
 								.attr("platform", "elevenlabs")
 								.appendTo(voiceSelect);
 						});
@@ -3956,7 +3956,7 @@
 							.val(option.value)
 							.text(option.label)
 							.attr("platform", "openai")
-							.attr("name", option.label + (" (OpenAI)"))
+							.attr("name", option.label + (" (Dzeva Voice)"))
 							.appendTo(voiceSelect);
 					});
 				}
@@ -3966,7 +3966,7 @@
 						$("<option></option>")
 							.val(option.voice_id)
 							.text(option.name)
-							.attr("name", option.name + (" (ElevenLabs)"))
+							.attr("name", option.name + (" (Ohùn Voice)"))
 							.attr("platform", "elevenlabs")
 							.appendTo(voiceSelect);
 					});

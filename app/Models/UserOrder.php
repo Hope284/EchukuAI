@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Helpers\Classes\MarketplaceHelper;
+use App\Services\StrategicPartner\StrategicPartnerService;
 use Dcblogdev\Xero\Facades\Xero;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -63,6 +64,14 @@ class UserOrder extends Model
                     $response = Xero::invoices()->store($data);
                 } catch (Throwable $e) {
                 }
+            }
+
+            StrategicPartnerService::createCommissionForOrder($model);
+        });
+
+        static::updated(static function ($model) {
+            if ($model->wasChanged(['status', 'affiliate_earnings'])) {
+                StrategicPartnerService::createCommissionForOrder($model);
             }
         });
     }

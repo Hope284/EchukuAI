@@ -23,6 +23,7 @@ use App\Services\Payment\Enums\PaymentGatewayEnum;
 use App\Services\Payment\Factories\GatewayFactory;
 use App\Services\PaymentGateways\Contracts\CreditUpdater;
 use App\Services\PaymentGateways\StripeService;
+use App\Services\StrategicPartner\StrategicPartnerService;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Database\Eloquent\Collection;
@@ -112,6 +113,10 @@ class PaymentProcessController extends Controller
     { // when click on subscribe
         $plan = Plan::where('id', $planId)->first();
         if ($plan) {
+            if (! StrategicPartnerService::gatewayAllowed(Auth::user(), $gatewayCode)) {
+                return back()->with(['message' => __('This payment gateway is not available for your account or country.'), 'type' => 'error']);
+            }
+
             if ($this->isActiveSubscription($planId)) {
                 return back()->with([
                     'message' => __('You already have subscription. Please cancel it before creating a new subscription'),
@@ -141,6 +146,10 @@ class PaymentProcessController extends Controller
     {
         $plan = Plan::where('id', $planId)->first();
         if ($plan) {
+            if (! StrategicPartnerService::gatewayAllowed(Auth::user(), $gatewayCode)) {
+                return back()->with(['message' => __('This payment gateway is not available for your account or country.'), 'type' => 'error']);
+            }
+
             try {
                 if (PaymentGatewayEnum::isRefactored($gatewayCode)) {
                     return GatewayFactory::make(PaymentGatewayEnum::tryFrom($gatewayCode))->prepaid($plan);
@@ -157,7 +166,7 @@ class PaymentProcessController extends Controller
     public function startSubscriptionCheckoutProcess(Request $request, $gateway = null, $referral = null): null|RedirectResponse|array|View
     {
         if ($gateway !== 'freeservice' && $request->isMethod('post')) {
-            $gateways = Gateways::where('is_active', 1)->pluck('code')->toArray();
+            $gateways = StrategicPartnerService::availableGateways(Auth::user())->pluck('code')->toArray();
             $request->validate([
                 'planID'   => 'required',
                 'orderID'  => 'nullable',
@@ -183,7 +192,7 @@ class PaymentProcessController extends Controller
     public function startPrepaidCheckoutProcess(Request $request, $gateway = null, $referral = null): null|RedirectResponse|View
     {
         if ($gateway !== 'freeservice' && $request->isMethod('post')) {
-            $gateways = Gateways::where('is_active', 1)->pluck('code')->toArray();
+            $gateways = StrategicPartnerService::availableGateways(Auth::user())->pluck('code')->toArray();
             $request->validate([
                 'planID'   => 'nullable',
                 'orderID'  => 'nullable',
@@ -758,6 +767,8 @@ class PaymentProcessController extends Controller
 
         $user = User::find($userID);
         $plan = Plan::where('id', $planID)->first();
+        abort_if(! $user || ! $plan || $plan->type !== 'subscription', 404);
+
         $total = $plan->price;
 
         $gatewayCode = 'freeservice';
@@ -773,13 +784,17 @@ class PaymentProcessController extends Controller
             $taxRate = $gateway->tax;
             $status = $gateway->code . '_approved';
         }
-        $currency = Currency::where('id', $gateway->currency)->first()->code;
         $settings = Setting::getCache();
 
         try {
             DB::beginTransaction();
             // Create the subscription with the customer ID, price ID, and necessary options.
-            $subscription = new Subscriptions;
+            $subscription = Subscriptions::query()
+                ->where('user_id', $user->id)
+                ->whereIn('stripe_status', ['active', 'free_approved', 'stripe_approved', 'paystack_approved', 'paypal_approved', 'banktransfer_approved'])
+                ->latest()
+                ->first() ?? new Subscriptions;
+
             $subscription->user_id = $user->id;
             $subscription->name = $planID;
             $subscription->stripe_id = 'FLS-' . strtoupper(Str::random(13));
@@ -788,6 +803,8 @@ class PaymentProcessController extends Controller
             $subscription->quantity = 1;
             $subscription->trial_ends_at = null;
             $subscription->ends_at = match ($plan->frequency) {
+                FrequencyEnum::MONTHLY->value          => Carbon::now()->addMonths(1),
+                FrequencyEnum::YEARLY->value           => Carbon::now()->addYears(1),
                 FrequencyEnum::LIFETIME_MONTHLY->value => Carbon::now()->addMonths(1),
                 FrequencyEnum::LIFETIME_YEARLY->value  => Carbon::now()->addYears(1),
                 FrequencyEnum::LIFETIME->value         => null,

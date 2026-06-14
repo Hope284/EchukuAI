@@ -11,8 +11,11 @@ use App\Enums\Plan\FrequencyEnum;
 use App\Enums\Plan\TypeEnum;
 use App\Enums\StatusEnum;
 use App\Models\Currency;
+use App\Models\CustomSettings;
 use App\Models\Faq;
+use App\Models\Frontend\FrontendSetting;
 use App\Models\FrontendGenerators;
+use App\Models\FrontendTools;
 use App\Models\Plan;
 use App\Models\Setting;
 use App\Services\Finance\PlanService;
@@ -100,6 +103,37 @@ class DzevaPlanSeeder extends Seeder
                 ->orWhere('answer', 'like', '%OpenAI%')
                 ->update([
                     'answer' => 'Dzeva uses its own public AI capability names for chat, image, document, code, voice, search, and local business tasks. Choose what you want to create, provide your prompt or business context, and Dzeva will generate the result using the model access and prepaid tokens available on your account.',
+                ]);
+        }
+
+        if (Schema::hasTable('customsettings')) {
+            CustomSettings::query()
+                ->where('key', 'howitworks_bottomline')
+                ->update([
+                    'value_html' => 'Ready to start? <a class="text-[#FCA7FF]" href="/register">Join Dzeva</a>',
+                ]);
+        }
+
+        if (Schema::hasTable('frontend_footer_settings')) {
+            FrontendSetting::query()
+                ->where('hero_button_url', 'like', '%codecanyon%')
+                ->orWhere('footer_button_url', 'like', '%codecanyon%')
+                ->update([
+                    'hero_button'       => 'Start with Dzeva',
+                    'hero_button_url'   => '/register',
+                    'footer_button_text' => 'Join Dzeva',
+                    'footer_button_url' => '/register',
+                ]);
+
+            FrontendSetting::forgetCache();
+        }
+
+        if (Schema::hasTable('frontend_tools') && Schema::hasColumn('frontend_tools', 'buy_link_url')) {
+            FrontendTools::query()
+                ->where('buy_link_url', 'like', '%codecanyon%')
+                ->update([
+                    'buy_link'     => 'Start with Dzeva',
+                    'buy_link_url' => '/register',
                 ]);
         }
     }

@@ -43,7 +43,13 @@ class User extends Authenticatable
         'name',
         'surname',
         'email',
+        'phone',
         'country',
+        'state',
+        'city',
+        'postal',
+        'address',
+        'avatar',
         'otp',
         'type',
         'password',
@@ -282,6 +288,16 @@ class User extends Authenticatable
     public function withdrawals()
     {
         return $this->hasMany(UserAffiliate::class);
+    }
+
+    public function strategicPartner()
+    {
+        return $this->hasOne(ParentAffiliate::class, 'user_id', 'id');
+    }
+
+    public function strategicPartnerChild()
+    {
+        return $this->hasOne(ParentAffiliateChild::class, 'child_affiliate_user_id', 'id');
     }
 
     // Chat

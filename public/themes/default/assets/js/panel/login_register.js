@@ -91,6 +91,9 @@ function RegisterForm() {
 	let affiliate = $('#affiliate_code').val();
 	formData.append('affiliate_code', affiliate !== 'undefined' ? affiliate : null);
 
+	let partner = $('#partner_code').val();
+	formData.append('partner_code', partner !== 'undefined' ? partner : null);
+
 	// Dynamically collect optional fields (only if present in DOM)
 	['name', 'surname', 'phone', 'country'].forEach(field => {
 		let el = document.getElementById(field + '_register');

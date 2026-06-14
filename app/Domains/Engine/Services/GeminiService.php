@@ -8,6 +8,7 @@ use GuzzleHttp\Promise\PromiseInterface;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
+use RuntimeException;
 
 class GeminiService
 {
@@ -20,6 +21,7 @@ class GeminiService
     public function streamGenerateContent($entity = EntityEnum::GEMINI_3_FLASH->value): PromiseInterface|Response
     {
         ApiHelper::setGeminiKey();
+        $this->ensureApiKeyConfigured();
 
         $client = $this->client();
         $body = [
@@ -40,6 +42,7 @@ class GeminiService
     {
 
         ApiHelper::setGeminiKey();
+        $this->ensureApiKeyConfigured();
 
         $client = $this->client();
         $body = [
@@ -124,5 +127,14 @@ class GeminiService
         $this->tools = $tools;
 
         return $this;
+    }
+
+    private function ensureApiKeyConfigured(): void
+    {
+        if (filled(config('gemini.api_key'))) {
+            return;
+        }
+
+        throw new RuntimeException('Gemini API key is not configured. Set GEMINI_API_KEY for Amamihe models.');
     }
 }

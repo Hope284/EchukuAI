@@ -82,13 +82,16 @@ function userProfileSave() {
 	formData.append( 'postal', $( "#postal" ).val() );
 	formData.append( 'address', $( "#address" ).val() );
 
-    if ( $( '#old_password' ).val() != null ) {
+    if ( $( '#old_password' ).val() ) {
         formData.append( 'old_password', $( "#old_password" ).val() );
+        formData.append( 'new_password', $( "#new_password" ).val() );
+        formData.append( 'new_password_confirmation', $( "#new_password_confirmation" ).val() );
+    } else if ( $( "#new_password" ).val() ) {
         formData.append( 'new_password', $( "#new_password" ).val() );
         formData.append( 'new_password_confirmation', $( "#new_password_confirmation" ).val() );
     }
 
-	if ( $( '#avatar' ).val() != 'undefined' ) {
+	if ( $( '#avatar' ).prop( 'files' ) && $( '#avatar' ).prop( 'files' ).length > 0 ) {
 		formData.append( 'avatar', $( '#avatar' ).prop( 'files' )[ 0 ] );
 	}
 
@@ -99,14 +102,14 @@ function userProfileSave() {
 		contentType: false,
 		processData: false,
 		success: function ( data ) {
-			toastr.success(magicai_localize?.user_saved ||'User saved succesfully')
+			toastr.success(data?.message || magicai_localize?.user_saved || 'User saved succesfully')
 			document.getElementById( "user_edit_button" ).disabled = false;
 			document.getElementById( "user_edit_button" ).innerHTML = "Save";
 		},
 		error: function ( data ) {
-			var err = data.responseJSON.errors;
+			var err = data.responseJSON?.errors || { error: [ data.responseJSON?.message || 'Unable to save profile.' ] };
 			$.each( err, function ( index, value ) {
-				toastr.error( value );
+				toastr.error( Array.isArray(value) ? value[0] : value );
 			} );
 			document.getElementById( "user_edit_button" ).disabled = false;
 			document.getElementById( "user_edit_button" ).innerHTML = "Save";

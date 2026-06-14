@@ -45,6 +45,14 @@
                 <p class="grow text-start">{{ __('Total') }}</p>
                 <p class="whitespace-nowrap text-end">{!! displayCurr(currency()->symbol, $plan->price, $taxValue ?? 0, $newDiscountedPrice ?? null, tax_included: $plan->price_tax_included) !!}</p>
             </li>
+            @php($localQuote = \App\Services\StrategicPartner\StrategicPartnerService::localCurrencyQuote((float) ($newDiscountedPrice ?: $plan->price), auth()->user()))
+            @if ($localQuote)
+                <hr class="mt-0">
+                <li class="flex px-1 text-muted">
+                    <p class="grow text-start">{{ __('Local currency estimate') }}</p>
+                    <p class="whitespace-nowrap text-end">{{ $localQuote['symbol'] }}{{ number_format($localQuote['amount'], 2) }}</p>
+                </li>
+            @endif
         </ul>
 
         <x-plan-details-card

@@ -114,12 +114,8 @@ function getSubsPlans()
     return Plan::getCache(
         static fn () => Plan::query()->where('type', TypeEnum::SUBSCRIPTION->value)
             ->where('active', 1)
-            ->where(function ($query) {
-                $query->where('price', 0)
-                    ->orWhere('frequency', FrequencyEnum::LIFETIME_MONTHLY)
-                    ->orWhere('frequency', FrequencyEnum::LIFETIME_YEARLY)
-                    ->orWhere('frequency', FrequencyEnum::LIFETIME);
-            })
+            ->orderByRaw("CASE frequency WHEN 'monthly' THEN 1 WHEN 'yearly' THEN 2 WHEN 'lifetime_monthly' THEN 3 WHEN 'lifetime_yearly' THEN 4 WHEN 'lifetime' THEN 5 ELSE 6 END")
+            ->orderBy('price')
             ->get(),
         '_subs_plans'
     );

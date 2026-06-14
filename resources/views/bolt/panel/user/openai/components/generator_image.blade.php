@@ -153,7 +153,7 @@
                                 x-bind:data-active="activeGenerator === 'openai'"
                                 @click="changeActiveGenerator('openai')"
                             >
-                                {{ __('DALL-E') }}
+                                {{ __('Taswira Picha') }}
                             </x-button>
                         @endif
                         @if (setting('enabled_gpt_image_1', '0') != '0')
@@ -168,7 +168,7 @@
                                 x-bind:data-active="activeGenerator === 'gpt_image_1'"
                                 @click="changeActiveGenerator('gpt_image_1')"
                             >
-                                {{ __('GPT-IMAGE-1') }}
+                                {{ __('Taswira Rangi') }}
                             </x-button>
                         @endif
                         @if (setting('enabled_gpt_image_1_5', '0') != '0')
@@ -183,7 +183,7 @@
                                 x-bind:data-active="activeGenerator === 'gpt_image_1_5'"
                                 @click="changeActiveGenerator('gpt_image_1_5')"
                             >
-                                {{ __('GPT-IMAGE-1.5') }}
+                                {{ __('Taswira Ubunifu') }}
                             </x-button>
                         @endif
                         @if (setting('enabled_gpt_image_2', '0') != '0')
@@ -198,7 +198,7 @@
                                 x-bind:data-active="activeGenerator === 'gpt_image_2'"
                                 @click="changeActiveGenerator('gpt_image_2')"
                             >
-                                {{ __('GPT-IMAGE-2') }}
+                                {{ __('Taswira Mwonekano') }}
                             </x-button>
                         @endif
                         @if (setting('stable_hidden', 0) != 1)
@@ -213,7 +213,7 @@
                                 x-bind:data-active="activeGenerator === 'stable_diffusion'"
                                 @click="changeActiveGenerator('stable_diffusion')"
                             >
-                                {{ __('Stable Diffusion') }}
+                                {{ __('Taswira Sanaa') }}
                             </x-button>
                         @endif
                         @if (\App\Helpers\Classes\ApiHelper::setPiAPIKey())

@@ -16,6 +16,7 @@ use App\Http\Controllers\MailController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\Payment\PlanAndPricingController;
 use App\Http\Controllers\PrivatePlanController;
+use App\Http\Controllers\StrategicPartnerReferralController;
 use App\Http\Controllers\TestController;
 use Illuminate\Support\Facades\Route;
 use RachidLaasri\LaravelInstaller\Middleware\ApplicationStatus;
@@ -35,6 +36,7 @@ Route::get('default', static function () {
 Route::view('account-deletion', 'default.account-deletion');
 Route::middleware('checkInstallation')
     ->group(static function () {
+        Route::get('partner/{code}', StrategicPartnerReferralController::class)->name('strategic-partner.referral');
         Route::get('', IndexController::class)->name('index');
         Route::controller(PageController::class)
             ->group(static function () {
@@ -47,10 +49,10 @@ Route::middleware('checkInstallation')
         Route::controller(BlogController::class)
             ->group(static function () {
                 Route::get('blog', 'index')->name('blog.index');
-                Route::get('blog/{slug}', 'post')->name('blog.post');
                 Route::get('blog/tag/{slug}', 'tags')->name('blog.tags');
                 Route::get('blog/category/{slug}', 'categories')->name('blog.categories');
                 Route::get('blog/author/{slug}', 'author')->name('blog.author');
+                Route::get('blog/{slug}', 'post')->name('blog.post');
             });
 
         Route::get('credit-list-partial', [PlanAndPricingController::class, 'creditListPartial'])->name('credit-list-partial');

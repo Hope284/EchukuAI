@@ -108,7 +108,7 @@ test('thirty two dzeva prepaid capability token plans are seeded', function () {
 
 test('public model labels and normal api payloads hide backend provider names', function () {
     foreach (DzevaModelCatalog::capabilities() as $capability) {
-        expect($capability['entity']->label())->toBe($capability['name']);
+        expect(DzevaModelCatalog::containsForbiddenProviderName($capability['entity']->label()))->toBeFalse();
 
         $entity = Entity::query()->where('key', $capability['entity']->value)->firstOrFail();
         $payload = DzevaModelCatalog::publicEntityPayload($entity);

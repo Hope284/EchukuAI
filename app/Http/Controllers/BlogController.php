@@ -6,6 +6,7 @@ use App\Models\Blog;
 use App\Models\Frontend\FrontendSectionsStatus;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 
 class BlogController extends Controller
@@ -166,17 +167,29 @@ class BlogController extends Controller
 
     public function blogAddOrUpdateSave(Request $request)
     {
+        $postId = $request->input('post_id');
+        $isUpdate = filled($postId) && $postId !== 'undefined' && $postId !== 'null';
 
-        if ($request->post_id != 'undefined') {
-            $post = Blog::where('id', $request->post_id)->firstOrFail();
-        } else {
-            $post = new Blog;
+        $validator = Validator::make($request->all(), [
+            'title'         => ['required', 'string', 'max:255'],
+            'content'       => ['required', 'string'],
+            'feature_image' => ['nullable', 'file', 'mimes:jpg,jpeg,png,svg,webp'],
+            'status'        => ['nullable', 'boolean'],
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()->all()], 422);
         }
+
+        $post = $isUpdate
+            ? Blog::where('id', $postId)->firstOrFail()
+            : new Blog;
 
         if ($request->hasFile('feature_image')) {
             $path = 'upload/images/blog/';
             $image = $request->file('feature_image');
-            $image_name = Str::random(4) . '-' . Str::slug($request->slug) . '.' . $image->guessExtension();
+            $baseSlug = Str::slug($request->input('slug') ?: $request->input('title'));
+            $image_name = Str::random(4) . '-' . $baseSlug . '.' . $image->guessExtension();
 
             // Resim uzantı kontrolü
             $imageTypes = ['jpg', 'jpeg', 'png', 'svg', 'webp'];
@@ -196,13 +209,46 @@ class BlogController extends Controller
         $post->title = $request->title;
         $post->content = $request->get('content');
         $post->feature_image = $feature_image ?? $post->feature_image;
-        $post->slug = Str::slug($request->slug);
+        $post->slug = $this->uniqueBlogSlug($request->input('slug') ?: $request->input('title'), $isUpdate ? (int) $post->id : null);
         $post->seo_title = $request->seo_title;
         $post->seo_description = $request->seo_description;
-        $post->category = $request->category;
-        $post->tag = $request->tag;
-        $post->status = $request->status;
+        $post->category = $this->csvInput($request->input('category'));
+        $post->tag = $this->csvInput($request->input('tag'));
+        $post->status = (bool) $request->input('status', 1);
         $post->user_id = Auth::user()->id;
         $post->save();
+
+        return response()->json([
+            'message'  => __('Post saved successfully.'),
+            'redirect' => route('dashboard.admin.blog.addOrUpdate', $post->id),
+            'preview'  => $post->status ? route('blog.post', $post->slug) : null,
+        ]);
+    }
+
+    private function uniqueBlogSlug(string $value, ?int $ignoreId = null): string
+    {
+        $baseSlug = Str::slug($value) ?: Str::random(8);
+        $slug = $baseSlug;
+        $counter = 2;
+
+        while (
+            Blog::query()
+                ->where('slug', $slug)
+                ->when($ignoreId, static fn ($query) => $query->where('id', '!=', $ignoreId))
+                ->exists()
+        ) {
+            $slug = $baseSlug . '-' . $counter++;
+        }
+
+        return $slug;
+    }
+
+    private function csvInput(mixed $value): ?string
+    {
+        if (is_array($value)) {
+            $value = implode(',', array_filter($value));
+        }
+
+        return filled($value) ? (string) $value : null;
     }
 }

@@ -11,6 +11,7 @@ use App\Models\OpenAIGenerator;
 use App\Models\Plan;
 use App\Models\Team\Team;
 use App\Models\User;
+use App\Services\StrategicPartner\StrategicPartnerService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -20,7 +21,10 @@ class PlanAndPricingController extends Controller
 {
     public function __invoke()
     {
-        $activeGateways = Gateways::query()->where('is_active', 1)->get();
+        $activeGateways = StrategicPartnerService::availableGateways(
+            Auth::user(),
+            Gateways::query()->where('is_active', 1)->get()
+        );
 
         $is_active_gateway = $activeGateways->count() > 0 ? 1 : 0;
 

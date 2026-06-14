@@ -167,6 +167,11 @@
 					type="hidden"
 					value="{{ Request::get('aff') }}"
 				>
+				<input
+					id="partner_code"
+					type="hidden"
+					value="{{ Request::get('partner') }}"
+				>
 
 				{{-- Render optional fields dynamically --}}
 				@foreach ($optionalFields as $field)

@@ -588,12 +588,13 @@ class UserController extends Controller
         $request->validate([
             'name'    => 'required|string|max:255',
             'surname' => 'required|string|max:255',
-            'phone'   => 'nullable|string|max:15',
+            'phone'   => 'nullable|string|max:30',
             'country' => 'nullable',
             'state'   => 'nullable|string|max:255',
             'city'    => 'nullable|string|max:255',
             'postal'  => 'nullable|string|max:255',
             'address' => 'nullable|string|max:255',
+            'avatar'  => 'nullable|file|mimes:jpg,jpeg,png,svg,webp|max:5120',
         ]);
 
         $user = Auth::user();
@@ -606,8 +607,8 @@ class UserController extends Controller
         $user->postal = $request->postal;
         $user->address = $request->address;
 
-        if (! empty($request->old_password)) {
-            $validated = $request->validateWithBag('updatePassword', [
+        if ($request->filled('old_password')) {
+            $request->validateWithBag('updatePassword', [
                 'old_password' => ['required', 'current_password'],
                 'new_password' => ['required', Password::defaults(), 'confirmed'],
             ]);
@@ -615,12 +616,12 @@ class UserController extends Controller
             $user->password = Hash::make($request->new_password);
         }
 
-        if (empty($request->old_password) && ! empty($request->new_password)) {
+        if (! $request->filled('old_password') && $request->filled('new_password')) {
             $isOneOfSocialTokensNotEmpty =
                 ! empty($user->google_token) || ! empty($user->github_token) || ! empty($user->facebook_token);
 
             if ($isOneOfSocialTokensNotEmpty) {
-                $validated = $request->validateWithBag('updatePassword', [
+                $request->validateWithBag('updatePassword', [
                     'new_password' => ['required', Password::defaults(), 'confirmed'],
                 ]);
 
@@ -655,13 +656,17 @@ class UserController extends Controller
 
         CreateActivity::for($user, 'Updated', 'Profile Information');
         $user->save();
+
+        return response()->json([
+            'message' => __('User settings saved successfully'),
+        ]);
     }
 
     public function userSettingsUpdate(Request $request): RedirectResponse
     {
         $request->validate([
 
-            'phone'   => 'nullable|string|max:15',
+            'phone'   => 'nullable|string|max:30',
             'country' => 'nullable',
             'state'   => 'nullable|string|max:255',
             'city'    => 'nullable|string|max:255',
@@ -673,7 +678,13 @@ class UserController extends Controller
             return redirect()->back()->with(['message' => __('Unauthorized'), 'type' => 'error']);
         }
 
-        $user->update($request->only(['phone', 'country', 'state', 'city', 'postal', 'address']));
+        $user->phone = $request->input('phone');
+        $user->country = $request->input('country');
+        $user->state = $request->input('state');
+        $user->city = $request->input('city');
+        $user->postal = $request->input('postal');
+        $user->address = $request->input('address');
+        $user->save();
 
         CreateActivity::for($user, 'Updated', 'Profile Address Information');
 

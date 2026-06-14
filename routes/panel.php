@@ -36,11 +36,13 @@ use App\Http\Controllers\Common\CommonController;
 use App\Http\Controllers\Common\HealthController;
 use App\Http\Controllers\Common\Settings\FalAISettingController as CommonFalAISettingController;
 use App\Http\Controllers\Dashboard\AdminController;
+use App\Http\Controllers\Dashboard\AdminStrategicPartnerController;
 use App\Http\Controllers\Dashboard\BrandController;
 use App\Http\Controllers\Dashboard\DebugController;
 use App\Http\Controllers\Dashboard\NotificationController;
 use App\Http\Controllers\Dashboard\SearchController;
 use App\Http\Controllers\Dashboard\SettingsController;
+use App\Http\Controllers\Dashboard\StrategicPartnerController;
 use App\Http\Controllers\Dashboard\SupportController;
 use App\Http\Controllers\Dashboard\TranslateController;
 use App\Http\Controllers\Dashboard\UGCStudioController;
@@ -363,6 +365,19 @@ Route::middleware(['auth', 'updateUserActivity'])
                     Route::post('/send-request', [UserController::class, 'affiliatesListSendRequest']);
                     Route::get('/users', [UserController::class, 'affiliatesUsers'])->name('users');
                 });
+
+                Route::prefix('strategic-partner')
+                    ->name('strategic-partner.')
+                    ->middleware('strategic_partner')
+                    ->controller(StrategicPartnerController::class)
+                    ->group(function () {
+                        Route::get('/', 'index')->name('index');
+                        Route::get('/children', 'children')->name('children');
+                        Route::get('/earnings', 'earnings')->name('earnings');
+                        Route::get('/withdrawals', 'withdrawals')->name('withdrawals');
+                        Route::post('/withdrawals', 'requestWithdrawal')->name('withdrawals.request');
+                        Route::post('/profile', 'updateProfile')->name('profile.update');
+                    });
 
                 Route::resource('voice', ElevenlabVoiceController::class)->except('show', 'destroy');
                 Route::get('voice/{voice}', [ElevenlabVoiceController::class, 'delete'])->name('voice.destroy');
@@ -864,6 +879,20 @@ Route::middleware(['auth', 'updateUserActivity'])
                     Route::get('/delete/{id?}', [BlogController::class, 'blogDelete'])->name('delete');
                     Route::post('/save', [BlogController::class, 'blogAddOrUpdateSave']);
                 });
+
+                Route::prefix('strategic-partners')
+                    ->name('strategic-partners.')
+                    ->controller(AdminStrategicPartnerController::class)
+                    ->group(function () {
+                        Route::get('/', 'index')->name('index');
+                        Route::get('/create', 'create')->name('create');
+                        Route::post('/', 'store')->name('store');
+                        Route::post('/withdrawals/{withdrawal}', 'updateWithdrawal')->name('withdrawals.update');
+                        Route::get('/{strategicPartner}', 'show')->name('show');
+                        Route::get('/{strategicPartner}/edit', 'edit')->name('edit');
+                        Route::put('/{strategicPartner}', 'update')->name('update');
+                        Route::post('/{strategicPartner}/payment-gateways', 'saveGateways')->name('payment-gateways.save');
+                    });
             });
 
         // Notifications

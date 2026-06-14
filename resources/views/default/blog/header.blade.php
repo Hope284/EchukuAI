@@ -23,6 +23,7 @@
                     class="peer absolute start-0 top-1/2 -translate-y-1/2 translate-x-3 opacity-0 transition-all group-[.lqd-is-sticky]/header:translate-x-0 group-[.lqd-is-sticky]/header:opacity-100"
                     src="{{ custom_theme_url($setting->logo_sticky_path, true) }}"
                     @if (isset($setting->logo_sticky_2x_path)) srcset="/{{ $setting->logo_sticky_2x_path }} 2x" @endif
+                    style="image-rendering: auto; object-fit: contain;"
                     alt="{{ $setting->site_name }} logo"
                 >
             @endif
@@ -30,6 +31,7 @@
                 class="transition-all group-[.lqd-is-sticky]/header:peer-first:translate-x-2 group-[.lqd-is-sticky]/header:peer-first:opacity-0"
                 src="{{ custom_theme_url($app_is_demo ? $setting->logo_sticky_path : $setting->logo_path, true) }}"
                 @if (isset($setting->logo_2x_path)) srcset="/{{ $setting->logo_2x_path }} 2x" @endif
+                style="image-rendering: auto; object-fit: contain;"
                 alt="{{ $setting->site_name }} logo"
             >
         </a>
@@ -198,9 +200,8 @@
     <div class="fixed bottom-8 start-8 z-50">
         <a
             class="size-12 inline-flex items-center justify-center rounded-full bg-[#262626] transition-all duration-300 hover:-translate-y-1 hover:scale-110 hover:shadow-md"
-            href="https://codecanyon.net/item/magicai-openai-content-text-image-chat-code-generator-as-saas/45408109"
-            target="_blank"
-            title="{{ __('Buy on Envato') }}"
+            href="{{ route('register') }}"
+            title="{{ __('Join Dzeva') }}"
         >
             <svg
                 fill="#0ac994"

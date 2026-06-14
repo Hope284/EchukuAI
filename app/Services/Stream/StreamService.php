@@ -257,6 +257,15 @@ class StreamService
         $this->safeFlush();
     }
 
+    private function emitModelUnavailable(string $modelName = 'This model'): void
+    {
+        echo PHP_EOL;
+        echo "event: data\n";
+        echo 'data: ' . __($modelName . ' is temporarily unavailable. Please try another model.');
+        echo "\n\n";
+        $this->safeFlush();
+    }
+
     private function resetStreamChunkState(): void
     {
         $this->titleEmitted = false;
@@ -2397,13 +2406,12 @@ class StreamService
                     ->setTools($geminiSkillTools)
                     ->streamGenerateContent($driver->enum()->value);
             } catch (Throwable $e) {
-                Log::error('[StreamDebug] Gemini connection failed', ['error' => $e->getMessage()]);
+                Log::error('[Dzeva] Amamihe connection failed', [
+                    'backend_model' => $driver->enum()->value,
+                    'error'         => $e->getMessage(),
+                ]);
 
-                echo PHP_EOL;
-                echo "event: data\n";
-                echo 'data: ' . __('An error occurred while connecting to the AI service. Please try again.');
-                echo "\n\n";
-                $this->safeFlush();
+                $this->emitModelUnavailable('Amamihe');
                 echo "event: stop\n";
                 echo 'data: [DONE]';
                 echo "\n\n";
@@ -2432,13 +2440,12 @@ class StreamService
 
                 if (isset($decodedLine['error'])) {
                     $errorMessage = $decodedLine['error']['message'] ?? 'Unknown error occurred.';
-                    $formattedMessage = '⚠️ ' . $errorMessage;
+                    Log::error('[Dzeva] Amamihe provider error', [
+                        'backend_model' => $driver->enum()->value,
+                        'error'         => $errorMessage,
+                    ]);
 
-                    echo PHP_EOL;
-                    echo "event: data\n";
-                    echo 'data: ' . $formattedMessage;
-                    echo "\n\n";
-                    $this->safeFlush();
+                    $this->emitModelUnavailable('Amamihe');
 
                     break;
                 }

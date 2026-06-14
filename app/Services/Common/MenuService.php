@@ -222,6 +222,11 @@ class MenuService
                 $showAffiliate = true;
             }
         }
+        $showStrategicPartner = $user && ! $user->isAdmin()
+            && \App\Models\ParentAffiliate::query()
+                ->where('user_id', $user->id)
+                ->where('status', \App\Models\ParentAffiliate::STATUS_APPROVED)
+                ->exists();
 
         $menu = [
 
@@ -2264,6 +2269,24 @@ class MenuService
                 'active_condition' => null,
                 'show_condition'   => $showAffiliate,
             ],
+            'strategic_partner' => [
+                'parent_key'       => null,
+                'key'              => 'strategic_partner',
+                'route'            => 'dashboard.user.strategic-partner.index',
+                'route_slug'       => null,
+                'label'            => 'Strategic Partner',
+                'icon'             => 'tabler-affiliate',
+                'svg'              => null,
+                'order'            => 22.1,
+                'is_active'        => true,
+                'params'           => [],
+                'type'             => 'item',
+                'extension'        => null,
+                'active_condition' => [
+                    'dashboard.user.strategic-partner.*',
+                ],
+                'show_condition' => $showStrategicPartner && Route::has('dashboard.user.strategic-partner.index'),
+            ],
             'support' => [
                 'parent_key'       => null,
                 'key'              => 'support',
@@ -3439,6 +3462,24 @@ class MenuService
                     'dashboard.admin.affiliates.*',
                 ],
                 'show_condition' => true,
+                'is_admin'       => true,
+            ],
+            'strategic_partner_admin' => [
+                'parent_key'       => null,
+                'key'              => 'strategic_partner_admin',
+                'route'            => 'dashboard.admin.strategic-partners.index',
+                'label'            => 'Strategic Partner Management',
+                'icon'             => 'tabler-affiliate',
+                'svg'              => null,
+                'order'            => 63.1,
+                'is_active'        => true,
+                'params'           => [],
+                'type'             => 'item',
+                'extension'        => null,
+                'active_condition' => [
+                    'dashboard.admin.strategic-partners.*',
+                ],
+                'show_condition' => $admin && Route::has('dashboard.admin.strategic-partners.index'),
                 'is_admin'       => true,
             ],
             'coupons_admin' => [

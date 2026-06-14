@@ -1,9 +1,8 @@
 <div class="fixed bottom-8 start-8 z-50">
     <a
         class="size-12 inline-flex items-center justify-center rounded-full bg-[#262626] transition-all duration-300 hover:-translate-y-1 hover:scale-110 hover:shadow-md"
-        href="https://codecanyon.net/item/magicai-openai-content-text-image-chat-code-generator-as-saas/45408109"
-        target="_blank"
-        title="{{ __('Buy on Envato') }}"
+        href="{{ route('register') }}"
+        title="{{ __('Join Dzeva') }}"
     >
         <svg
             fill="#0ac994"

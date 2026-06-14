@@ -1,9 +1,9 @@
 @inject('gatewayControls', 'App\Http\Controllers\Finance\GatewayController')
 @php
-    $activeGateways = \App\Models\Gateways::where('is_active', 1)->get();
+    $activeGateways = \App\Services\StrategicPartner\StrategicPartnerService::availableGateways(auth()->user(), \App\Models\Gateways::where('is_active', 1)->get());
     $type = strpos(Route::currentRouteName(), 'startPrepaidPaymentProcess') !== false ? 'startPrepaidPaymentProcess' : 'startSubscriptionProcess';
 @endphp
-@if ($activeGateways->count() > 1)
+@if ($activeGateways->count() > 0)
     <div class="my-2 w-full">
         <x-card
             class="border"

@@ -7,10 +7,8 @@ function blogSave( post_id ) {
 
 	var formData = new FormData();
 
-    if ( post_id != 'undefined' ) {
+    if ( post_id !== undefined && post_id !== null && post_id !== 'undefined' ) {
         formData.append( 'post_id', post_id );
-	} else {
-		formData.append( 'post_id', null );
 	}
 	formData.append( 'title', $( "#title" ).val() );
 	formData.append( 'content', tinymce.activeEditor.getContent() );
@@ -31,12 +29,15 @@ function blogSave( post_id ) {
 		contentType: false,
 		processData: false,
 		success: function ( data ) {
-			toastr.success(magicai_localize?.page_saved ||'Page Saved Succesfully')
+			toastr.success( data.message || magicai_localize?.page_saved || 'Page Saved Successfully' )
 			document.getElementById( "post_button" ).disabled = false;
 			document.getElementById( "post_button" ).innerHTML = "Save";
+			if ( data.redirect ) {
+				window.location.href = data.redirect;
+			}
 		},
 		error: function ( data ) {
-			var err = data.responseJSON.errors;
+			var err = data.responseJSON?.errors || [ 'Post could not be saved. Please check the form and try again.' ];
 			$.each( err, function ( index, value ) {
 				toastr.error( value );
 			} );
