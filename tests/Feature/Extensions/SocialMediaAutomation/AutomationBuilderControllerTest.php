@@ -40,7 +40,8 @@ it('returns posts for facebook platform via api', function () {
         ]),
     ]);
 
-    $response = $this->getJson(route('dashboard.user.social-media.automation.posts', ['platform_id' => $platform->id]));
+    $response = $this->actingAs($this->user)
+        ->getJson(route('dashboard.user.social-media.automation.posts', ['platform_id' => $platform->id]));
 
     $response->assertSuccessful()
         ->assertJsonPath('status', 'success')
@@ -88,7 +89,8 @@ it('returns posts for x platform via api', function () {
         ]),
     ]);
 
-    $response = $this->getJson(route('dashboard.user.social-media.automation.posts', ['platform_id' => $platform->id]));
+    $response = $this->actingAs($this->user)
+        ->getJson(route('dashboard.user.social-media.automation.posts', ['platform_id' => $platform->id]));
 
     $response->assertSuccessful()
         ->assertJsonPath('status', 'success')
@@ -121,10 +123,11 @@ it('filters x posts by search term', function () {
         ]),
     ]);
 
-    $response = $this->getJson(route('dashboard.user.social-media.automation.posts', [
-        'platform_id' => $platform->id,
-        'search'      => 'laravel',
-    ]));
+    $response = $this->actingAs($this->user)
+        ->getJson(route('dashboard.user.social-media.automation.posts', [
+            'platform_id' => $platform->id,
+            'search'      => 'laravel',
+        ]));
 
     $response->assertSuccessful()
         ->assertJsonCount(1, 'data')
@@ -142,7 +145,8 @@ it('returns error when platform does not belong to user', function () {
         'expires_at'   => now()->addMonth(),
     ]);
 
-    $response = $this->getJson(route('dashboard.user.social-media.automation.posts', ['platform_id' => $platform->id]));
+    $response = $this->actingAs($this->user)
+        ->getJson(route('dashboard.user.social-media.automation.posts', ['platform_id' => $platform->id]));
 
     $response->assertSuccessful()
         ->assertJsonPath('status', 'error');

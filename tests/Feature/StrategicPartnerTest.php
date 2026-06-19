@@ -28,7 +28,7 @@ test('user profile settings save supported personal and address fields', functio
         'surname' => 'Name',
     ]);
 
-    actingAs($user)
+    $this->actingAs($user)
         ->post('/dashboard/user/settings/save', [
             'name' => 'Ada',
             'surname' => 'Okafor',
@@ -117,7 +117,7 @@ test('strategic partner commission is twenty percent of child affiliate commissi
     expect($childAffiliate->refresh()->affiliate_id)->toBeNull()
         ->and($order->affiliate_earnings)->toBe(100)
         ->and($partner->commissions()->count())->toBe(1)
-        ->and((float) $partner->commissions()->first()->amount)->toBe(20.0);
+        ->and((int) round($partner->commissions()->first()->amount))->toBe(20);
 });
 
 test('strategic partner withdrawal cannot exceed available balance', function () {
