@@ -46,7 +46,7 @@ test('driver name to method name', function () {
 });
 
 test('driver has accessible', function () {
-    expect(Entity::driver(EntityEnum::AZURE)->inputVoiceCount(1))
+    expect(Entity::driver(EntityEnum::AZURE)->input('DZEVA voice sample'))
         ->toBeInstanceOf(EntityEnum::AZURE->driverClass());
 });
 

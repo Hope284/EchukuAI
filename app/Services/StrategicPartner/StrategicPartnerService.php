@@ -10,6 +10,7 @@ use App\Models\ParentAffiliateChild;
 use App\Models\ParentAffiliateCommission;
 use App\Models\ParentAffiliatePaymentGateway;
 use App\Models\ParentAffiliateWithdrawal;
+use App\Models\Setting;
 use App\Models\User;
 use App\Models\UserOrder;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
@@ -159,7 +160,7 @@ class StrategicPartnerService
             return ParentAffiliateWithdrawal::query()->create([
                 'parent_affiliate_id' => $partner->id,
                 'amount' => $amount,
-                'currency' => currency()->code ?? 'USD',
+                'currency' => self::defaultCurrencyCode(),
                 'payout_method' => $partner->preferred_payout_method,
                 'payout_details_snapshot' => $partner->payout_details ?: [],
                 'status' => ParentAffiliateWithdrawal::STATUS_PENDING,
@@ -206,7 +207,7 @@ class StrategicPartnerService
 
     public static function localCurrencyQuote(float $baseAmount, ?User $user): ?array
     {
-        $baseCurrency = currency()->code ?? 'USD';
+        $baseCurrency = self::defaultCurrencyCode();
         $targetCurrency = self::countryCurrencyCode($user?->country);
 
         if (! $targetCurrency || $targetCurrency === $baseCurrency) {
@@ -267,7 +268,14 @@ class StrategicPartnerService
         $gateway = Gateways::query()->where('code', $order->payment_type)->first();
         $currency = $gateway?->currency ? Currency::query()->find($gateway->currency) : null;
 
-        return $currency?->code ?: (currency()->code ?? 'USD');
+        return $currency?->code ?: self::defaultCurrencyCode();
+    }
+
+    private static function defaultCurrencyCode(): string
+    {
+        $defaultCurrencyId = Setting::query()->value('default_currency');
+
+        return Currency::query()->find($defaultCurrencyId)?->code ?? 'USD';
     }
 
     private static function countryCurrencyCode(?string $country): ?string

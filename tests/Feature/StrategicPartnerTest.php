@@ -15,6 +15,8 @@ use App\Models\Setting;
 use App\Models\User;
 use App\Models\UserOrder;
 use App\Services\StrategicPartner\StrategicPartnerService;
+use function Pest\Laravel\actingAs;
+use function Pest\Laravel\artisan;
 
 beforeEach(function () {
     Setting::factory()->create();
