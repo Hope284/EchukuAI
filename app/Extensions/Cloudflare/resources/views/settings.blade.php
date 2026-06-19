@@ -9,77 +9,56 @@
         <div class="container-xl">
             <div class="row">
                 <div class="col-md-5 mx-auto">
-                    @php
-                        $missingLabels = [
-                            'key' => __('Access key ID'),
-                            'secret' => __('Secret access key'),
-                            'region' => __('Default region'),
-                            'bucket' => __('Bucket'),
-                            'endpoint' => __('Endpoint'),
-                            'url' => __('Domain URL'),
-                        ];
-                    @endphp
-
-                    @if (! $isConfigured)
-                        <div class="alert alert-warning mb-4">
-                            <h4 class="alert-title">{{ __('Cloudflare R2 is not fully configured') }}</h4>
-                            <p class="mb-2">
-                                {{ __('The settings page is available, but DZEVA will keep using local storage until all required Cloudflare R2 values are saved.') }}
-                            </p>
-                            @if ($missingKeys->isNotEmpty())
-                                <p class="mb-0">
-                                    {{ __('Missing:') }}
-                                    {{ $missingKeys->map(fn ($key) => $missingLabels[$key] ?? $key)->join(', ') }}
-                                </p>
-                            @endif
-                        </div>
-                    @else
-                        <div class="alert alert-success mb-4">
-                            {{ __('Cloudflare R2 settings are present. Save changes only when you want to update them.') }}
-                        </div>
-                    @endif
-
                     <form
                         action="{{ route('dashboard.admin.settings.cloudflare-r2') }}"
                         method="post"
                     >
                         @csrf
                         <h3 class="mb-[25px] text-[20px]">{{ __('Cloudflare R2 Settings') }}</h3>
+                        @if ($errors->any())
+                            <div class="alert alert-danger mb-4">
+                                <ul class="mb-0">
+                                    @foreach ($errors->all() as $error)
+                                        <li>{{ $error }}</li>
+                                    @endforeach
+                                </ul>
+                            </div>
+                        @endif
                         <div class="row">
                             <div class="col-md-12">
                                 <div class="mb-3">
                                     <label class="form-label">{{__('ACCESS KEY ID')}}</label>
-                                    <input type="text" class="form-control @error('CLOUDFLARE_R2_ACCESS_KEY_ID') border-red-400 @enderror" value="{{ old('CLOUDFLARE_R2_ACCESS_KEY_ID', config('filesystems.disks.r2.key')) }}" id="CLOUDFLARE_R2_ACCESS_KEY_ID" name="CLOUDFLARE_R2_ACCESS_KEY_ID">
+                                    <input type="text" class="form-control @error('CLOUDFLARE_R2_ACCESS_KEY_ID') border-red-400 @enderror" value="{{ config('filesystems.disks.r2.key') }}" id="CLOUDFLARE_R2_ACCESS_KEY_ID" name="CLOUDFLARE_R2_ACCESS_KEY_ID">
                                 </div>
                             </div>
                             <div class="col-md-12">
                                 <div class="mb-3">
                                     <label class="form-label">{{__('SECRET ACCESS KEY')}}</label>
-                                    <input type="text" class="form-control @error('CLOUDFLARE_R2_SECRET_ACCESS_KEY') border-red-400 @enderror" value="{{ old('CLOUDFLARE_R2_SECRET_ACCESS_KEY', config('filesystems.disks.r2.secret')) }}" id="CLOUDFLARE_R2_SECRET_ACCESS_KEY" name="CLOUDFLARE_R2_SECRET_ACCESS_KEY">
+                                    <input type="password" class="form-control @error('CLOUDFLARE_R2_SECRET_ACCESS_KEY') border-red-400 @enderror" value="{{ old('CLOUDFLARE_R2_SECRET_ACCESS_KEY', config('filesystems.disks.r2.secret')) }}" id="CLOUDFLARE_R2_SECRET_ACCESS_KEY" name="CLOUDFLARE_R2_SECRET_ACCESS_KEY" autocomplete="new-password">
                                 </div>
                             </div>
                             <div class="col-md-12">
                                 <div class="mb-3">
                                     <label class="form-label">{{__('DEFAULT REGION')}}</label>
-                                    <input type="text" class="form-control @error('CLOUDFLARE_R2_DEFAULT_REGION') border-red-400 @enderror" value="{{ old('CLOUDFLARE_R2_DEFAULT_REGION', config('filesystems.disks.r2.region')) }}" id="CLOUDFLARE_R2_DEFAULT_REGION" name="CLOUDFLARE_R2_DEFAULT_REGION">
+                                    <input type="text" class="form-control @error('CLOUDFLARE_R2_DEFAULT_REGION') border-red-400 @enderror" value="{{ config('filesystems.disks.r2.region') }}" id="CLOUDFLARE_R2_DEFAULT_REGION" name="CLOUDFLARE_R2_DEFAULT_REGION">
                                 </div>
                             </div>
                             <div class="col-md-12">
                                 <div class="mb-3">
                                     <label class="form-label">{{__('BUCKET')}}</label>
-                                    <input type="text" class="form-control @error('CLOUDFLARE_R2_BUCKET') border-red-400 @enderror" value="{{ old('CLOUDFLARE_R2_BUCKET', config('filesystems.disks.r2.bucket')) }}" id="CLOUDFLARE_R2_BUCKET" name="CLOUDFLARE_R2_BUCKET">
+                                    <input type="text" class="form-control @error('CLOUDFLARE_R2_BUCKET') border-red-400 @enderror" value="{{ config('filesystems.disks.r2.bucket') }}" id="CLOUDFLARE_R2_BUCKET" name="CLOUDFLARE_R2_BUCKET">
                                 </div>
                             </div>
                             <div class="col-md-12">
                                 <div class="mb-3">
                                     <label class="form-label">{{__('ENDPOINT')}}</label>
-                                    <input type="text" class="form-control  @error('CLOUDFLARE_R2_ENDPOINT') border-red-400 @enderror" value="{{ old('CLOUDFLARE_R2_ENDPOINT', config('filesystems.disks.r2.endpoint')) }}" id="CLOUDFLARE_R2_ENDPOINT" name="CLOUDFLARE_R2_ENDPOINT">
+                                    <input type="text" class="form-control  @error('CLOUDFLARE_R2_ENDPOINT') border-red-400 @enderror" value="{{ config('filesystems.disks.r2.endpoint') }}" id="CLOUDFLARE_R2_ENDPOINT" name="CLOUDFLARE_R2_ENDPOINT">
                                 </div>
                             </div>
                             <div class="col-md-12">
                                 <div class="mb-3">
                                     <label class="form-label">{{__('DOMAIN URL')}}</label>
-                                    <input type="text" class="form-control  @error('CLOUDFLARE_R2_URL') border-red-400 @enderror" value="{{ old('CLOUDFLARE_R2_URL', config('filesystems.disks.r2.url')) }}" id="CLOUDFLARE_R2_URL" name="CLOUDFLARE_R2_URL">
+                                    <input type="text" class="form-control  @error('CLOUDFLARE_R2_URL') border-red-400 @enderror" value="{{ config('filesystems.disks.r2.url') }}" id="CLOUDFLARE_R2_URL" name="CLOUDFLARE_R2_URL">
                                 </div>
                             </div>
                             <div class="col-md-12">

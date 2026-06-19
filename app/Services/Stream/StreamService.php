@@ -2046,12 +2046,27 @@ class StreamService
                         ];
                     }
 
-                    $data = $client->setStream(true)
-                        ->setSystem($system)
-                        ->setTools($skillTools)
-                        ->setMessages(array_values($historyMessages))
-                        ->stream()
-                        ->body();
+                    try {
+                        $data = $client->setStream(true)
+                            ->setModel($driver->enum()->value)
+                            ->setSystem($system)
+                            ->setTools($skillTools)
+                            ->setMessages(array_values($historyMessages))
+                            ->stream()
+                            ->body();
+                    } catch (Throwable $exception) {
+                        Log::error('[DZEVA] Hikima provider connection failed', [
+                            'backend_model' => $driver->enum()->value,
+                            'error'         => $exception->getMessage(),
+                        ]);
+
+                        $this->emitModelUnavailable('Hikima');
+                        echo "event: stop\n";
+                        echo "data: [DONE]\n\n";
+                        $this->safeFlush();
+
+                        return;
+                    }
 
                     $toolUseBlock = null;
                     $toolUseInput = '';
@@ -2102,6 +2117,7 @@ class StreamService
                                     ];
 
                                     $followUpData = $client->setStream(true)
+                                        ->setModel($driver->enum()->value)
                                         ->setSystem($system)
                                         ->setTools([])
                                         ->setMessages($followUpMessages)
@@ -2269,11 +2285,26 @@ class StreamService
                 }
 
             } else {
+            try {
                 $data = $client->setStream(true)
+                    ->setModel($driver->enum()->value)
                     ->setSystem($system)
                     ->setMessages(array_values($historyMessages))
                     ->stream()
                     ->body();
+            } catch (Throwable $exception) {
+                Log::error('[DZEVA] Hikima provider connection failed', [
+                    'backend_model' => $driver->enum()->value,
+                    'error'         => $exception->getMessage(),
+                ]);
+
+                $this->emitModelUnavailable('Hikima');
+                echo "event: stop\n";
+                echo "data: [DONE]\n\n";
+                $this->safeFlush();
+
+                return;
+            }
                 foreach (explode("\n", $data) as $chunk) {
                     if (strlen($chunk) < 6) {
                         continue;

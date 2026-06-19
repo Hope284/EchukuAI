@@ -3,11 +3,14 @@
 namespace App\Extensions\MarketingBot\System\Services\Whatsapp;
 
 use App\Extensions\MarketingBot\System\Enums\CampaignStatus;
+use App\Extensions\MarketingBot\System\Models\CampaignMessageAnalytic;
 use App\Extensions\MarketingBot\System\Models\MarketingConversation;
 use App\Extensions\MarketingBot\System\Models\MarketingMessageHistory;
 use App\Extensions\MarketingBot\System\Models\Whatsapp\ContactList;
 use App\Extensions\MarketingBot\System\Models\Whatsapp\WhatsappChannel;
 use App\Extensions\MarketingBot\System\Services\Common\Traits\HasMarketingCampaign;
+use App\Extensions\MarketingBot\System\Services\MarketingBotLimitService;
+use App\Models\User;
 use Exception;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -19,6 +22,8 @@ class WhatsappSenderService
     use HasMarketingCampaign;
 
     public ?WhatsappChannel $whatsappChannel = null;
+
+    public ?MarketingBotLimitService $limitService = null;
 
     public function setWhatsappChannel($id): self
     {
@@ -45,6 +50,13 @@ class WhatsappSenderService
             throw new Exception('Whatsapp channel not found for user ID: ' . $marketingCampaign->getAttribute('user_id'));
         }
 
+        $user = User::find($marketingCampaign->getAttribute('user_id'));
+        $this->limitService = new MarketingBotLimitService($user);
+
+        if (! $this->limitService->canAccessChannel('whatsapp')) {
+            throw new Exception('WhatsApp channel is not enabled in your current plan.');
+        }
+
         $contacts = $marketingCampaign->getAttribute('contacts');
 
         $segments = $marketingCampaign->getAttribute('segments');
@@ -58,7 +70,6 @@ class WhatsappSenderService
                     $query->whereIn('segment_id', $segments);
                 });
             })
-            ->select('phone')
             ->get();
 
         // Here you would implement the logic to send the campaign to the contacts
@@ -66,7 +77,10 @@ class WhatsappSenderService
 
         if ($contactList->count()) {
             foreach ($contactList as $contact) {
-                // Send message to each contact
+                if (! $this->limitService->canSendMessage()) {
+                    break;
+                }
+
                 $this->sendMessageToContact($contact, $marketingCampaign->getAttribute('content'), $marketingCampaign);
             }
         }
@@ -75,11 +89,29 @@ class WhatsappSenderService
         $marketingCampaign->update(['status' => CampaignStatus::published]);
     }
 
-    public function sendMessageToContact(ContactList $contactList, string $content, $marketingCampaign): void
+    public function sendMessageToContact(ContactList $contactList, ?string $content, $marketingCampaign): void
     {
         try {
+            $templateName = $marketingCampaign->getAttribute('meta_template_name');
 
-            $this->sendText($contactList->phone, $content, $marketingCampaign->getAttribute('image') ?: null);
+            $result = null;
+
+            if ($this->whatsappChannel->isMeta() && $templateName) {
+                $resolvedVariables = array_map(
+                    fn ($v) => $this->resolveContactTags((string) $v, $contactList),
+                    $marketingCampaign->getAttribute('meta_body_variables') ?? [],
+                );
+
+                $result = $this->sendTemplate(
+                    $contactList->phone,
+                    $templateName,
+                    $marketingCampaign->getAttribute('meta_template_language') ?? 'en_US',
+                    $resolvedVariables,
+                );
+            } else {
+                $resolvedContent = $content ? $this->resolveContactTags($content, $contactList) : $content;
+                $result = $this->sendText($contactList->phone, $resolvedContent, $marketingCampaign->getAttribute('image') ?: null);
+            }
 
             $conversation = $this->updateOrCreateMarketingConversation($contactList->phone);
 
@@ -88,13 +120,28 @@ class WhatsappSenderService
                 'message_id'      => random_int(100000000, 999999999),
                 'model'           => null,
                 'role'            => 'user',
-                'message'         => $content,
+                'message'         => $content ?? $marketingCampaign->getAttribute('meta_template_name'),
                 'media_url'       => $marketingCampaign->getAttribute('image'),
                 'type'            => 'default',
                 'message_type'    => 'text',
                 'content_type'    => 'text',
                 'created_at'      => now(),
             ]);
+
+            $wamid = $result['properties']['messages'][0]['id'] ?? null;
+
+            if ($this->whatsappChannel->isMeta() && $wamid) {
+                CampaignMessageAnalytic::query()->create([
+                    'campaign_id'        => $marketingCampaign->getKey(),
+                    'meta_message_id'    => $wamid,
+                    'recipient_phone'    => $contactList->phone,
+                    'meta_template_name' => $marketingCampaign->getAttribute('meta_template_name'),
+                    'status'             => 'sent',
+                    'sent_at'            => now(),
+                ]);
+            }
+
+            $this->limitService?->incrementMonthlyMessages();
         } catch (Exception $exception) {
         }
     }
@@ -120,8 +167,24 @@ class WhatsappSenderService
             ]);
     }
 
+    /**
+     * @param  array<int, string>|null  $bodyVariables
+     */
+    public function sendTemplate(string $receiver, string $templateName, string $language, ?array $bodyVariables = []): array
+    {
+        return app(MetaWhatsappSenderService::class)
+            ->setWhatsappChannel($this->whatsappChannel)
+            ->sendTemplate($receiver, $templateName, $language, $bodyVariables ?? []);
+    }
+
     public function sendText($receiver, $message, $mediaUrl = null): array
     {
+        if ($this->whatsappChannel->isMeta()) {
+            return app(MetaWhatsappSenderService::class)
+                ->setWhatsappChannel($this->whatsappChannel)
+                ->sendText($receiver, $message, $mediaUrl);
+        }
+
         $client = $this->client();
 
         $from = $this->whatsappChannel->isSandbox()
@@ -157,6 +220,15 @@ class WhatsappSenderService
                 'status'  => false,
             ];
         }
+    }
+
+    private function resolveContactTags(string $value, ContactList $contact): string
+    {
+        return str_replace(
+            ['{first_name}', '{last_name}', '{phone}'],
+            [$contact->name ?? '', $contact->last_name ?? '', $contact->phone ?? ''],
+            $value,
+        );
     }
 
     public function receiverCheck($receiver)

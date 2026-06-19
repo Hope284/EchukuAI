@@ -135,6 +135,13 @@
                         {{ __('Generate Video') }}
                     </x-button>
                 </form>
+
+                <div
+                    x-data
+                    x-init="$nextTick(() => $dispatch('generator-changed', { generator: '{{ $videoEntity }}', quantity: 1, _force: Date.now() }))"
+                >
+                    <x-cost-preview class="w-full justify-end" />
+                </div>
             </div>
 
             {{-- Right Panel: Results --}}

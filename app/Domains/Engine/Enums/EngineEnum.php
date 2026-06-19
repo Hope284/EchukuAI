@@ -7,6 +7,7 @@ namespace App\Domains\Engine\Enums;
 use App\Domains\Engine\Drivers\AiMlMinimaxAIEngineDriver;
 use App\Domains\Engine\Drivers\AnthropicEngineDriver;
 use App\Domains\Engine\Drivers\AzureEngineDriver;
+use App\Domains\Engine\Drivers\CaptionsEngineDriver;
 use App\Domains\Engine\Drivers\ClipDropEngineDriver;
 use App\Domains\Engine\Drivers\CreatifyEngineDriver;
 use App\Domains\Engine\Drivers\DeepSeekAIEngineDriver;
@@ -114,6 +115,8 @@ enum EngineEnum: string implements Contracts\WithStringBackedEnum
     case VIZARD = 'vizard';
     case KLAP = 'klap';
 
+    case CAPTIONS = 'captions';
+
     public function label(): string
     {
         return match ($this) {
@@ -149,6 +152,7 @@ enum EngineEnum: string implements Contracts\WithStringBackedEnum
             self::TOPVIEW                => __('Topview'),
             self::VIZARD                 => __('Vizard'),
             self::KLAP                   => __('Klap'),
+            self::CAPTIONS               => __('Captions'),
         };
     }
 
@@ -187,6 +191,7 @@ enum EngineEnum: string implements Contracts\WithStringBackedEnum
             self::AI_ML_MINIMAX    => AiMlMinimaxAIEngineDriver::class,
             self::OPEN_ROUTER      => OpenRouterEngineDriver::class,
             self::TOGETHER         => TogetherEngineDriver::class,
+            self::CAPTIONS         => CaptionsEngineDriver::class,
         };
     }
 
@@ -238,6 +243,7 @@ enum EngineEnum: string implements Contracts\WithStringBackedEnum
                 ...(EntityEnum::fromSlug($setting?->openai_default_model ?? EntityEnum::GPT_5_MINI->slug()) !== EntityEnum::GPT_5_MINI
                     ? [EntityEnum::GPT_5_MINI]
                     : []),
+                EntityEnum::GPT_REALTIME,
                 EntityEnum::GPT_4_O_REALTIME_PREVIEW,
                 EntityEnum::GPT_4_O_SEARCH_PREVIEW,
                 EntityEnum::GPT_4_O_MINI_SEARCH_PREVIEW,
@@ -360,6 +366,7 @@ enum EngineEnum: string implements Contracts\WithStringBackedEnum
             self::HEYGEN            => [EntityEnum::HEYGEN],
             self::PEBBLELY          => [EntityEnum::PEBBLELY],
             self::TOGETHER          => [EntityEnum::BLACK_FOREST_LABS_FLUX_1_SCHNELL],
+            self::CAPTIONS          => [EntityEnum::AI_CAPTIONS],
             default                 => throw new Exception('No default model found for engine ' . $this->value),
         };
     }

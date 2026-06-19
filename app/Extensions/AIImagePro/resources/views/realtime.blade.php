@@ -359,6 +359,7 @@
                     class="pointer-events-none absolute inset-x-0 bottom-0 z-10 p-5 sm:pb-12"
                     x-ref="promptBar"
                 >
+                    <x-cost-preview class="pointer-events-auto mx-auto mt-0 mb-2 w-[min(595px,100%)] justify-end" />
                     <form
                         class="pointer-events-auto mx-auto flex w-[min(595px,100%)] items-center gap-1 rounded-2xl bg-surface-background pe-5 shadow-2xl shadow-black/10 transition focus-within:ring-2 focus-within:ring-primary/10 dark:border md:rounded-3xl"
                         @submit.prevent="changePrompt"
@@ -480,6 +481,13 @@
                                 this.panX = 0;
                                 this.panY = 0;
                             }
+                        });
+
+                        // Dispatch generator for cost preview
+                        this.$nextTick(() => {
+                            this.$dispatch('generator-changed', {
+                                generator: '{{ \App\Domains\Entity\Enums\EntityEnum::BLACK_FOREST_LABS_FLUX_1_SCHNELL->value }}',
+                            });
                         });
                     },
 

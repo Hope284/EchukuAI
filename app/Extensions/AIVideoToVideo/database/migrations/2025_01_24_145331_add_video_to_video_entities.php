@@ -1,5 +1,6 @@
 <?php
 
+use App\Domains\Entity\Enums\EntityEnum;
 use App\Domains\Entity\Models\Entity;
 use App\Enums\StatusEnum;
 use Illuminate\Database\Migrations\Migration;
@@ -7,10 +8,10 @@ use Illuminate\Database\Migrations\Migration;
 return new class extends Migration
 {
     public static $data = [
-        \App\Domains\Entity\Enums\EntityEnum::VIDEO_UPSCALER,
-        \App\Domains\Entity\Enums\EntityEnum::COGVIDEOX_5B,
-        \App\Domains\Entity\Enums\EntityEnum::ANIMATEDIFF_V2V,
-        \App\Domains\Entity\Enums\EntityEnum::FAST_ANIMATEDIFF_TURBO,
+        EntityEnum::VIDEO_UPSCALER,
+        EntityEnum::COGVIDEOX_5B,
+        EntityEnum::ANIMATEDIFF_V2V,
+        EntityEnum::FAST_ANIMATEDIFF_TURBO,
     ];
 
     public function up(): void

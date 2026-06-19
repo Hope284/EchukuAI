@@ -70,6 +70,7 @@
         <div
             class="lqd-ugc-creator flex flex-wrap items-start gap-10 lg:flex-nowrap"
             x-data="ugcCreator({{ json_encode($ugcCreatorInitial) }})"
+            x-init="$nextTick(() => { const m = models.find(m => m.value === defaultModel); if (m?.entity) $dispatch('generator-changed', { generator: m.entity, quantity: 1 }); })"
         >
             {{-- Left column — form --}}
             <div class="w-full lg:sticky lg:top-1 lg:w-[35%] lg:shrink-0">
@@ -301,6 +302,7 @@
                                 :value="$defaultModel"
                                 x-modelable="selected"
                                 x-model="form.model"
+                                @change="() => { const m = models.find(m => m.value === form.model); if (m?.entity) $dispatch('generator-changed', { generator: m.entity, quantity: 1, _force: Date.now() }); }"
                             >
                                 @foreach ($models as $model)
                                     <x-forms.selectbox-option
@@ -342,6 +344,8 @@
                             <span x-show="!submitting">{{ __('Generate') }}</span>
                             <span x-show="submitting" x-cloak>{{ __('Submitting…') }}</span>
                         </x-button>
+
+                        <x-cost-preview class="w-full justify-end" />
 
                         <p
                             class="m-0 text-center text-3xs text-label"

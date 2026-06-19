@@ -38,6 +38,7 @@ class UGCCreatorController extends Controller
                 'label'          => $meta['label'],
                 'supports_audio' => $meta['supports_audio'],
                 'max_refs'       => $meta['max_refs'] ?? 1,
+                'entity'         => $meta['entity']?->value,
             ])
             ->values()
             ->all();

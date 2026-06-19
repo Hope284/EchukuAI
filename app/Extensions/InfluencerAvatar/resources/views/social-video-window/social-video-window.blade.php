@@ -139,6 +139,10 @@
             >
                 {{ __('Generate Video') }}
             </x-button>
+
+            <div>
+                <x-cost-preview class="w-full justify-end" />
+            </div>
         </div>
     </div>
 </div>
@@ -146,6 +150,12 @@
 
 @push('script')
     <script>
+        document.addEventListener('alpine:initialized', () => {
+            window.dispatchEvent(new CustomEvent('generator-changed', {
+                detail: { generator: '{{ \App\Domains\Entity\Enums\EntityEnum::VEED->value }}', quantity: 1, _force: Date.now() }
+            }));
+        });
+
         document.addEventListener('alpine:init', () => {
             Alpine.data('socialVideoData', () => ({
                 // scriptContent

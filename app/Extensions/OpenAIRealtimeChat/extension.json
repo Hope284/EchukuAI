@@ -1,6 +1,6 @@
 {
-  "name": "OpenAI realtime chat",
+  "name": "Ohùn Live Voice",
   "type": "extension",
-  "version": "1.9",
-  "description": "OpenAI realtime chat extension for DZEVA"
+  "version": "1.10",
+  "description": "Realtime Ohùn voice conversations for DZEVA"
 }

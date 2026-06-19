@@ -6,6 +6,7 @@ use App\Extensions\MarketingBot\System\Http\Requests\Campaign\CampaignWhatsappRe
 use App\Extensions\MarketingBot\System\Models\MarketingCampaign;
 use App\Extensions\MarketingBot\System\Models\Whatsapp\Contact;
 use App\Extensions\MarketingBot\System\Models\Whatsapp\Segment;
+use App\Extensions\MarketingBot\System\Models\Whatsapp\WhatsappChannel;
 use App\Helpers\Classes\Helper;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
@@ -36,14 +37,15 @@ class WhatsappCampaignController extends Controller
     public function create(): View
     {
         return view('marketing-bot::whatsapp-campaign.create', [
-            'title'            => trans('New WhatsApp Campaign'),
-            'action'           => route('dashboard.user.marketing-bot.whatsapp-campaign.store'),
-            'method'           => 'POST',
-            'item'             => new MarketingCampaign,
-            'contacts'         => Contact::my()->get(),
-            'segments'         => Segment::my()->get(),
-            'selectedContact'  => [],
-            'selectedSegment'  => [],
+            'title'           => trans('New WhatsApp Campaign'),
+            'action'          => route('dashboard.user.marketing-bot.whatsapp-campaign.store'),
+            'method'          => 'POST',
+            'item'            => new MarketingCampaign,
+            'contacts'        => Contact::my()->get(),
+            'segments'        => Segment::my()->get(),
+            'selectedContact' => [],
+            'selectedSegment' => [],
+            'whatsapp'        => WhatsappChannel::query()->where('user_id', Auth::id())->first(),
         ]);
     }
 
@@ -80,6 +82,7 @@ class WhatsappCampaignController extends Controller
             'segments'        => Segment::query()->where('user_id', Auth::id())->get(),
             'selectedContact' => $whatsappCampaign->getAttribute('contacts') ?: [],
             'selectedSegment' => $whatsappCampaign->getAttribute('segments') ?: [],
+            'whatsapp'        => WhatsappChannel::query()->where('user_id', Auth::id())->first(),
         ]);
     }
 

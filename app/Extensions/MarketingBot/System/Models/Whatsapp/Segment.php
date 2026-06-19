@@ -2,11 +2,20 @@
 
 namespace App\Extensions\MarketingBot\System\Models\Whatsapp;
 
+use Database\Factories\SegmentFactory;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Segment extends Model
 {
+    use HasFactory;
+
+    protected static function newFactory(): SegmentFactory
+    {
+        return SegmentFactory::new();
+    }
+
     protected $table = 'ext_segments';
 
     protected $fillable = [

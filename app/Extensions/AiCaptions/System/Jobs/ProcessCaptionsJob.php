@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Extensions\AiCaptions\System\Jobs;
 
+use App\Domains\Entity\Enums\EntityEnum;
+use App\Domains\Entity\Facades\Entity;
 use App\Extensions\AiCaptions\System\Models\AiCaptionVideo;
 use App\Extensions\AiCaptions\System\Services\CaptionsApiService;
 use Illuminate\Bus\Queueable;
@@ -13,6 +15,7 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Throwable;
 
 /**
  * Polls the Captions API for a submitted video and updates its status.
@@ -79,6 +82,8 @@ class ProcessCaptionsJob implements ShouldQueue
             'usage_deducted' => true,
         ]);
 
+        $this->deductSharedCredits($entry);
+
         DownloadCaptionedVideoJob::dispatch($entry->id, $outputUrl);
     }
 
@@ -104,5 +109,22 @@ class ProcessCaptionsJob implements ShouldQueue
 
         // Re-dispatch after a delay so the entry keeps moving toward completion.
         static::dispatch($entry->id)->delay(now()->addSeconds(15));
+    }
+
+    private function deductSharedCredits(AiCaptionVideo $entry): void
+    {
+        try {
+            $minutes = max(1, (int) ceil(($entry->duration_seconds ?? 60) / 60));
+            Entity::driver(EntityEnum::AI_CAPTIONS)
+                ->forUser($entry->user_id)
+                ->inputMinute($minutes)
+                ->calculateCredit()
+                ->decreaseCredit(1.0);
+        } catch (Throwable $e) {
+            Log::warning('AiCaptions: SharedCredit deduction failed', [
+                'id'    => $entry->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 }

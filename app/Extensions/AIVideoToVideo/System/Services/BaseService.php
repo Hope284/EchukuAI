@@ -8,6 +8,7 @@ use App\Models\UserOpenai;
 use Exception;
 use GuzzleHttp\Client;
 use Illuminate\Http\File;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -53,7 +54,7 @@ abstract class BaseService
 
     abstract public function generate();
 
-    public function checked(): array|\Illuminate\Http\JsonResponse
+    public function checked(): array|JsonResponse
     {
         $openai = $this->getOpenai();
 

@@ -30,6 +30,7 @@
 >
     <div class="container">
         @include('creative-suite::home.includes.generator-forms')
+        <x-cost-preview />
         @include('creative-suite::home.includes.recent-grid')
         @include('creative-suite::home.includes.templates-grid')
         @include('creative-suite::home.includes.predefined-artboard')

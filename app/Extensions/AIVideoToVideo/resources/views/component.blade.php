@@ -179,6 +179,21 @@
                 {{ __('Generate') }}
                 <x-tabler-arrow-right class="size-5" />
             </x-button>
+
+            <div
+                x-data
+                x-init="
+                    $nextTick(() => {
+                        const model = document.getElementById('model')?.value;
+                        if (model) $dispatch('generator-changed', { generator: model });
+                    });
+                    document.getElementById('model')?.addEventListener('change', (e) => {
+                        $dispatch('generator-changed', { generator: e.target.value, _force: Date.now() });
+                    });
+                "
+            >
+                <x-cost-preview class="w-full" />
+            </div>
         </form>
     </x-card>
 

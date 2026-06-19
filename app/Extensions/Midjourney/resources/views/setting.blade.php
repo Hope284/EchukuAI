@@ -13,19 +13,16 @@
 
 @section('settings')
     <form
+        id="settings_form"
         method="post"
         action="{{ route('dashboard.admin.settings.piapi-ai') }}"
-        id="settings_form"
         enctype="multipart/form-data"
     >
         @csrf
         <h3 class="mb-[25px] text-[20px]">{{ __('PiAPI Settings') }}</h3>
         <div class="row">
             <!-- TODO OPENAI API KEY -->
-            <x-card
-                class="mb-3 max-md:text-center"
-                szie="lg"
-            >
+            <x-card class="mb-3 max-md:text-center">
 
                 <div class="col-md-12">
                     <div
@@ -38,10 +35,13 @@
                             name="piapi_ai_api_secret"
                             multiple
                         >
-                            @if($app_is_demo)
-                                <option selected value="*********************">*********************</option>
+                            @if ($app_is_demo)
+                                <option
+                                    selected
+                                    value="*********************"
+                                >*********************</option>
                             @else
-                                @foreach (explode(',', setting('piapi_ai_api_secret','api key')) as $secret)
+                                @foreach (explode(',', setting('piapi_ai_api_secret', 'api key')) as $secret)
                                     <option
                                         value="{{ $secret }}"
                                         selected
@@ -62,34 +62,34 @@
                     </div>
                 </div>
 
-				<div class="col-md-12">
-					<div class="col-md-12">
-						<div class="mb-3">
-							<x-card
-								class="w-full"
-								size="sm"
-							>
-								<x-forms.input
-									tooltip="{{ trans('If you enable this setting, multiple variations matching your prompt will also be generated.') }}"
-									id="midjourney_variation"
-									name="midjourney_variation"
-									type="checkbox"
-									switcher
-									type="checkbox"
-									:checked="setting('midjourney_variation', '0') == '1'"
-									label="{{ __('Generate Multiple Variations') }}"
-								>
-									<x-badge
-										class="ms-2 text-2xs"
-										variant="secondary"
-									>
-										@lang('New')
-									</x-badge>
-								</x-forms.input>
-							</x-card>
-						</div>
-					</div>
-				</div>
+                <div class="col-md-12">
+                    <div class="col-md-12">
+                        <div class="mb-3">
+                            <x-card
+                                class="w-full"
+                                size="sm"
+                            >
+                                <x-forms.input
+                                    id="midjourney_variation"
+                                    tooltip="{{ trans('If you enable this setting, multiple variations matching your prompt will also be generated.') }}"
+                                    name="midjourney_variation"
+                                    type="checkbox"
+                                    switcher
+                                    type="checkbox"
+                                    :checked="setting('midjourney_variation', '0') == '1'"
+                                    label="{{ __('Generate Multiple Variations') }}"
+                                >
+                                    <x-badge
+                                        class="ms-2 text-2xs"
+                                        variant="secondary"
+                                    >
+                                        @lang('New')
+                                    </x-badge>
+                                </x-forms.input>
+                            </x-card>
+                        </div>
+                    </div>
+                </div>
             </x-card>
         </div>
         <button

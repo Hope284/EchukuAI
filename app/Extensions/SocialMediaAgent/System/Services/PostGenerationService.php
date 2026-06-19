@@ -3,6 +3,7 @@
 namespace App\Extensions\SocialMediaAgent\System\Services;
 
 use App\Domains\Entity\Enums\EntityEnum;
+use App\Domains\Entity\Facades\Entity;
 use App\Extensions\SocialMedia\System\Models\SocialMediaPlatform;
 use App\Extensions\SocialMediaAgent\System\Models\SocialMediaAgent;
 use App\Extensions\SocialMediaAgent\System\Models\SocialMediaAgentPost;
@@ -147,6 +148,13 @@ class PostGenerationService
             }
 
             $content = $response->json('choices.0.message.content');
+
+            if ($content) {
+                Entity::driver(EntityEnum::fromSlug($this->model))
+                    ->input($content)
+                    ->calculateCredit()
+                    ->decreaseCredit();
+            }
 
             $post = $this->parsePostContent($content, $agent, $generationSettings);
 

@@ -144,6 +144,15 @@
                             </x-forms.input>
                         </div>
 
+                        <div
+                            x-init="
+                                $nextTick(() => $dispatch('generator-changed', { generator: '{{ \App\Extensions\AIPhotoshoot\System\Services\AIPhotoshootImageModelRegistry::getDefaultModel()->value }}', quantity: numImages }));
+                                $watch('numImages', val => $dispatch('generator-changed', { generator: '{{ \App\Extensions\AIPhotoshoot\System\Services\AIPhotoshootImageModelRegistry::getDefaultModel()->value }}', quantity: val, _force: Date.now() }));
+                            "
+                        >
+                            <x-cost-preview class="w-full justify-end" />
+                        </div>
+
                         <x-button
                             class="w-full"
                             size="xl"

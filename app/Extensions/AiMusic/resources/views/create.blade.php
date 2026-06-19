@@ -98,5 +98,12 @@ A brilliance that will grow`">
 		@endif
 	</form>
 
+	<div
+		x-data
+		x-init="$nextTick(() => $dispatch('generator-changed', { generator: '{{ \App\Models\Setting::getCache()?->ai_music_model ?? \App\Domains\Entity\Enums\EntityEnum::MUSIC_01->slug() }}', _force: Date.now() }))"
+	>
+		<x-cost-preview class="w-full justify-end" />
+	</div>
+
 	<div id="responseMessage" class="mt-3"></div>
 @endsection

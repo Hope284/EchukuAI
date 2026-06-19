@@ -44,6 +44,37 @@ class WhatsappReplyService
         );
     }
 
+    public function sendMetaReply(string $body, string $from, $marketingConversation): void
+    {
+        $campaign = $this->findCampaign();
+
+        if (! $campaign?->ai_reply) {
+            return;
+        }
+
+        $whatsappSenderService = $this->whatsappSenderService();
+
+        $whatsappSenderService->setWhatsappChannel(
+            $this->whatsappChannel->getAttribute('user_id')
+        );
+
+        $response = $this->generateResponse(
+            prompt: $body,
+            marketingConversation: $marketingConversation,
+            campaign: $campaign
+        );
+
+        $this->sendMessageToContact(
+            conversation: $marketingConversation,
+            content: $response
+        );
+
+        $whatsappSenderService->sendText(
+            receiver: $from,
+            message: $response,
+        );
+    }
+
     public function sendMessageToContact(
         $conversation,
         string $content,

@@ -2,11 +2,20 @@
 
 namespace App\Extensions\MarketingBot\System\Models\Whatsapp;
 
+use Database\Factories\ContactFactory;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Contact extends Model
 {
+    use HasFactory;
+
+    protected static function newFactory(): ContactFactory
+    {
+        return ContactFactory::new();
+    }
+
     protected $table = 'ext_contacts';
 
     protected $fillable = [

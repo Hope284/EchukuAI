@@ -77,21 +77,26 @@ class SubscriptionPlanCreate extends Component
             'plan.hidden'                                     => 'boolean',
             'plan.max_subscribe'                              => 'integer|min:-1|nullable',
             'plan.multi_model_support'                        => 'nullable',
-            'plan.model_council_support'                      => 'nullable',
             'plan.reset_credits_on_renewal'                   => 'boolean',
             'plan.last_date'                                  => 'date|nullable',
             'plan.hidden_url'                                 => 'nullable',
             'plan.social_media_agent_limits.agents'           => 'nullable|integer|min:-1',
             'plan.social_media_agent_limits.monthly_posts'    => 'nullable|integer|min:-1',
-            'plan.social_media_automation_limits.automations' => 'nullable|integer|min:-1',
             'plan.blogpilot_limits.agents'                    => 'nullable|integer|min:-1',
             'plan.blogpilot_limits.monthly_posts'             => 'nullable|integer|min:-1',
             'plan.voice_call_seconds_limit'                   => 'nullable|integer|min:-1',
-            'plan.deep_research_request_limit'                => 'nullable|integer|min:-1',
-            'plan.ugc_videos_limit'                           => 'nullable|integer|min:-1',
-            'plan.video_dubbing_seconds_limit'                => 'nullable|integer|min:-1',
-            'plan.ai_captions_access'                         => 'nullable|boolean',
-            'plan.ai_captions_minutes'                        => 'nullable|integer|min:-1',
+            'plan.marketing_bot_limits.max_contacts'          => 'nullable|integer|min:-1',
+            'plan.marketing_bot_limits.monthly_messages'      => 'nullable|integer|min:-1',
+            'plan.marketing_bot_limits.channels'              => 'nullable|array',
+            'plan.marketing_bot_limits.channels.*'            => 'nullable|string|in:whatsapp,telegram',
+            'plan.ai_agent_workflow_limit'                    => 'nullable|integer|min:-1',
+            'plan.ai_agent_channel_limit'                     => 'nullable|integer|min:-1',
+            'plan.ai_agent_message_limit'                     => 'nullable|integer|min:-1',
+            'plan.ai_agent_memory_limit'                      => 'nullable|integer|min:-1',
+            'plan.social_media_automation_limits.automations' => 'nullable|integer|min:-1',
+            'plan.credit_system_type'                         => 'required_if:step,1|in:separated,shared',
+            'plan.shared_credits_amount'                      => 'required_if:plan.credit_system_type,shared|nullable|numeric|min:0',
+            'plan.model_council_support'                      => 'nullable|boolean',
         ],
             // Step 2
             $this->rulesOfPlanAiTools(),
@@ -166,10 +171,14 @@ class SubscriptionPlanCreate extends Component
         }
 
         $isSensitiveDataChanged = $this->isSensitiveDataChanged();
-        $this->changePlanValuesWithSuppliedEntities();
+        if (! $this->plan->isSharedCreditPlan()) {
+            $this->changePlanValuesWithSuppliedEntities();
+        }
         $this->normalizeSocialMediaAgentLimits();
         $this->normalizeBlogPilotLimits();
+        $this->normalizeMarketingBotLimits();
         $this->normalizeSocialMediaAutomationLimits();
+        $this->normalizeAiAgentLimits();
         $this->plan->save();
         if ($isSensitiveDataChanged) {
             PaymentProcessController::saveGatewayProducts($this->plan, $this->gatewaysToCreatePriceIds);
@@ -277,6 +286,35 @@ class SubscriptionPlanCreate extends Component
         }
 
         $this->plan->social_media_automation_limits = $limits;
+    }
+
+    private function normalizeMarketingBotLimits(): void
+    {
+        $limits = (array) ($this->plan->marketing_bot_limits ?? []);
+
+        foreach (['max_contacts', 'monthly_messages'] as $key) {
+            $value = $limits[$key] ?? null;
+            if ($value === null || $value === '') {
+                $limits[$key] = -1;
+
+                continue;
+            }
+            $limits[$key] = max(-1, (int) $value);
+        }
+
+        if (empty($limits['channels'])) {
+            $limits['channels'] = ['whatsapp', 'telegram'];
+        }
+
+        $this->plan->marketing_bot_limits = $limits;
+    }
+
+    private function normalizeAiAgentLimits(): void
+    {
+        foreach (['ai_agent_workflow_limit', 'ai_agent_channel_limit', 'ai_agent_message_limit', 'ai_agent_memory_limit'] as $column) {
+            $value = $this->plan->{$column};
+            $this->plan->{$column} = ($value === null || $value === '') ? -1 : max(-1, (int) $value);
+        }
     }
 
     private function isSensitiveDataChanged(): bool

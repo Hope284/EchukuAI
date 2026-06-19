@@ -73,14 +73,21 @@ class DzevaPlanSeeder extends Seeder
     private function seedPublicEntityLabels(): void
     {
         foreach (DzevaModelCatalog::capabilities() as $capability) {
-            Entity::query()
-                ->where('key', $capability['entity']->value)
-                ->update([
+            $entity = Entity::query()->updateOrCreate(
+                ['key' => $capability['entity']->value],
+                [
+                    'engine'         => $capability['entity']->engine()->value,
                     'selected_title' => $capability['name'],
                     'title'          => $capability['name'] . ' - ' . $capability['capability'] . '. ' . $capability['description'],
                     'is_selected'    => true,
                     'status'         => StatusEnum::ENABLED->value,
-                ]);
+                ]
+            );
+
+            $entity->tokens()->firstOrCreate(
+                ['entity_id' => $entity->id],
+                ['type' => $capability['entity']->tokenType()->value]
+            );
         }
     }
 

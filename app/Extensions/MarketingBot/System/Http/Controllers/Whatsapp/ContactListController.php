@@ -6,10 +6,12 @@ use App\Extensions\MarketingBot\System\Http\Requests\ContactListRequest;
 use App\Extensions\MarketingBot\System\Models\Whatsapp\Contact;
 use App\Extensions\MarketingBot\System\Models\Whatsapp\ContactList;
 use App\Extensions\MarketingBot\System\Models\Whatsapp\Segment;
+use App\Extensions\MarketingBot\System\Services\MarketingBotLimitService;
 use App\Helpers\Classes\Helper;
 use App\Helpers\Classes\Localization;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 
 class ContactListController extends Controller
@@ -17,7 +19,9 @@ class ContactListController extends Controller
     public function index()
     {
         return view('marketing-bot::contact-list.index', [
-            'items' => ContactList::query()->where('user_id', Auth::id())->paginate(10),
+            'items'    => ContactList::query()->where('user_id', Auth::id())->paginate(10),
+            'segments' => Segment::my()->get(),
+            'contacts' => Contact::my()->get(),
         ]);
     }
 
@@ -36,12 +40,21 @@ class ContactListController extends Controller
         ]);
     }
 
-    public function store(ContactListRequest $request): \Illuminate\Http\RedirectResponse
+    public function store(ContactListRequest $request): RedirectResponse
     {
         if (Helper::appIsDemo()) {
             return back()->with([
                 'status'  => 'error',
                 'message' => trans('This feature is disabled in demo mode.'),
+            ]);
+        }
+
+        $limitService = new MarketingBotLimitService(Auth::user());
+
+        if (! $limitService->canAddContact()) {
+            return back()->with([
+                'status'  => 'error',
+                'message' => trans('You have reached your contact limit. Please upgrade your plan to add more contacts.'),
             ]);
         }
 
@@ -75,7 +88,7 @@ class ContactListController extends Controller
         ]);
     }
 
-    public function update(ContactListRequest $request, ContactList $contactList): \Illuminate\Http\RedirectResponse
+    public function update(ContactListRequest $request, ContactList $contactList): RedirectResponse
     {
         $this->authorize('update', $contactList);
 

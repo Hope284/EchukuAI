@@ -11,12 +11,15 @@ use App\Http\Controllers\Admin\Config\PremiumAdvantagesController;
 use App\Http\Controllers\Admin\Config\SeoController;
 use App\Http\Controllers\Admin\Config\SmtpController;
 use App\Http\Controllers\Admin\Config\StorageController;
+use App\Http\Controllers\Admin\Finance\CreditMigrationController;
 use App\Http\Controllers\Admin\ElevenLabsLibraryController;
 use App\Http\Controllers\Admin\Finance\PlanController;
+use App\Http\Controllers\Admin\Finance\SharedCreditCostController;
 use App\Http\Controllers\Admin\Finance\TokenPackPlanController;
 use App\Http\Controllers\Admin\Frontend\ChannelSettingController;
 use App\Http\Controllers\Admin\Frontend\ContentBoxController;
 use App\Http\Controllers\Admin\Frontend\CurtainController;
+use App\Http\Controllers\Admin\UserSharedCreditController;
 use App\Http\Controllers\AdsController;
 use App\Http\Controllers\AdvertisController;
 use App\Http\Controllers\AIArticleWizardController;
@@ -507,6 +510,11 @@ Route::middleware(['auth', 'updateUserActivity'])
 
                     Route::get('deletion/requests', [AdminController::class, 'deletionRequests'])->name('deletion.reqs');
                     Route::post('deletion/requests/{id}', [AdminController::class, 'deletionRequest'])->name('deletion.req');
+
+                    Route::post('{user}/shared-credit/adjust', [UserSharedCreditController::class, 'adjust'])
+                        ->name('shared-credit.adjust');
+                    Route::put('{user}/credit-type', [UserSharedCreditController::class, 'updateType'])
+                        ->name('credit-type.update');
                 });
 
                 // Announcements
@@ -606,6 +614,18 @@ Route::middleware(['auth', 'updateUserActivity'])
                     Route::prefix('mobile')->name('mobile.')->group(function () {
                         Route::match(['get', 'post'], '/', [MobilePaymentsController::class, 'mobilePlanIdSettings'])->name('index');
                     });
+
+                    // Shared Credit Costs
+                    Route::prefix('shared-credit-costs')->name('shared-credit-costs.')->group(function () {
+                        Route::get('/', [SharedCreditCostController::class, 'index'])->name('index');
+                        Route::post('/', [SharedCreditCostController::class, 'store'])->name('store');
+                        Route::put('/{cost}', [SharedCreditCostController::class, 'update'])->name('update');
+                        Route::delete('/{cost}', [SharedCreditCostController::class, 'destroy'])->name('destroy');
+                    });
+
+                    Route::get('credit-migration', [CreditMigrationController::class, 'index'])
+                        ->name('credit-migration.index');
+
                 });
 
                 // Testimonials

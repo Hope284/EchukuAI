@@ -3,6 +3,7 @@
 namespace App\Extensions\ProductPhotography\System\Services;
 
 use App\Helpers\Classes\Helper;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -68,7 +69,7 @@ trait PebblelyTrait
     {
         $imageContent = '';
 
-        if ($image instanceof \Illuminate\Http\UploadedFile) {
+        if ($image instanceof UploadedFile) {
             $imageContent = file_get_contents($image->getRealPath());
         } elseif (is_array($image) && isset($image['tmp_name'])) {
             $imageContent = file_get_contents($image['tmp_name']);

@@ -1379,7 +1379,7 @@ class SocialMediaAgentController extends Controller
         $platforms = [
             ['id' => 1, 'platform' => 'instagram', 'credentials' => ['username' => '@designstudio']],
             ['id' => 2, 'platform' => 'facebook', 'credentials' => ['username' => 'DZEVA Official']],
-            ['id' => 3, 'platform' => 'linkedin', 'credentials' => ['username' => 'DZEVA Inc.']],
+            ['id' => 3, 'platform' => 'linkedin', 'credentials' => ['username' => 'DZEVA']],
         ];
 
         $agents = [
@@ -1389,7 +1389,7 @@ class SocialMediaAgentController extends Controller
         ];
 
         $contents = [
-            'Discover how AI is transforming the way we create content. Stay ahead of the curve with DZEVA!',
+            'Discover how AI is transforming the way we create content. Stay ahead with DZEVA.',
             'New feature alert! Our latest update makes content creation 10x faster. Try it now.',
             'Behind the scenes of our latest product development. Exciting things are coming!',
             'Tips for growing your social media presence with AI-powered tools.',

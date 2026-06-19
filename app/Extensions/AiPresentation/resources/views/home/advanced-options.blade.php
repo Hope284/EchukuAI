@@ -15,6 +15,7 @@
         selectedImageSourceLabel: '',
         selectedImageSourceValue: '',
         selectedAiImageModel: '',
+        selectedAiImageModelLabel: '',
         selectedCardDimensions: '',
         selectedWorkspaceAccess: '',
         selectedExternalAccess: '',
@@ -465,7 +466,7 @@
                     variant="outline"
                 >
                     <x-tabler-brain class="size-4" />
-                    <span x-text="selectedAiImageModel || '@lang('AI Image Model')'"></span>
+                    <span x-text="selectedAiImageModelLabel || '@lang('AI Image Model')'"></span>
                 </x-slot:trigger>
                 <x-slot:dropdown
                     class="max-h-60 min-w-[150px] overflow-y-auto rounded-lg bg-background p-2 shadow-lg"
@@ -473,156 +474,156 @@
                     <a
                         class="block border-b px-3 py-2 text-2xs font-medium text-heading-foreground transition-colors last:border-b-0 hover:bg-foreground/5"
                         href="#"
-                        @click.prevent="selectedAiImageModel = ''"
+                        @click.prevent="selectedAiImageModel = ''; selectedAiImageModelLabel = '{{ __('Auto') }}'"
                     >
                         @lang('Auto')
                     </a>
                     <a
                         class="block border-b px-3 py-2 text-2xs font-medium text-heading-foreground transition-colors last:border-b-0 hover:bg-foreground/5"
                         href="#"
-                        @click.prevent="selectedAiImageModel = 'flux-1-quick'"
+                        @click.prevent="selectedAiImageModel = 'flux-1-quick'; selectedAiImageModelLabel = 'Taswira Haraka'"
                     >
-                        @lang('flux-1-quick')
+                        Taswira Haraka
                     </a>
                     <a
                         class="block border-b px-3 py-2 text-2xs font-medium text-heading-foreground transition-colors last:border-b-0 hover:bg-foreground/5"
                         href="#"
-                        @click.prevent="selectedAiImageModel = 'flux-kontext-fast'"
+                        @click.prevent="selectedAiImageModel = 'flux-kontext-fast'; selectedAiImageModelLabel = 'Taswira Muktadha'"
                     >
-                        @lang('flux-kontext-fast')
+                        Taswira Muktadha
                     </a>
                     <a
                         class="block border-b px-3 py-2 text-2xs font-medium text-heading-foreground transition-colors last:border-b-0 hover:bg-foreground/5"
                         href="#"
-                        @click.prevent="selectedAiImageModel = 'imagen-3-flash'"
+                        @click.prevent="selectedAiImageModel = 'imagen-3-flash'; selectedAiImageModelLabel = 'Taswira Picha'"
                     >
-                        @lang('imagen-3-flash')
+                        Taswira Picha
                     </a>
                     <a
                         class="block border-b px-3 py-2 text-2xs font-medium text-heading-foreground transition-colors last:border-b-0 hover:bg-foreground/5"
                         href="#"
-                        @click.prevent="selectedAiImageModel = 'luma-photon-flash-1'"
+                        @click.prevent="selectedAiImageModel = 'luma-photon-flash-1'; selectedAiImageModelLabel = 'Taswira Mwanga'"
                     >
-                        @lang('luma-photon-flash-1')
+                        Taswira Mwanga
                     </a>
                     <a
                         class="block border-b px-3 py-2 text-2xs font-medium text-heading-foreground transition-colors last:border-b-0 hover:bg-foreground/5"
                         href="#"
-                        @click.prevent="selectedAiImageModel = 'flux-1-pro'"
+                        @click.prevent="selectedAiImageModel = 'flux-1-pro'; selectedAiImageModelLabel = 'Taswira Sanaa'"
                     >
-                        @lang('flux-1-pro')
+                        Taswira Sanaa
                     </a>
                     <a
                         class="block border-b px-3 py-2 text-2xs font-medium text-heading-foreground transition-colors last:border-b-0 hover:bg-foreground/5"
                         href="#"
-                        @click.prevent="selectedAiImageModel = 'imagen-3-pro'"
+                        @click.prevent="selectedAiImageModel = 'imagen-3-pro'; selectedAiImageModelLabel = 'Taswira Ubunifu'"
                     >
-                        @lang('imagen-3-pro')
+                        Taswira Ubunifu
                     </a>
                     <a
                         class="block border-b px-3 py-2 text-2xs font-medium text-heading-foreground transition-colors last:border-b-0 hover:bg-foreground/5"
                         href="#"
-                        @click.prevent="selectedAiImageModel = 'ideogram-v3-turbo'"
+                        @click.prevent="selectedAiImageModel = 'ideogram-v3-turbo'; selectedAiImageModelLabel = 'Taswira Nembo'"
                     >
-                        @lang('ideogram-v3-turbo')
+                        Taswira Nembo
                     </a>
                     <a
                         class="block border-b px-3 py-2 text-2xs font-medium text-heading-foreground transition-colors last:border-b-0 hover:bg-foreground/5"
                         href="#"
-                        @click.prevent="selectedAiImageModel = 'luma-photon-1'"
+                        @click.prevent="selectedAiImageModel = 'luma-photon-1'; selectedAiImageModelLabel = 'Taswira Mwanga Pro'"
                     >
-                        @lang('luma-photon-1')
+                        Taswira Mwanga Pro
                     </a>
                     <a
                         class="block border-b px-3 py-2 text-2xs font-medium text-heading-foreground transition-colors last:border-b-0 hover:bg-foreground/5"
                         href="#"
-                        @click.prevent="selectedAiImageModel = 'leonardo-phoenix'"
+                        @click.prevent="selectedAiImageModel = 'leonardo-phoenix'; selectedAiImageModelLabel = 'Taswira Kipekee'"
                     >
-                        @lang('leonardo-phoenix')
+                        Taswira Kipekee
                     </a>
                     <a
                         class="block border-b px-3 py-2 text-2xs font-medium text-heading-foreground transition-colors last:border-b-0 hover:bg-foreground/5"
                         href="#"
-                        @click.prevent="selectedAiImageModel = 'flux-kontext-pro'"
+                        @click.prevent="selectedAiImageModel = 'flux-kontext-pro'; selectedAiImageModelLabel = 'Taswira Muktadha Pro'"
                     >
-                        @lang('flux-kontext-pro')
+                        Taswira Muktadha Pro
                     </a>
                     <a
                         class="block border-b px-3 py-2 text-2xs font-medium text-heading-foreground transition-colors last:border-b-0 hover:bg-foreground/5"
                         href="#"
-                        @click.prevent="selectedAiImageModel = 'ideogram-v3'"
+                        @click.prevent="selectedAiImageModel = 'ideogram-v3'; selectedAiImageModelLabel = 'Taswira Nembo Pro'"
                     >
-                        @lang('ideogram-v3')
+                        Taswira Nembo Pro
                     </a>
                     <a
                         class="block border-b px-3 py-2 text-2xs font-medium text-heading-foreground transition-colors last:border-b-0 hover:bg-foreground/5"
                         href="#"
-                        @click.prevent="selectedAiImageModel = 'imagen-4-pro'"
+                        @click.prevent="selectedAiImageModel = 'imagen-4-pro'; selectedAiImageModelLabel = 'Taswira Mwonekano'"
                     >
-                        @lang('imagen-4-pro')
+                        Taswira Mwonekano
                     </a>
                     <a
                         class="block border-b px-3 py-2 text-2xs font-medium text-heading-foreground transition-colors last:border-b-0 hover:bg-foreground/5"
                         href="#"
-                        @click.prevent="selectedAiImageModel = 'recraft-v3'"
+                        @click.prevent="selectedAiImageModel = 'recraft-v3'; selectedAiImageModelLabel = 'Taswira Usanifu'"
                     >
-                        @lang('recraft-v3')
+                        Taswira Usanifu
                     </a>
                     <a
                         class="block border-b px-3 py-2 text-2xs font-medium text-heading-foreground transition-colors last:border-b-0 hover:bg-foreground/5"
                         href="#"
-                        @click.prevent="selectedAiImageModel = 'gpt-image-1-medium'"
+                        @click.prevent="selectedAiImageModel = 'gpt-image-1-medium'; selectedAiImageModelLabel = 'Taswira Rangi'"
                     >
-                        @lang('gpt-image-1-medium')
+                        Taswira Rangi
                     </a>
                     <a
                         class="block border-b px-3 py-2 text-2xs font-medium text-heading-foreground transition-colors last:border-b-0 hover:bg-foreground/5"
                         href="#"
-                        @click.prevent="selectedAiImageModel = 'flux-1-ultra'"
+                        @click.prevent="selectedAiImageModel = 'flux-1-ultra'; selectedAiImageModelLabel = 'Taswira Sanaa Max'"
                     >
-                        @lang('flux-1-ultra')
+                        Taswira Sanaa Max
                     </a>
                     <a
                         class="block border-b px-3 py-2 text-2xs font-medium text-heading-foreground transition-colors last:border-b-0 hover:bg-foreground/5"
                         href="#"
-                        @click.prevent="selectedAiImageModel = 'imagen-4-ultra'"
+                        @click.prevent="selectedAiImageModel = 'imagen-4-ultra'; selectedAiImageModelLabel = 'Taswira Mwonekano Max'"
                     >
-                        @lang('imagen-4-ultra')
+                        Taswira Mwonekano Max
                     </a>
                     <a
                         class="block border-b px-3 py-2 text-2xs font-medium text-heading-foreground transition-colors last:border-b-0 hover:bg-foreground/5"
                         href="#"
-                        @click.prevent="selectedAiImageModel = 'dall-e-3'"
+                        @click.prevent="selectedAiImageModel = 'dall-e-3'; selectedAiImageModelLabel = 'Taswira Picha Pro'"
                     >
-                        @lang('dall-e-3')
+                        Taswira Picha Pro
                     </a>
                     <a
                         class="block border-b px-3 py-2 text-2xs font-medium text-heading-foreground transition-colors last:border-b-0 hover:bg-foreground/5"
                         href="#"
-                        @click.prevent="selectedAiImageModel = 'flux-kontext-max'"
+                        @click.prevent="selectedAiImageModel = 'flux-kontext-max'; selectedAiImageModelLabel = 'Taswira Muktadha Max'"
                     >
-                        @lang('flux-kontext-max')
+                        Taswira Muktadha Max
                     </a>
                     <a
                         class="block border-b px-3 py-2 text-2xs font-medium text-heading-foreground transition-colors last:border-b-0 hover:bg-foreground/5"
                         href="#"
-                        @click.prevent="selectedAiImageModel = 'recraft-v3-svg'"
+                        @click.prevent="selectedAiImageModel = 'recraft-v3-svg'; selectedAiImageModelLabel = 'Taswira Nembo Vector'"
                     >
-                        @lang('recraft-v3-svg')
+                        Taswira Nembo Vector
                     </a>
                     <a
                         class="block border-b px-3 py-2 text-2xs font-medium text-heading-foreground transition-colors last:border-b-0 hover:bg-foreground/5"
                         href="#"
-                        @click.prevent="selectedAiImageModel = 'ideogram-v3-quality'"
+                        @click.prevent="selectedAiImageModel = 'ideogram-v3-quality'; selectedAiImageModelLabel = 'Taswira Nembo Max'"
                     >
-                        @lang('ideogram-v3-quality')
+                        Taswira Nembo Max
                     </a>
                     <a
                         class="block border-b px-3 py-2 text-2xs font-medium text-heading-foreground transition-colors last:border-b-0 hover:bg-foreground/5"
                         href="#"
-                        @click.prevent="selectedAiImageModel = 'gpt-image-1-high'"
+                        @click.prevent="selectedAiImageModel = 'gpt-image-1-high'; selectedAiImageModelLabel = 'Taswira Rangi Max'"
                     >
-                        @lang('gpt-image-1-high')
+                        Taswira Rangi Max
                     </a>
                 </x-slot:dropdown>
             </x-dropdown.dropdown>

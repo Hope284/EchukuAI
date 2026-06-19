@@ -190,6 +190,13 @@
                             {{ __('Generate') }}
                         </x-button>
                     </form>
+
+                    <div
+                        x-data
+                        x-init="$nextTick(() => $dispatch('generator-changed', { generator: '{{ \App\Domains\Entity\Enums\EntityEnum::NANO_BANANA_PRO_EDIT->value }}', quantity: {{ $numImages }}, _force: Date.now() }))"
+                    >
+                        <x-cost-preview class="w-full justify-end" />
+                    </div>
                 </x-card>
             </div>
 

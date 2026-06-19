@@ -110,12 +110,23 @@
                                 <x-tabler-x class="size-4" />
                             </x-button>
                         @else
+                            @if ($item->type->value === 'whatsapp')
+                                <x-button
+                                    class="size-9"
+                                    href="{{ route('dashboard.user.marketing-bot.whatsapp-campaign.analytics', $item->id) }}"
+                                    variant="ghost-shadow"
+                                    size="none"
+                                    title="{{ __('Analytics') }}"
+                                >
+                                    <x-tabler-chart-bar class="size-4" />
+                                </x-button>
+                            @endif
                             <x-button
                                 class="size-9"
                                 href="{{ route('dashboard.user.marketing-bot.' . $item->type->value . '-campaign.edit', $item->id) }}"
                                 variant="ghost-shadow"
                                 size="none"
-                                title="{{ __('Delete') }}"
+                                title="{{ __('Edit') }}"
                             >
                                 <x-tabler-edit class="size-4" />
                             </x-button>

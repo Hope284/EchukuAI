@@ -134,6 +134,15 @@
                                 </x-button>
                                 <x-button
                                     class="size-9"
+                                    href="{{ route('dashboard.user.marketing-bot.whatsapp-campaign.analytics', $item->id) }}"
+                                    variant="ghost-shadow"
+                                    size="none"
+                                    title="{{ __('Analytics') }}"
+                                >
+                                    <x-tabler-chart-bar class="size-4" />
+                                </x-button>
+                                <x-button
+                                    class="size-9"
                                     variant="ghost-shadow"
                                     size="none"
                                     onclick="return toastr.info('This feature is disabled in Demo version.')"
@@ -194,6 +203,15 @@
                                             </linearGradient>
                                         </defs>
                                     </svg>
+                                </x-button>
+                                <x-button
+                                    class="size-9"
+                                    href="{{ route('dashboard.user.marketing-bot.whatsapp-campaign.analytics', $item->id) }}"
+                                    variant="ghost-shadow"
+                                    size="none"
+                                    title="{{ __('Analytics') }}"
+                                >
+                                    <x-tabler-chart-bar class="size-4" />
                                 </x-button>
                                 <x-button
                                     class="size-9"

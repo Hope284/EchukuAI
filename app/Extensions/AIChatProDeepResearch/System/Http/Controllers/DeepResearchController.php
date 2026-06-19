@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace App\Extensions\AIChatProDeepResearch\System\Http\Controllers;
 
+use App\Domains\Entity\Enums\EntityEnum;
+use App\Domains\Entity\Facades\Entity;
 use App\Enums\Plan\FrequencyEnum;
 use App\Extensions\AIChatProDeepResearch\System\Models\DeepResearchSession;
 use App\Extensions\AIChatProDeepResearch\System\Services\DeepResearchService;
 use App\Http\Controllers\Controller;
+use App\Models\Usage;
 use App\Models\UserOpenaiChatMessage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -324,6 +327,17 @@ class DeepResearchController extends Controller
         $duration = (int) now()->diffInSeconds($session->created_at);
         $wordCount = countWords($outputText);
 
+        // Deduct shared credits for the generated report text
+        $creditsUsed = 0;
+
+        if ($outputText !== '') {
+            $entityEnum = EntityEnum::fromSlug($session->model_used);
+            $driver = Entity::driver($entityEnum)->forUser($session->user_id);
+            $driver->input($outputText)->calculateCredit()->decreaseCredit();
+            Usage::getSingle()->updateWordCounts((int) max(1, round($driver->calculate())));
+            $creditsUsed = (int) ceil(max(1, $driver->getCalculatedInputCredit()));
+        }
+
         // Update session
         $session->update([
             'status'           => 'completed',
@@ -331,7 +345,7 @@ class DeepResearchController extends Controller
             'sources_count'    => count($sources),
             'searches_count'   => $searchesCount,
             'duration_seconds' => $duration,
-            'credits_used'     => 1,
+            'credits_used'     => $creditsUsed,
             'report_output'    => $outputText,
             'thinking_steps'   => $thinkingSteps,
             'raw_response'     => json_encode($output),
@@ -344,7 +358,7 @@ class DeepResearchController extends Controller
         $session->message?->update([
             'response' => $richOutput,
             'output'   => $richOutput,
-            'credits'  => $wordCount,
+            'credits'  => $creditsUsed ?: $wordCount,
             'words'    => $wordCount,
         ]);
 

@@ -719,8 +719,16 @@
                         this.$watch('selectedModel', (value) => {
                             if (value) {
                                 localStorage.setItem('aiImageProSelectedModel', value);
+                                this.$dispatch('generator-changed', { generator: value });
                             }
                         });
+
+                        // Dispatch initial model for cost preview
+                        if (this.selectedModel) {
+                            this.$nextTick(() => {
+                                this.$dispatch('generator-changed', { generator: this.selectedModel });
+                            });
+                        }
 
                         // Cleanup on page unload
                         window.addEventListener('beforeunload', () => {

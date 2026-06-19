@@ -62,6 +62,7 @@ class AiMusicProController extends Controller
         }
 
         $provider = setting('ai_music_pro_default_provider', 'elevenlabs');
+		$requestedMinutes = (float) $request->get('duration', 30) / 60;
 
         $entityEnum = match ($provider) {
             'lyria3clip' => EntityEnum::LYRIA_3_CLIP,
@@ -69,8 +70,9 @@ class AiMusicProController extends Controller
             default      => EntityEnum::ELEVENLABS_AI_MUSIC,
         };
 
+
         if ($provider === 'elevenlabs') {
-            $driver = Entity::driver($entityEnum)->inputMinute(1)->calculateCredit();
+			$driver = Entity::driver($entityEnum)->inputMinute($requestedMinutes)->calculateCredit();
         } else {
             $estimatedSeconds = $provider === 'lyria3clip' ? 30 : 120;
             $driver = Entity::driver($entityEnum)->inputSecond($estimatedSeconds)->calculateCredit();

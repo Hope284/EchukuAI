@@ -174,7 +174,7 @@ class InstallationController extends Controller
 
         if ($version > $currentVersion) {
             if (! Schema::hasTable('migrations')) {
-                return 'DZEVA is not installed. Install it first. Go to /install';
+                return 'MagicAI is not installed. Install it first. Go to /install';
             }
 
             Artisan::call('migrate', [
@@ -195,7 +195,7 @@ class InstallationController extends Controller
 
     public function updateManual(Request $request)
     {
-        $version = '10.70';
+        $version = '10.81';
 
         Artisan::call('migrate', [
             '--force' => true,

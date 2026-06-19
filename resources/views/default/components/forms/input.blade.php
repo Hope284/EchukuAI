@@ -125,7 +125,7 @@
 
             {{-- Tooltip --}}
             @if (!empty($tooltip))
-                <x-info-tooltip text="{{ $tooltip }}" />
+                <x-info-tooltip text="{!! $tooltip !!}" />
             @endif
         </label>
     @endif

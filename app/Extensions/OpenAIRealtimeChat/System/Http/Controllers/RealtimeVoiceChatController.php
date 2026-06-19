@@ -34,7 +34,7 @@ class RealtimeVoiceChatController extends Controller
             return response()->json(['status' => 'error', 'message' => 'Exceeded messages limit on demo'], 200);
         }
 
-        $driver = EntityFacade::driver(EntityEnum::GPT_4_O_REALTIME_PREVIEW);
+        $driver = EntityFacade::driver(EntityEnum::GPT_REALTIME);
 
         try {
             $driver->redirectIfNoCreditBalance();
@@ -64,18 +64,27 @@ class RealtimeVoiceChatController extends Controller
         }
 
         $apiKey = ApiHelper::setOpenAiKey();
-        $model = 'gpt-4o-realtime-preview-2024-12-17';
+        $model = 'gpt-realtime';
 
         $response = Http::withToken($apiKey)
-            ->post('https://api.openai.com/v1/realtime/sessions', [
-                'model'                     => $model,
-                'voice'                     => 'verse',
-                'input_audio_transcription' => [
-                    'model' => 'gpt-4o-mini-transcribe',
-                ],
-                'turn_detection' => [
-                    'type'                => 'server_vad',
-                    'silence_duration_ms' => 500,
+            ->post('https://api.openai.com/v1/realtime/client_secrets', [
+                'session' => [
+                    'type'  => 'realtime',
+                    'model' => $model,
+                    'audio' => [
+                        'input' => [
+                            'transcription' => [
+                                'model' => 'gpt-4o-mini-transcribe',
+                            ],
+                            'turn_detection' => [
+                                'type'                => 'server_vad',
+                                'silence_duration_ms' => 500,
+                            ],
+                        ],
+                        'output' => [
+                            'voice' => 'verse',
+                        ],
+                    ],
                 ],
             ]);
 
@@ -91,7 +100,7 @@ class RealtimeVoiceChatController extends Controller
         }
 
         $data = $response->json();
-        $ephemeralKey = $data['client_secret']['value'] ?? null;
+        $ephemeralKey = $data['value'] ?? $data['client_secret']['value'] ?? null;
 
         if (! $ephemeralKey) {
             Log::error('Ephemeral token not found in OpenAI response', [

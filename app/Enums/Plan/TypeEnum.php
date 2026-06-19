@@ -12,7 +12,6 @@ enum TypeEnum: string implements WithStringBackedEnum
     use EnumTo;
     use SluggableEnumTrait;
     use StringBackedEnumTrait;
-    use StringBackedEnumTrait;
 
     case SUBSCRIPTION = 'subscription';
     case TOKEN_PACK = 'prepaid';

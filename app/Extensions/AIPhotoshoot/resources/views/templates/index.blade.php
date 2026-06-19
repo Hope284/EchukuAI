@@ -131,6 +131,13 @@
                             {{ __('templates selected') }}
                         </p>
 
+                        <div
+                            x-data
+                            x-init="$nextTick(() => $dispatch('generator-changed', { generator: '{{ \App\Extensions\AIPhotoshoot\System\Services\AIPhotoshootImageModelRegistry::getDefaultModel()->value }}', quantity: 1 }))"
+                        >
+                            <x-cost-preview class="w-full justify-end" />
+                        </div>
+
                         <x-button
                             class="w-full"
                             size="xl"

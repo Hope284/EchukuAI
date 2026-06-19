@@ -137,6 +137,13 @@
                     >
                         @lang('Generate')
                     </x-button>
+
+                    <div
+                        x-data
+                        x-init="$nextTick(() => $dispatch('generator-changed', { generator: '{{ \App\Domains\Entity\Enums\EntityEnum::PEBBLELY->value }}' }))"
+                    >
+                        <x-cost-preview class="w-full" />
+                    </div>
                 </div>
             </form>
 

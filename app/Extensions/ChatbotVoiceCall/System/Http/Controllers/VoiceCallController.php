@@ -17,7 +17,6 @@ use App\Services\Ai\ElevenLabsService;
 use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -69,15 +68,23 @@ class VoiceCallController extends Controller
         $isDemo = Helper::appIsDemo();
 
         if ($isDemo) {
-            $demoCheck = Helper::checkDemoSecondDailyLimit(0, 'voice_call_demo_lock');
+            $demoSecondsLimit = (int) setting('voice_call_demo_seconds_limit', 30);
 
-            if ($demoCheck->getStatusCode() === 429) {
+            $demoUsedSeconds = (int) ChatbotHistory::query()
+                ->whereHas('conversation', function ($q) use ($sessionId) {
+                    $q->where('session_id', $sessionId);
+                })
+                ->where('role', 'voice-call-ended')
+                ->where('created_at', '>=', now()->startOfDay())
+                ->sum('voice_call_duration');
+
+            if ($demoUsedSeconds >= $demoSecondsLimit) {
                 return response()->json([
-                    'error' => $demoCheck->getData(true)['message'] ?? __('Demo limit reached.'),
+                    'error' => __('You have reached the daily voice call limit for demo mode.'),
                 ], 429);
             }
 
-            $demoRemaining = $demoCheck->getData(true)['remaining_seconds'] ?? 30;
+            $demoRemaining = $demoSecondsLimit - $demoUsedSeconds;
             $remainingSeconds = $remainingSeconds !== null
                 ? min($remainingSeconds, $demoRemaining)
                 : $demoRemaining;
@@ -157,6 +164,22 @@ class VoiceCallController extends Controller
 
         $duration = (int) $request->input('duration', 0);
 
+        // Demo mode: cap duration to remaining demo limit
+        if (Helper::appIsDemo()) {
+            $demoSecondsLimit = (int) setting('voice_call_demo_seconds_limit', 30);
+
+            $demoUsedSeconds = (int) ChatbotHistory::query()
+                ->whereHas('conversation', function ($q) use ($sessionId) {
+                    $q->where('session_id', $sessionId);
+                })
+                ->where('role', 'voice-call-ended')
+                ->where('created_at', '>=', now()->startOfDay())
+                ->sum('voice_call_duration');
+
+            $demoRemaining = max(0, $demoSecondsLimit - $demoUsedSeconds);
+            $duration = min($duration, $demoRemaining);
+        }
+
         ChatbotHistory::query()->create([
             'chatbot_id'          => $chatbot->getKey(),
             'conversation_id'     => $conversation->getKey(),
@@ -194,19 +217,30 @@ class VoiceCallController extends Controller
                 ->decreaseCredit();
         }
 
-        // Demo mode: record used seconds
-        if (Helper::appIsDemo() && $duration > 0) {
-            $clientIp = Helper::getRequestIp();
-            $cacheKey = "demo_ai_usage_seconds_{$clientIp}";
-            $usedSeconds = Cache::get($cacheKey, 0);
-            Cache::put($cacheKey, $usedSeconds + $duration, now()->endOfDay());
-        }
-
         return response()->json(['success' => true]);
     }
 
     public function transcript(Request $request, Chatbot $chatbot, string $sessionId): JsonResponse
     {
+        if (Helper::appIsDemo()) {
+            $demoSecondsLimit = (int) setting('voice_call_demo_seconds_limit', 30);
+
+            $demoUsedSeconds = (int) ChatbotHistory::query()
+                ->whereHas('conversation', function ($q) use ($sessionId) {
+                    $q->where('session_id', $sessionId);
+                })
+                ->where('role', 'voice-call-ended')
+                ->where('created_at', '>=', now()->startOfDay())
+                ->sum('voice_call_duration');
+
+            if ($demoUsedSeconds >= $demoSecondsLimit) {
+                return response()->json([
+                    'error'    => __('You have reached the daily voice call limit for demo mode.'),
+                    'exceeded' => true,
+                ], 429);
+            }
+        }
+
         $request->validate([
             'role'    => ['required', 'string', 'in:user,assistant'],
             'message' => ['required', 'string'],
@@ -246,12 +280,19 @@ class VoiceCallController extends Controller
     private function getOpenAiCredentials(): array
     {
         $apiKey = ApiHelper::setOpenAiKey();
-        $model = 'gpt-4o-realtime-preview-2024-12-17';
+        $model = 'gpt-realtime';
 
         $response = Http::withToken($apiKey)
-            ->post('https://api.openai.com/v1/realtime/sessions', [
-                'model' => $model,
-                'voice' => 'verse',
+            ->post('https://api.openai.com/v1/realtime/client_secrets', [
+                'session' => [
+                    'type'  => 'realtime',
+                    'model' => $model,
+                    'audio' => [
+                        'output' => [
+                            'voice' => 'verse',
+                        ],
+                    ],
+                ],
             ]);
 
         if ($response->failed()) {
@@ -259,7 +300,7 @@ class VoiceCallController extends Controller
         }
 
         $data = $response->json();
-        $ephemeralKey = $data['client_secret']['value'] ?? null;
+        $ephemeralKey = $data['value'] ?? $data['client_secret']['value'] ?? null;
 
         if (! $ephemeralKey) {
             throw new Exception('Ephemeral token not found in OpenAI response.');

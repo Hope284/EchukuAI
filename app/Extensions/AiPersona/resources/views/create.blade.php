@@ -197,6 +197,13 @@
             </x-button>
         @endif
 
+        <div
+            x-data
+            x-init="$nextTick(() => $dispatch('generator-changed', { generator: '{{ \App\Domains\Entity\Enums\EntityEnum::HEYGEN->value }}' }))"
+        >
+            <x-cost-preview class="w-full" />
+        </div>
+
     </form>
     <div
         class="spinner-border text-primary"

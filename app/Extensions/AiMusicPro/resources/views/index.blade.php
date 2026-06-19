@@ -307,6 +307,25 @@
             </form>
         </x-card>
 
+		<div
+			x-data
+			x-init="
+				$nextTick(() => {
+					const durationEl = document.getElementById('duration');
+					const getQuantity = () => {
+						const val = parseInt(durationEl?.value);
+						return val > 0 ? val / 60 : 1;
+					};
+					$dispatch('generator-changed', { generator: '{{ \App\Domains\Entity\Enums\EntityEnum::ELEVENLABS_AI_MUSIC->value }}', quantity: getQuantity(), _force: Date.now() });
+					durationEl?.addEventListener('change', () => {
+						$dispatch('generator-changed', { generator: '{{ \App\Domains\Entity\Enums\EntityEnum::ELEVENLABS_AI_MUSIC->value }}', quantity: getQuantity(), _force: Date.now() });
+					});
+				});
+			"
+		>
+			<x-cost-preview class="w-full justify-end" />
+		</div>
+
         <div id="generator_sidebar_table">
             @include('ai-music-pro::components.generator_sidebar_table', ['music' => $music])
         </div>
@@ -386,6 +405,10 @@
                     }
 
                     resetGenerateButton(generateBtn);
+
+                    if (res.status === 'success') {
+                        window.dispatchEvent(new CustomEvent('lqd:credit-balance-refresh'));
+                    }
                 },
                 error: function(data) {
                     resetGenerateButton(generateBtn);

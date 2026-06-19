@@ -112,7 +112,7 @@ class TTSController extends Controller
 
         foreach ($speeches as $speech) {
             $model = $this->getAIModel($speech['platform'], $speech['pace']);
-            $driver = Entity::driver($model)->inputVoiceCount(1)->calculateCredit();
+            $driver = Entity::driver($model)->input($speech['content'])->calculateCredit();
             $langsAndVoices['language'][] = $speech['lang'];
             $langsAndVoices['voices'][] = $speech['voice'];
 

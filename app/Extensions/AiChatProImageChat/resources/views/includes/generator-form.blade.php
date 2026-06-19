@@ -1,5 +1,6 @@
 {{-- generator-form.blade --}}
 <div class="z-3 mx-auto w-full lg:sticky lg:bottom-0 lg:z-[90] lg:w-[min(100%,700px)] lg:px-5 lg:pb-8">
+    <x-cost-preview class="mt-0 mb-2 justify-end" />
     <form
         class="relative border border-transparent bg-background transition dark:border-border max-lg:border-0 max-lg:border-t lg:rounded-[20px] lg:shadow-2xl lg:shadow-black/15"
         id="chatImageProForm"
@@ -390,6 +391,16 @@
                             this.$nextTick(() => {
                                 // Give the template time to render the image input
                                 setTimeout(() => this.loadPendingImage(), 100);
+                            });
+                        }
+                    });
+
+                    // Dispatch quantity changes for cost preview
+                    this.$watch('formValues.image_count', (value) => {
+                        if (value && this.selectedModel) {
+                            this.$dispatch('generator-changed', {
+                                generator: this.selectedModel,
+                                quantity: parseInt(value) || 1,
                             });
                         }
                     });

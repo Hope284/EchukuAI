@@ -9,7 +9,6 @@ use App\Extensions\AiMusic\System\Services\AiMusicService;
 use App\Helpers\Classes\Helper;
 use App\Http\Controllers\Controller;
 use App\Models\Setting;
-use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -68,13 +67,11 @@ class AiMusicController extends Controller
                 'message' => trans('This feature is disabled in demo mode.'), 'type' => 'error',
             ]);
         }
-        $driver = Entity::driver(EntityEnum::fromSlug(Setting::getCache()?->ai_music_model ?? EntityEnum::MUSIC_01->slug()))->inputVoiceCount(1)->calculateCredit();
+        $driver = Entity::driver(EntityEnum::fromSlug(Setting::getCache()?->ai_music_model ?? EntityEnum::MUSIC_01->slug()))->inputMinute(1.0)->calculateCredit();
 
-        try {
-            $driver->redirectIfNoCreditBalance();
-        } catch (Exception $e) {
+        if (! $driver->hasCreditBalanceForInput()) {
             return redirect()->back()->with([
-                'message' => $e->getMessage(), 'type' => 'error',
+                'message' => __('Insufficient credits to generate music.'), 'type' => 'error',
             ]);
         }
 
@@ -89,7 +86,8 @@ class AiMusicController extends Controller
                 'title'     => 'Unknown',
             ]);
 
-            $driver->decreaseCredit();
+            $voiceLengthMinutes = measureVoiceLength(public_path($data['audio_url'])) ?? 1.0;
+            $driver->inputMinute($voiceLengthMinutes)->calculateCredit()->decreaseCredit();
 
             return redirect()->route('dashboard.user.ai-music.index')->with([
                 'message' => __('Created Successfully'), 'type' => 'success',

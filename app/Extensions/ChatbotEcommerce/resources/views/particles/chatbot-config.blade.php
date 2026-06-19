@@ -44,10 +44,9 @@
 		x-show="activeChatbot.is_shop && activeChatbot.shop_source === 'woocommerce'"
 	>
 		<a
-			href="{{ asset('downloads/dzeva-woocommerce-extension.zip') }}"
-			target="_blank"
+			href="{{ route('dashboard.support.list') }}"
 		>
-			{{ __('An addon is required for WooCommerce. Please install the addon and activate it on your site.') }}
+			{{ __('A DZEVA addon is required for WooCommerce. Contact support to get the compatible package.') }}
 			<x-tabler-download class="inline size-4 align-text-bottom" />
 		</a>
 	</x-alert>

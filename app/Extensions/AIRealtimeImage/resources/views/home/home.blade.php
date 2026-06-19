@@ -8,6 +8,7 @@
 >
     <div class="container">
         @include('ai-realtime-image::home.generator-form', ['image_styles' => $image_styles])
+        <x-cost-preview />
 
         <div
             class="mx-auto py-3 lg:w-9/12"

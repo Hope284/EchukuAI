@@ -69,6 +69,8 @@
 					<x-tabler-arrow-right class="size-5" />
 				</x-button>
 			</div>
+
+			<x-cost-preview class="w-full" />
 		</form>
 	</div>
 	@endif

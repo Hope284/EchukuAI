@@ -28,6 +28,65 @@
                     required
                     value="{{ old('name', $item?->name) }}"
                 />
+                {{-- Meta template selector (only shown when provider is meta) --}}
+                @if ($whatsapp?->isMeta() && $whatsapp->meta_waba_id)
+                    <div x-show="true">
+                        <x-forms.input
+                            id="meta_template_name"
+                            type="select"
+                            size="lg"
+                            name="meta_template_name"
+                            label="{{ __('WhatsApp Template') }}"
+                            x-model="templateName"
+                            @change="onTemplateChange()"
+                        >
+                            <option value="">@lang('— Send custom message (no template) —')</option>
+                            <template x-for="tpl in templates" :key="tpl.name">
+                                <option
+                                    :value="tpl.name"
+                                    :selected="tpl.name === '{{ old('meta_template_name', $item?->meta_template_name) }}'"
+                                    x-text="tpl.name + ' (' + tpl.language + ')'"
+                                ></option>
+                            </template>
+                        </x-forms.input>
+                        <input type="hidden" name="meta_template_language" x-model="templateLanguage">
+                    </div>
+
+                    {{-- Body variable inputs --}}
+                    <div x-show="bodyVariables.length > 0" x-transition>
+                        <span class="mb-2 flex items-center gap-2 text-2xs font-medium leading-none text-label">@lang('Template Body Variables')</span>
+                        <div class="flex flex-col gap-3">
+                            <template x-for="(v, i) in bodyVariables" :key="i">
+                                <div>
+                                    <x-forms.input
+                                        size="lg"
+                                        ::name="`meta_body_variables[${i}]`"
+                                        ::label="`@{{` + (i+1) + `}}`"
+                                        ::placeholder="`@{{` + (i+1) + `}} or {contact_name}`"
+                                        ::value="v"
+                                        @input="bodyVariables[i] = $event.target.value"
+                                    />
+                                    <div class="mt-1.5 flex flex-wrap gap-1">
+                                        @foreach ([
+                                            '{first_name}' => 'first_name',
+                                            '{last_name}'  => 'last_name',
+                                            '{phone}'      => 'phone',
+                                        ] as $tag => $label)
+                                            <button
+                                                type="button"
+                                                class="rounded-input border border-input-border bg-input-background px-2 py-0.5 text-2xs text-input-foreground transition-colors hover:border-primary hover:text-primary"
+                                                @click="bodyVariables[i] = '{{ $tag }}'"
+                                            >{{ $label }}</button>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                @endif
+
+                {{-- Content field: hidden when a template is selected --}}
+                <div x-show="!templateName">
                 <x-forms.input
                     class:label="text-heading-foreground"
                     :tooltip="trans('Write the message you want to send to your audience.')"
@@ -130,6 +189,20 @@
                     </x-slot:label-extra>
                     {{ old('content', $item?->content) }}
                 </x-forms.input>
+                <div class="mt-1.5 flex flex-wrap gap-1">
+                    @foreach ([
+                        '{first_name}' => 'first_name',
+                        '{last_name}'  => 'last_name',
+                        '{phone}'      => 'phone',
+                    ] as $tag => $label)
+                        <button
+                            type="button"
+                            class="rounded-input border border-input-border bg-input-background px-2 py-0.5 text-2xs text-input-foreground transition-colors hover:border-primary hover:text-primary"
+                            @click="content += '{{ $tag }}'"
+                        >{{ $label }}</button>
+                    @endforeach
+                </div>
+                </div>
                 <input
                     type="hidden"
                     name="image"
@@ -205,6 +278,7 @@
                         </option>
                     @endforeach
                 </x-forms.input>
+
 
 
 				<x-forms.input
@@ -337,11 +411,12 @@
                                 <div class="rounded bg-white px-4 py-2 text-[15px] leading-tight text-gray-800 shadow">
                                     <img
                                         class="mb-2"
+                                        x-show="!templateName"
                                         :src="image || '{{ $item?->image ?: asset('vendor/marketing-bot/images/image-placeholder.png') }}'"
                                     >
                                     <p
                                         class="m-0 break-words p-0"
-                                        x-text="content || 'This is what your campaign will look like.'"
+                                        x-text="previewText"
                                     >This is what your campaign will look like.</p>
                                     <span class="mt-1 block text-right text-[12px] text-gray-400">09:30 AM</span>
                                 </div>
@@ -370,6 +445,56 @@
                 image: '{{ old('image', $item?->image) }}',
                 isScheduled: {!! $item?->scheduled_at ? 'true' : 'false' !!},
 				aiReply: {!! $item?->ai_reply ? 'true' : 'false' !!},
+                templates: [],
+                templateName: '{{ old('meta_template_name', $item?->meta_template_name) }}',
+                templateLanguage: '{{ old('meta_template_language', $item?->meta_template_language) }}',
+                bodyVariables: {!! json_encode(old('meta_body_variables', $item?->meta_body_variables ?? [])) !!},
+
+                async init() {
+                    @if ($whatsapp?->isMeta() && $whatsapp->meta_waba_id)
+                    await this.loadTemplates();
+                    if (this.templateName) {
+                        this.onTemplateChange();
+                    }
+                    @endif
+                },
+
+                async loadTemplates() {
+                    try {
+                        const res = await fetch('{{ route('dashboard.user.marketing-bot.whatsapp.meta-templates') }}');
+                        const data = await res.json();
+                        this.templates = data.templates || [];
+                    } catch (e) {
+                        console.error('Failed to load templates', e);
+                    }
+                },
+
+                onTemplateChange() {
+                    const tpl = this.templates.find(t => t.name === this.templateName);
+                    if (tpl) {
+                        this.templateLanguage = tpl.language;
+                        const existing = this.bodyVariables;
+                        this.bodyVariables = Array.from({ length: tpl.variable_count }, (_, i) => existing[i] ?? '');
+                    } else {
+                        this.templateLanguage = '';
+                        this.bodyVariables = [];
+                    }
+                },
+
+                get previewText() {
+                    if (this.templateName) {
+                        const tpl = this.templates.find(t => t.name === this.templateName);
+                        if (tpl && tpl.body_text) {
+                            const ob = '{' + '{', cb = '}' + '}';
+                            return tpl.body_text.replace(/\{\{(\d+)\}\}/g, (_, n) => {
+                                const val = this.bodyVariables[parseInt(n) - 1];
+                                return val || (ob + n + cb);
+                            });
+                        }
+                        return this.templateName;
+                    }
+                    return this.content || 'This is what your campaign will look like.';
+                },
 
                 async uploadImage(event) {
                     const input = event.target;

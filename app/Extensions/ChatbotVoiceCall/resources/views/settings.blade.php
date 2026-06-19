@@ -9,10 +9,7 @@
         action="{{ route('dashboard.admin.settings.voice-call.update') }}"
     >
         @csrf
-        <x-card
-            class="mb-2 max-md:text-center"
-            szie="lg"
-        >
+        <x-card class="mb-2 max-md:text-center">
             <div class="flex flex-col gap-5">
                 <div
                     class="form-control border-none p-0"

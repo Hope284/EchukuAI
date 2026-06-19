@@ -41,6 +41,12 @@ Route::middleware('auth:api')->get('/user', function (Request $request) {
     return $request->user();
 });
 
+Route::middleware('auth:api')->prefix('v1/shared-credit')->group(function () {
+    Route::get('/balance', [App\Http\Controllers\Api\SharedCreditApiController::class, 'balance']);
+    Route::get('/history', [App\Http\Controllers\Api\SharedCreditApiController::class, 'history']);
+    Route::get('/cost/{entity}', [App\Http\Controllers\Api\SharedCreditApiController::class, 'cost']);
+});
+
 Route::middleware('auth:api')->group(function () {
 
     Route::prefix('auth')->group(function () {

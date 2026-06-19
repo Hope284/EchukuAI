@@ -10,7 +10,33 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out release
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: curl, dom, fileinfo, mbstring, pdo_sqlite, sodium, sqlite3, zip
+          coverage: none
+
+      - name: Install validation dependencies
+        run: composer install --prefer-dist --no-interaction --no-progress
+
+      - name: Validate PHP syntax
+        run: find app database routes resources/views -type f -name '*.php' -print0 | xargs -0 -n1 php -l
+
+      - name: Validate extension manifests
+        run: find app/Extensions -type f -name 'extension.json' -print0 | xargs -0 -n1 jq empty
+
+      - name: Run Laravel tests
+        run: php artisan test
+
   deploy:
+    needs: validate
     runs-on: ubuntu-latest
     steps:
       - name: Deploy over SSH
@@ -23,8 +49,52 @@ jobs:
           script: |
             set -euo pipefail
             cd /var/www/dzeva
+
+            if [ -n "$(git status --porcelain)" ]; then
+              echo "Production worktree has uncommitted changes; deployment stopped."
+              git status --short
+              exit 1
+            fi
+
             sudo systemctl stop cron || true
             trap 'sudo systemctl start cron || true' EXIT
+
+            backup_stamp="$(date -u +%Y%m%d-%H%M%S)"
+            backup_dir="/home/ubuntu/backups/dzeva-update-${backup_stamp}"
+            sudo install -d -o ubuntu -g ubuntu -m 0700 "$backup_dir"
+            git rev-parse HEAD > "$backup_dir/commit.txt"
+            tar \
+              --exclude='./.git' \
+              --exclude='./.env' \
+              --exclude='./vendor' \
+              --exclude='./node_modules' \
+              --exclude='./storage' \
+              --exclude='./public/uploads' \
+              -czf "$backup_dir/app.tar.gz" .
+            install -m 0600 .env "$backup_dir/.env.backup"
+
+            db_host="$(php -r '$e=parse_ini_file(".env", false, INI_SCANNER_RAW); echo $e["DB_HOST"] ?? "127.0.0.1";')"
+            db_port="$(php -r '$e=parse_ini_file(".env", false, INI_SCANNER_RAW); echo $e["DB_PORT"] ?? "3306";')"
+            db_name="$(php -r '$e=parse_ini_file(".env", false, INI_SCANNER_RAW); echo $e["DB_DATABASE"] ?? "";')"
+            db_user="$(php -r '$e=parse_ini_file(".env", false, INI_SCANNER_RAW); echo $e["DB_USERNAME"] ?? "";')"
+            db_password="$(php -r '$e=parse_ini_file(".env", false, INI_SCANNER_RAW); echo $e["DB_PASSWORD"] ?? "";')"
+
+            if [ -z "$db_name" ] || [ -z "$db_user" ]; then
+              echo "Database backup configuration is incomplete."
+              exit 1
+            fi
+
+            MYSQL_PWD="$db_password" mysqldump \
+              --single-transaction \
+              --quick \
+              --skip-lock-tables \
+              --host="$db_host" \
+              --port="$db_port" \
+              --user="$db_user" \
+              "$db_name" | gzip > "$backup_dir/database.sql.gz"
+            chmod 0600 "$backup_dir/database.sql.gz"
+            echo "Production backup created at $backup_dir"
+
             git fetch origin main
             git checkout main
             git pull --ff-only origin main
@@ -45,13 +115,19 @@ jobs:
             php -m | grep -E '^sodium$'
             composer install --no-dev --prefer-dist --optimize-autoloader --no-interaction
             php artisan migrate --force
+            sudo -u www-data php artisan vendor:publish --tag=extension --force
             sudo -u www-data php artisan db:seed --class=DzevaPlanSeeder --force
+            sudo -u www-data php artisan plans:ensure-gateway-products || echo "Gateway product backfill completed with reported errors; review the deployment log."
             sudo -u www-data php artisan optimize:clear
             fix_laravel_permissions
             sudo -u www-data php artisan config:cache
             sudo -u www-data php artisan route:clear
+            sudo -u www-data php artisan route:list --path=strategic
+            sudo -u www-data php artisan route:list --path=partner
+            sudo -u www-data php artisan route:list --path=affiliate
             sudo -u www-data php artisan route:list --path=webhooks
             sudo -u www-data php artisan route:list --path=paystack
+            sudo -u www-data php artisan dzeva:production-audit
             sudo -u www-data php artisan view:cache
             sudo -u www-data php artisan theme:refresh-cache || true
             fix_laravel_permissions
@@ -59,3 +135,29 @@ jobs:
             sudo supervisorctl restart dzeva-worker:* || true
             sudo systemctl reload nginx
             sudo systemctl restart php8.3-fpm
+
+      - name: Verify live routes
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          check_url() {
+            local url="$1"
+            local status
+            status="$(curl --silent --show-error --location --max-time 45 --output /dev/null --write-out '%{http_code}' "$url")"
+            echo "$url -> $status"
+            case "$status" in
+              200|301|302|303|307|308) ;;
+              *) exit 1 ;;
+            esac
+          }
+
+          check_url "https://dzeva.com"
+          check_url "https://dzeva.com/login"
+          check_url "https://dzeva.com/register"
+          check_url "https://dzeva.com/blog"
+          check_url "https://dzeva.com/sitemap.xml"
+          check_url "https://dzeva.com/dashboard/user/strategic-partner"
+          check_url "https://dzeva.com/dashboard/admin/strategic-partners"
+          check_url "https://dzeva.com/dashboard/admin/strategic-partners/create"
+          check_url "https://dzeva.com/partner/invalid-code"

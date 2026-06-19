@@ -47,7 +47,7 @@ class DzevaModelCatalog
                 'capability'  => 'Writing & Professional Documents',
                 'icon'        => 'FileText',
                 'description' => 'Best for emails, reports, proposals, formal documents, summaries, and careful professional writing.',
-                'entity'      => EntityEnum::CLAUDE_3_5_HAIKU,
+                'entity'      => EntityEnum::CLAUDE_SONNET_4_6,
             ],
             'taswira' => [
                 'name'        => 'Taswira',
@@ -297,7 +297,7 @@ class DzevaModelCatalog
             EntityEnum::CLAUDE_3_7_SONNET->value => ['Hikima Auna', 'Writing & Professional Documents', 'ShieldCheck', 'Risk, policy, and careful reasoning.'],
             EntityEnum::CLAUDE_SONNET_4->value => ['Hikima Tattauna', 'Writing & Professional Documents', 'FileText', 'Balanced conversation and advice.'],
             EntityEnum::CLAUDE_SONNET_4_5->value => ['Hikima Nazari', 'Writing & Professional Documents', 'FileText', 'Careful analysis and review.'],
-            EntityEnum::CLAUDE_SONNET_4_6->value => ['Hikima Nazari', 'Writing & Professional Documents', 'FileText', 'Careful analysis and review.'],
+            EntityEnum::CLAUDE_SONNET_4_6->value => ['Hikima Rubutu', 'Writing & Professional Documents', 'FileText', 'Professional writing and reports.'],
             EntityEnum::CLAUDE_3_OPUS->value => ['Hikima Auna', 'Writing & Professional Documents', 'ShieldCheck', 'Risk, policy, and careful reasoning.'],
             EntityEnum::CLAUDE_OPUS_4->value => ['Hikima Auna', 'Writing & Professional Documents', 'ShieldCheck', 'Risk, policy, and careful reasoning.'],
             EntityEnum::CLAUDE_OPUS_4_1->value => ['Hikima Auna', 'Writing & Professional Documents', 'ShieldCheck', 'Risk, policy, and careful reasoning.'],

@@ -53,6 +53,7 @@ const generate = async ( message_no, creativity, maximum_length, number_of_resul
 			tinymce.activeEditor.insertContent('<p></p>');
 
 			clearInterval( nIntervId );
+			window.dispatchEvent(new CustomEvent('lqd:credit-balance-refresh'));
 		}
 
 		const text = chunk.shift();
@@ -208,10 +209,10 @@ const generate = async ( message_no, creativity, maximum_length, number_of_resul
 		} catch (error) {
 			switch (error.status) {
 				case 429:
-					toastr.error(magicai_localize?.api_connection_error || 'Api Connection Error. You hit the rate limites of openai requests. Please check your Openai API Key');
+					toastr.error(magicai_localize?.api_connection_error || 'DZEVA is receiving too many requests right now. Please wait a moment and try again.');
 					break;
 				default:
-					toastr.error(magicai_localize?.api_connection_error_admin || 'Api Connection Error. Please contact system administrator via Support Ticket. Error is: API Connection failed due to API keys');
+					toastr.error(magicai_localize?.api_connection_error_admin || 'This DZEVA service is temporarily unavailable. Please contact support if the issue continues.');
 			}
 
 			submitBtn.classList.remove( 'lqd-form-submitting' );

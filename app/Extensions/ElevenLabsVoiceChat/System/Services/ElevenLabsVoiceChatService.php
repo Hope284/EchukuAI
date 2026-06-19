@@ -11,7 +11,7 @@ use Illuminate\Http\JsonResponse;
 
 class ElevenLabsVoiceChatService
 {
-    public const ELEVENLABS_VOICE_CHATBOT_TITLE = 'DZEVA Voice Chatbot';
+    public const ELEVENLABS_VOICE_CHATBOT_TITLE = 'DZEVA Voice Assistant';
 
     public function __construct(protected ElevenLabsService $service) {}
 

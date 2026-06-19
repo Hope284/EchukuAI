@@ -304,6 +304,10 @@
                 x-ref="sketchFileInput"
             />
 
+            <div x-effect="if (aiModel && selectedTool) $dispatch('generator-changed', { generator: aiModel, action: selectedTool, _force: Date.now() })">
+                <x-cost-preview class="w-full" />
+            </div>
+
             <x-button
                 class="mt-auto w-full bg-gradient-to-r from-gradient-from via-gradient-via to-gradient-to"
                 size="lg"

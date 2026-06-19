@@ -33,14 +33,13 @@ class GeminiService
             $body['toolConfig'] = ['functionCallingConfig' => ['mode' => 'AUTO']];
         }
 
-        $url = sprintf('%s%s:streamGenerateContent?key=%s', self::ENDPOINT, $entity, config('gemini.api_key'));
+        $url = sprintf('%s%s:streamGenerateContent?key=%s', self::ENDPOINT, $this->providerModel($entity), config('gemini.api_key'));
 
         return $client->withOptions(['stream' => true])->post($url, $body);
     }
 
     public function generateContent($entity = EntityEnum::GEMINI_3_FLASH->value): PromiseInterface|Response
     {
-
         ApiHelper::setGeminiKey();
         $this->ensureApiKeyConfigured();
 
@@ -49,7 +48,12 @@ class GeminiService
             'contents' => $this->getHistory(),
         ];
 
-        $url = sprintf('%s%s:generateContent?key=%s', self::ENDPOINT, $entity, config('gemini.api_key'));
+        if (! empty($this->tools)) {
+            $body['tools'] = $this->tools;
+            $body['toolConfig'] = ['functionCallingConfig' => ['mode' => 'AUTO']];
+        }
+
+        $url = sprintf('%s%s:generateContent?key=%s', self::ENDPOINT, $this->providerModel($entity), config('gemini.api_key'));
 
         return $client->post($url, $body);
     }
@@ -135,6 +139,16 @@ class GeminiService
             return;
         }
 
-        throw new RuntimeException('Gemini API key is not configured. Set GEMINI_API_KEY for Amamihe models.');
+        throw new RuntimeException('Gemini API key is not configured for the selected DZEVA model.');
+    }
+
+    private function providerModel(string $entity): string
+    {
+        return match ($entity) {
+            // Keep the persisted 10.8.1 entity key stable while using the
+            // current stable provider model for Amamihe requests.
+            EntityEnum::GEMINI_3_FLASH->value => 'gemini-3.5-flash',
+            default => $entity,
+        };
     }
 }

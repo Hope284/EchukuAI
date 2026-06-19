@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace App\Extensions\VideoDubbing\System\Services;
 
+use App\Domains\Entity\Enums\EntityEnum;
+use App\Domains\Entity\Facades\Entity;
 use App\Extensions\VideoDubbing\System\Jobs\DownloadDubbedVideoJob;
 use App\Extensions\VideoDubbing\System\Models\VideoDubbing;
 use getID3;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Throwable;
@@ -340,6 +343,7 @@ class VideoDubbingService
 
             if ($updated) {
                 DownloadDubbedVideoJob::dispatch($dubbing->id);
+                $this->deductSharedCredits($dubbing->fresh() ?? $dubbing);
             }
         } elseif (in_array($status, ['failed', 'error'], true)) {
             VideoDubbing::query()
@@ -407,6 +411,8 @@ class VideoDubbingService
                 'output_url'       => Storage::disk('uploads')->url($relativePath),
                 'duration_seconds' => $result['media_metadata']['duration'] ?? $dubbing->duration_seconds,
             ]);
+
+            $this->deductSharedCredits($dubbing->fresh() ?? $dubbing);
         } elseif ($status === 'failed') {
             $dubbing->update([
                 'status'        => 'error',
@@ -440,5 +446,21 @@ class VideoDubbingService
         $provider = $provider ?? $this->getDefaultProvider();
 
         return config("videodubbing.{$provider}.languages", []);
+    }
+
+    private function deductSharedCredits(VideoDubbing $dubbing): void
+    {
+        try {
+            Entity::driver(EntityEnum::VIDEO_DUBBING)
+                ->forUser($dubbing->user_id)
+                ->inputSecond($dubbing->duration_seconds ?? 1)
+                ->calculateCredit()
+                ->decreaseCredit(1.0);
+        } catch (Throwable $e) {
+            Log::warning('VideoDubbing: SharedCredit deduction failed', [
+                'id'    => $dubbing->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 }

@@ -81,15 +81,24 @@ class GeneratorController extends Controller
      */
     public function buildStreamedOutput(Request $request): ?StreamedResponse
     {
-        $template_type = $request->get('template_type', 'chatbot');
+        try {
+            $template_type = $request->get('template_type', 'chatbot');
 
-        // If the template type is chat, then we will build a chat streamed output or other ai template streamed output
-        return match ($template_type) {
-            'chatbot', 'vision', 'chatPro', 'chatPro-image', 'socialMediaAgent' => $this->buildChatStreamedOutput($request),
-            'chatPro-council'         => $this->buildCouncilStreamedOutput($request),
-            'chatPro-council-summary' => $this->buildCouncilSummaryStreamedOutput($request),
-            default                   => $this->buildOtherStreamedOutput($request),
-        };
+            // If the template type is chat, then we will build a chat streamed output or other ai template streamed output
+            return match ($template_type) {
+                'chatbot', 'vision', 'chatPro', 'chatPro-image', 'socialMediaAgent' => $this->buildChatStreamedOutput($request),
+                'chatPro-council'         => $this->buildCouncilStreamedOutput($request),
+                'chatPro-council-summary' => $this->buildCouncilSummaryStreamedOutput($request),
+                default                   => $this->buildOtherStreamedOutput($request),
+            };
+        } catch (Throwable $exception) {
+            Log::error('[DZEVA] Stream initialization failed', [
+                'public_model' => $request->get('chatbot_front_model'),
+                'error'        => $exception->getMessage(),
+            ]);
+
+            return $this->modelUnavailableStream();
+        }
     }
 
     /**
@@ -348,6 +357,10 @@ class GeneratorController extends Controller
         }
 
         if (! empty($chatbot_front_model)) {
+            if ($entity = $this->entityFromModelValue($chatbot_front_model)) {
+                return $entity->value;
+            }
+
             $engine = Entity::query()
                 ->where('key', $chatbot_front_model)
                 ->first();
@@ -366,6 +379,10 @@ class GeneratorController extends Controller
         $default_ai_engine = setting('default_ai_engine', EngineEnum::OPEN_AI->value);
 
         if (! empty($chatbot_front_model)) {
+            if ($entity = $this->entityFromModelValue($chatbot_front_model)) {
+                return $entity->engine()->value;
+            }
+
             $engine = Entity::query()
                 ->where('key', $chatbot_front_model)
                 ->first();
@@ -400,6 +417,32 @@ class GeneratorController extends Controller
     private function resolveDzevaPublicModelSlug(?string $model): ?string
     {
         return DzevaModelCatalog::entityValueForPublicSlug($model) ?? $model;
+    }
+
+    private function entityFromModelValue(?string $model): ?EntityEnum
+    {
+        if (! $model) {
+            return null;
+        }
+
+        return EntityEnum::tryFrom(str_replace('__', '.', $model));
+    }
+
+    private function modelUnavailableStream(): StreamedResponse
+    {
+        return response()->stream(static function () {
+            echo "event: data\n";
+            echo 'data: ' . __('This model is temporarily unavailable. Please try another model.');
+            echo "\n\n";
+            echo "event: stop\n";
+            echo "data: [DONE]\n\n";
+            flush();
+        }, 200, [
+            'Cache-Control'     => 'no-cache',
+            'X-Accel-Buffering' => 'no',
+            'Connection'        => 'keep-alive',
+            'Content-Type'      => 'text/event-stream',
+        ]);
     }
 
     private function createChatMessage($user, array $chatParams): UserOpenaiChatMessage

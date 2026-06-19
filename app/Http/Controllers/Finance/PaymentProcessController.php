@@ -653,9 +653,9 @@ class PaymentProcessController extends Controller
                 try {
                     if (PaymentGatewayEnum::isRefactored($gateway->code)) {
                         GatewayFactory::make(PaymentGatewayEnum::tryFrom($gateway->code))->saveProduct($plan);
+                    } else {
+                        GatewaySelector::selectGateway($gateway->code)::saveProduct($plan);
                     }
-
-                    GatewaySelector::selectGateway($gateway->code)::saveProduct($plan);
                 } catch (Exception $e) {
                     Log::error('saveGatewayProducts(): ' . $e->getMessage());
                 }

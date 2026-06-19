@@ -711,6 +711,14 @@
             </div>
         </div>
 
+        <div x-init="
+            $watch('targetLanguages', langs => {
+                $dispatch('generator-changed', { generator: 'video-dubbing', quantity: Math.max(1, langs.length) * 60, _force: Date.now() });
+            });
+            $nextTick(() => $dispatch('generator-changed', { generator: 'video-dubbing', quantity: Math.max(1, targetLanguages.length) * 60 }));
+        ">
+        </div>
+
         {{-- Submit Button --}}
         @if (\App\Helpers\Classes\Helper::appIsDemo())
             <x-button
@@ -743,5 +751,16 @@
                 </template>
             </x-button>
         @endif
+
+        <div
+            x-init="
+                $watch('targetLanguages', langs => {
+                    $dispatch('generator-changed', { generator: 'video-dubbing', quantity: Math.max(1, langs.length) * 60, _force: Date.now() });
+                });
+                $nextTick(() => $dispatch('generator-changed', { generator: 'video-dubbing', quantity: Math.max(1, targetLanguages.length) * 60 }));
+            "
+        >
+            <x-cost-preview class="w-full justify-end" />
+        </div>
     </form>
 </div>

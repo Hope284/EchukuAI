@@ -158,6 +158,10 @@
                 </span>
             </x-button>
         @endif
+
+        <div x-init="$nextTick(() => $dispatch('generator-changed', { generator: 'ai-captions', quantity: 1 }))">
+            <x-cost-preview class="w-full justify-end" />
+        </div>
     </form>
 </x-card>
 
@@ -173,6 +177,7 @@
                 fileName: '',
                 submitting: false,
                 isDemo: initial.isDemo,
+                videoDurationSeconds: 0,
 
                 async onFileChange(event) {
                     const input = event.target;
@@ -253,6 +258,11 @@
                                     finish(false);
                                     return;
                                 }
+                            }
+                            if (isFinite(duration)) {
+                                this.videoDurationSeconds = Math.round(duration);
+                                const minutes = Math.max(1, Math.ceil(duration / 60));
+                                this.$dispatch('generator-changed', { generator: 'ai-captions', quantity: minutes, _force: Date.now() });
                             }
                             finish(true);
                         };

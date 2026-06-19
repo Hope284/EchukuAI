@@ -8,6 +8,8 @@ use App\Models\GatewayProducts;
 use App\Models\Gateways;
 use App\Models\Plan;
 use App\Services\GatewaySelector;
+use App\Services\Payment\Enums\PaymentGatewayEnum;
+use App\Services\Payment\Factories\GatewayFactory;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -63,16 +65,30 @@ class EnsurePlanGatewayProductsCommand extends Command
                 }
 
                 try {
-                    $service = GatewaySelector::selectGateway($gateway->code);
+                    if (PaymentGatewayEnum::isRefactored($gateway->code)) {
+                        GatewayFactory::make(PaymentGatewayEnum::tryFrom($gateway->code))->saveProduct($plan);
+                    } else {
+                        $service = GatewaySelector::selectGateway($gateway->code);
 
-                    if (! method_exists($service, 'saveProduct')) {
-                        $this->warn("Skipped {$gateway->code}: saveProduct is not available.");
-                        $skipped++;
-                        continue;
+                        if (! method_exists($service, 'saveProduct')) {
+                            $this->warn("Skipped {$gateway->code}: saveProduct is not available.");
+                            $skipped++;
+                            continue;
+                        }
+
+                        $serviceClass = get_class($service);
+                        $serviceClass::saveProduct($plan);
                     }
 
-                    $serviceClass = get_class($service);
-                    $serviceClass::saveProduct($plan);
+                    $mapping = GatewayProducts::query()
+                        ->where('plan_id', $plan->id)
+                        ->where('gateway_code', $gateway->code)
+                        ->first();
+
+                    if (! $mapping?->product_id || ! $mapping?->price_id) {
+                        throw new \RuntimeException('Gateway did not persist a complete product mapping.');
+                    }
+
                     $created++;
                     $this->line("Ensured {$gateway->code} mapping for plan {$plan->id}.");
                 } catch (Throwable $exception) {

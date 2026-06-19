@@ -108,7 +108,7 @@ class PaystackService
             }
 
             $key = self::getKey($gateway);
-            $paystackPlansResponse = self::curl_req(self::$plan_endpoint . '?perPage=100', $key, [], 'GET');
+            $paystackPlansResponse = self::curl_req_get(self::$plan_endpoint . '?perPage=100', $key);
             if (! isset($paystackPlansResponse['data'])) {
                 throw new RuntimeException('Could not fetch plans from Paystack.');
             }
@@ -158,8 +158,8 @@ class PaystackService
             $total = $plan->price + $taxValue;
             $price = (int) (((float) $total) * 100); // Must be in cents level for paystack
             $key = self::getKey($gateway);
-            $oldProductId = null;
-            // 2 check if product exists. No->create, Yes->create->assign old to $oldProductId. (Create product in every situation. maybe user updated stripe credentials.)
+            // Reuse an existing gateway product. Product IDs are stable; recurring
+            // plan codes may still be replaced when plan pricing changes.
             $product = GatewayProducts::where(['plan_id' => $plan->id, 'gateway_code' => self::$GATEWAY_CODE])->first();
 
             $data = [
@@ -168,24 +168,42 @@ class PaystackService
                 'price'       => $price == 0 ? 1000 : $price,
                 'currency'    => $currency,
             ];
-            // Create product in every situation. maybe user updated paystack credentials.
-            $newProduct = self::curl_req(self::$product_endpoint, $key, $data);
-            if ($product != null) {
-                if ($product->product_id != null) {
-                    $oldProductId = $product->product_id; // Product has been created before
-                } // ELSE Product has not been created before but record exists. Create new product and update record.
+            if ($product?->product_id) {
+                $productCode = $product->product_id;
             } else {
+                $newProduct = self::curl_req(self::$product_endpoint, $key, $data);
+                $productCode = data_get($newProduct, 'data.product_code');
+
+                if (! $productCode) {
+                    throw new Exception('Paystack did not return a product code.');
+                }
+            }
+
+            if (! $product) {
                 $product = new GatewayProducts;
                 $product->plan_id = $plan->id;
                 $product->gateway_code = self::$GATEWAY_CODE;
                 $product->gateway_title = self::$GATEWAY_NAME;
             }
-            $product->product_id = $newProduct['data']['product_code'];
+            $product->product_id = $productCode;
             $product->plan_name = $plan->name;
             $product->save();
             // if not lifetime or free or onetime then create priceID
             if ($plan->price != 0 && $plan->type == TypeEnum::SUBSCRIPTION->value && ! self::isLifetimeSubscription($plan)) {
                 $interval = $plan->frequency == FrequencyEnum::MONTHLY->value ? FrequencyEnum::MONTHLY->value : 'annually';
+
+                if (
+                    filled($product->price_id)
+                    && $product->price_id !== 'Not Needed'
+                    && self::paystackPlanMatches($product->price_id, $key, $price, $currency, $interval)
+                ) {
+                    $product->payload = self::mappingPayload($price, $currency, $plan, $interval);
+                    $product->save();
+                    DB::commit();
+
+                    return;
+                }
+
                 $billingPlan = self::curl_req(self::$plan_endpoint, $key, [
                     'name'        => $plan->name,
                     'interval'    => $interval,
@@ -199,7 +217,7 @@ class PaystackService
                     $history->plan_name = $plan->name;
                     $history->gateway_code = self::$GATEWAY_CODE;
                     $history->product_id = $product->product_id;
-                    $history->old_product_id = $oldProductId;
+                    $history->old_product_id = $product->product_id;
                     $history->old_price_id = $product->price_id;
                     $history->new_price_id = $billingPlan['data']['plan_code'];
                     $history->status = 'check';
@@ -207,17 +225,48 @@ class PaystackService
                     $tmp = self::updateUserData();
                 }
                 $product->price_id = $billingPlan['data']['plan_code'];
+                $product->payload = self::mappingPayload($price, $currency, $plan, $interval);
             } else {
                 $product->price_id = 'Not Needed';
+                $product->payload = self::mappingPayload($price, $currency, $plan);
             }
             $product->save();
             DB::commit();
-        } catch (Exception $ex) {
-            DB::rollBack();
+        } catch (Throwable $ex) {
+            if (DB::transactionLevel() > 0) {
+                DB::rollBack();
+            }
             Log::error(self::$GATEWAY_CODE . "-> saveProduct():\n" . $ex->getMessage());
 
-            return back()->with(['message' => $ex->getMessage(), 'type' => 'error']);
+            throw new RuntimeException('Paystack could not synchronize the plan product mapping.', 0, $ex);
         }
+    }
+
+    private static function paystackPlanMatches(string $planCode, string $key, int $amount, string $currency, string $interval): bool
+    {
+        try {
+            $response = self::curl_req_get(self::$plan_endpoint . '/' . rawurlencode($planCode), $key);
+            $remote = data_get($response, 'data', []);
+
+            return (int) data_get($remote, 'amount') === $amount
+                && strtolower((string) data_get($remote, 'interval')) === strtolower($interval)
+                && strtoupper((string) data_get($remote, 'currency')) === strtoupper($currency);
+        } catch (Throwable $exception) {
+            Log::warning(self::$GATEWAY_CODE . '-> paystackPlanMatches(): ' . $exception->getMessage());
+
+            return false;
+        }
+    }
+
+    private static function mappingPayload(int $amount, string $currency, Plan $plan, ?string $interval = null): array
+    {
+        return [
+            'amount_minor' => $amount,
+            'currency' => strtoupper($currency),
+            'frequency' => $plan->frequency,
+            'interval' => $interval,
+            'plan_type' => $plan->type,
+        ];
     }
 
     // tested

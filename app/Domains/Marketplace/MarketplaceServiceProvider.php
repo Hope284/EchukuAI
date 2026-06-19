@@ -10,6 +10,14 @@ use App\Domains\Marketplace\Services\ExtensionInstallService;
 use App\Domains\Marketplace\Services\ExtensionUninstallService;
 use App\Extensions\AdvancedImage\System\AdvancedImageServiceProvider;
 use App\Extensions\Affilate\System\AffilateServiceProvider;
+use App\Extensions\AIAgent\System\AIAgentServiceProvider;
+use App\Extensions\AIAgentGmail\System\AIAgentGmailServiceProvider;
+use App\Extensions\AIAgentOutlook\System\AIAgentOutlookServiceProvider;
+use App\Extensions\AIAgentSlackChannel\System\AIAgentSlackChannelServiceProvider;
+use App\Extensions\AIAgentToolChatbot\System\AIAgentToolChatbotServiceProvider;
+use App\Extensions\AIAgentToolMarketingBot\System\AIAgentToolMarketingBotServiceProvider;
+use App\Extensions\AIAgentToolSocialMediaAgent\System\AIAgentToolSocialMediaAgentServiceProvider;
+use App\Extensions\AIAgentWhatsappChannel\System\AIAgentWhatsappChannelServiceProvider;
 use App\Extensions\AiAvatar\System\AiAvatarServiceProvider;
 use App\Extensions\AiCaptions\System\AiCaptionsServiceProvider;
 use App\Extensions\AIChatPro\System\AIChatProServiceProvider;
@@ -218,11 +226,19 @@ class MarketplaceServiceProvider extends ServiceProvider
         'ai-photoshoot'                 => AIPhotoshootServiceProvider::class,
         'ai-chat-pro-entity-highlight'  => AiChatProEntityHighlightServiceProvider::class,
         'ai-chat-pro-highlight-to-ask'  => AiChatProHighlightToAskServiceProvider::class,
-        'video-editor'					             => VideoEditorServiceProvider::class,
+        'video-editor'					=> VideoEditorServiceProvider::class,
         'ugc-factory'                   => UGCFactoryServiceProvider::class,
         'ugc-creator'                   => UGCCreatorServiceProvider::class,
         'video-dubbing'                 => VideoDubbingServiceProvider::class,
         'ai-captions'                   => AiCaptionsServiceProvider::class,
+		'ai-agent'                      => AIAgentServiceProvider::class,
+        'ai-agent-whatsapp-channel'     => AIAgentWhatsappChannelServiceProvider::class,
+        'ai-agent-slack-channel'        => AIAgentSlackChannelServiceProvider::class,
+        'ai-agent-tool-social-media'    => AIAgentToolSocialMediaAgentServiceProvider::class,
+        'ai-agent-tool-marketing-bot'   => AIAgentToolMarketingBotServiceProvider::class,
+        'ai-agent-tool-chatbot'         => AIAgentToolChatbotServiceProvider::class,
+        'ai-agent-gmail'                => AIAgentGmailServiceProvider::class,
+        'ai-agent-outlook'              => AIAgentOutlookServiceProvider::class,
     ];
 
     public function register(): void

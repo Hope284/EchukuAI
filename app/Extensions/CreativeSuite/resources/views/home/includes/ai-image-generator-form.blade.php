@@ -367,6 +367,15 @@
                     return found ? found.label : '';
                 },
 
+                init() {
+                    this.$nextTick(() => {
+                        this.$dispatch('generator-changed', { generator: this.generator });
+                    });
+                    this.$watch('generator', (value) => {
+                        this.$dispatch('generator-changed', { generator: value });
+                    });
+                },
+
                 handleDragOver(event) {
                     this.$refs.dropArea.classList.add('drag-over');
                 },

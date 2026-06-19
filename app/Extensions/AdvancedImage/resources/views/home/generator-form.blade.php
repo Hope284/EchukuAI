@@ -388,6 +388,8 @@
 
         @include('panel.user.openai_chat.components.prompt_library_modal')
     </form>
+
+    <x-cost-preview class="w-full justify-end" />
 </div>
 
 @push('script')
@@ -407,6 +409,15 @@
                     'nano-banana',
                     'xai/grok-imagine-image'
                 ],
+
+                init() {
+                    this.$nextTick(() => {
+                        this.$dispatch('generator-changed', { generator: this.generator, _force: Date.now() });
+                    });
+                    this.$watch('generator', (value) => {
+                        this.$dispatch('generator-changed', { generator: value, _force: Date.now() });
+                    });
+                },
 
                 handleDragOver(event) {
                     this.$refs.dropArea.classList.add('drag-over');

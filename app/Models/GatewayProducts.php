@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class GatewayProducts extends Model
@@ -18,5 +19,10 @@ class GatewayProducts extends Model
     public function revenuecat_products(): HasMany
     {
         return $this->hasMany(RevenueCatProducts::class, 'gatewayproduct_id', 'id');
+    }
+
+    public function plan(): BelongsTo
+    {
+        return $this->belongsTo(Plan::class, 'plan_id');
     }
 }

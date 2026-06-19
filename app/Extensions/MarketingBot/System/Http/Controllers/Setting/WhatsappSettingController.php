@@ -19,11 +19,16 @@ class WhatsappSettingController extends Controller
         }
 
         $data = $request->validate([
-            'whatsapp_sid'           => 'required|string',
-            'whatsapp_token'         => 'required|string',
-            'whatsapp_phone'         => 'required|string',
+            'whatsapp_provider'      => 'required|string|in:twilio,meta',
+            'whatsapp_sid'           => 'required_if:whatsapp_provider,twilio|nullable|string',
+            'whatsapp_token'         => 'required_if:whatsapp_provider,twilio|nullable|string',
+            'whatsapp_phone'         => 'required_if:whatsapp_provider,twilio|nullable|string',
             'whatsapp_sandbox_phone' => 'nullable|string',
-            'whatsapp_environment'   => 'required',
+            'whatsapp_environment'   => 'required_if:whatsapp_provider,twilio|nullable|string',
+            'meta_access_token'      => 'required_if:whatsapp_provider,meta|nullable|string',
+            'meta_phone_number_id'   => 'required_if:whatsapp_provider,meta|nullable|string',
+            'meta_verify_token'      => 'nullable|string',
+            'meta_waba_id'           => 'required_if:whatsapp_provider,meta|nullable|string',
         ]);
 
         WhatsappChannel::query()->updateOrCreate([

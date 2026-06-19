@@ -15,6 +15,7 @@ use App\Extensions\Chatbot\System\Models\ChatbotCustomer;
 use App\Extensions\Chatbot\System\Models\ChatbotHistory;
 use App\Extensions\Chatbot\System\Services\ChatbotService;
 use App\Extensions\ChatbotAgent\System\Services\ChatbotForFrameEventAbly;
+use App\Extensions\ChatbotReview\System\Services\ChatbotReviewService;
 use App\Extensions\ChatbotTelegram\System\Services\Telegram\TelegramService;
 use App\Extensions\ChatbotWhatsapp\System\Services\Twillio\TwilioWhatsappService;
 use App\Helpers\Classes\ApiHelper;
@@ -36,7 +37,7 @@ class ChatbotAgentController extends Controller
     public function __construct(public ChatbotService $service)
     {
         $this->middleware(function ($request, $next) {
-            if (! ChatbotHelper::planAllowsHumanAgent()) {
+            if (method_exists(ChatbotHelper::class, 'planAllowsHumanAgent') && ! ChatbotHelper::planAllowsHumanAgent()) {
                 abort(403);
             }
 
@@ -196,7 +197,7 @@ class ChatbotAgentController extends Controller
         $conversation->load('customerTags');
 
         if (MarketplaceHelper::isRegistered('chatbot-review')) {
-            app(\App\Extensions\ChatbotReview\System\Services\ChatbotReviewService::class)
+            app(ChatbotReviewService::class)
                 ->requestReview($conversation, 'ticket_closed');
         }
 

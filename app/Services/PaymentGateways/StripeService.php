@@ -45,6 +45,7 @@ use Stripe\PaymentIntent;
 use Stripe\Stripe;
 use Stripe\StripeClient;
 use Stripe\Webhook;
+use RuntimeException;
 use Throwable;
 use UnexpectedValueException;
 
@@ -222,10 +223,28 @@ class StripeService
                 'product'     => $product->getAttribute('product_id'),
             ];
             // if Subscription price and its not lifetime subscription
-            if ($plan->price != 0 && $plan->type == TypeEnum::SUBSCRIPTION->value && $plan->frequency !== FrequencyEnum::LIFETIME_MONTHLY->value && $plan->frequency !== FrequencyEnum::LIFETIME_YEARLY->value) {
-                $data['recurring'] = ['interval' => $plan->frequency == FrequencyEnum::MONTHLY->value ? 'month' : 'year'];
+            if (
+                $plan->price != 0
+                && $plan->type === TypeEnum::SUBSCRIPTION->value
+                && ! in_array($plan->frequency, FrequencyEnum::lifetimeValues(), true)
+            ) {
+                $interval = $plan->frequency == FrequencyEnum::MONTHLY->value ? 'month' : 'year';
+                $data['recurring'] = ['interval' => $interval];
+
+                if (
+                    filled($product->price_id)
+                    && $product->price_id !== 'Not Needed'
+                    && self::stripePriceMatches($stripe, $product->price_id, $price, $currency, $interval)
+                ) {
+                    $product->payload = self::mappingPayload($price, $currency, $plan, $interval);
+                    $product->save();
+                    DB::commit();
+
+                    return;
+                }
+
                 // check if price exists
-                if ($product->price_id !== null) {
+                if (filled($product->price_id) && $product->price_id !== 'Not Needed') {
                     // Since stripe api does not allow to update recurring values, we deactivate all prices added to this product before and add a new price object.
                     // Deactivate all prices
                     foreach ($stripe->prices->all(['product' => $product->product_id]) as $oldPrice) {
@@ -253,16 +272,50 @@ class StripeService
                     $updatedPrice = $stripe->prices->create($data);
                 }
                 $product->price_id = $updatedPrice->id;
+                $product->payload = self::mappingPayload($price, $currency, $plan, $interval);
 
             } else {
                 $product->price_id = 'Not Needed';
+                $product->payload = self::mappingPayload($price, $currency, $plan);
             }
 
             $product->save();
             DB::commit();
-        } catch (Exception $ex) {
-            DB::rollBack();
+        } catch (Throwable $ex) {
+            if (DB::transactionLevel() > 0) {
+                DB::rollBack();
+            }
+            Log::error(self::$GATEWAY_CODE . '-> saveProduct(): ' . $ex->getMessage());
+
+            throw new RuntimeException('Stripe could not synchronize the plan product mapping.', 0, $ex);
         }
+    }
+
+    private static function stripePriceMatches(StripeClient $stripe, string $priceId, int $amount, string $currency, string $interval): bool
+    {
+        try {
+            $remote = $stripe->prices->retrieve($priceId);
+
+            return (bool) $remote->active
+                && (int) $remote->unit_amount === $amount
+                && strtolower((string) $remote->currency) === strtolower($currency)
+                && strtolower((string) ($remote->recurring?->interval ?? '')) === strtolower($interval);
+        } catch (Throwable $exception) {
+            Log::warning(self::$GATEWAY_CODE . '-> stripePriceMatches(): ' . $exception->getMessage());
+
+            return false;
+        }
+    }
+
+    private static function mappingPayload(int $amount, string $currency, Plan $plan, ?string $interval = null): array
+    {
+        return [
+            'amount_minor' => $amount,
+            'currency' => strtoupper($currency),
+            'frequency' => $plan->frequency,
+            'interval' => $interval,
+            'plan_type' => $plan->type,
+        ];
     }
 
     private static function createGatewayProducts(Plan $plan, StripeClient $stripe): array
@@ -276,13 +329,21 @@ class StripeService
             ])
             ->first();
 
-        $newProduct = $stripe->products->create(['name' => $plan->name]);
+        if ($product?->product_id) {
+            try {
+                $stripe->products->update($product->product_id, ['name' => $plan->name]);
+                $product->plan_name = $plan->name;
+                $product->save();
 
-        if ($product !== null) {
-            if ($product->product_id !== null && $plan->name !== null) {
+                return [$product, null];
+            } catch (Exception) {
                 $oldProductId = $product->product_id;
             }
-        } else {
+        }
+
+        $newProduct = $stripe->products->create(['name' => $plan->name]);
+
+        if (! $product) {
             $product = new GatewayProducts;
             $product->plan_id = $plan->id;
             $product->gateway_code = self::$GATEWAY_CODE;

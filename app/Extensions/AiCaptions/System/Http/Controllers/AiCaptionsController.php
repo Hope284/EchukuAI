@@ -11,6 +11,7 @@ use App\Extensions\AiCaptions\System\Services\CaptionsApiService;
 use App\Extensions\AiCaptions\System\Services\VideoDurationService;
 use App\Helpers\Classes\Helper;
 use App\Http\Controllers\Controller;
+use App\Services\SharedCredit\SharedCreditService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -380,6 +381,10 @@ class AiCaptionsController extends Controller
         }
 
         if ($user->isAdmin()) {
+            return true;
+        }
+
+        if (app(SharedCreditService::class)->isEnabled() && $user->isSharedCreditUser()) {
             return true;
         }
 

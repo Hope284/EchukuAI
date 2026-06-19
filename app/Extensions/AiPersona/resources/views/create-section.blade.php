@@ -602,6 +602,10 @@
                                     <span x-text="creating ? '{{ __('Generating...') }}' : '{{ __('Generate Video') }}'"></span>
                                 </x-button>
                             @endif
+
+                            <div x-init="$nextTick(() => $dispatch('generator-changed', { generator: 'heygen', quantity: 1 }))">
+                                <x-cost-preview class="w-full justify-end" />
+                            </div>
                         </div>
                     </form>
                 </x-card>

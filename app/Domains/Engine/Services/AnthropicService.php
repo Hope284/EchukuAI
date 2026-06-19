@@ -10,6 +10,7 @@ use GuzzleHttp\Promise\PromiseInterface;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
+use RuntimeException;
 
 class AnthropicService
 {
@@ -20,6 +21,8 @@ class AnthropicService
     public array $messages = [];
 
     public ?string $system = null;
+
+    public ?string $model = null;
 
     public array $tools = [];
 
@@ -34,7 +37,7 @@ class AnthropicService
         $hasTools = ! empty($this->tools);
 
         $body = Helper::arrayMerge($system, [
-            'model'      => setting('anthropic_default_model'),
+            'model'      => $this->model ?: setting('anthropic_default_model'),
             'max_tokens' => (int) setting('anthropic_max_output_length', 1024),
             'messages'   => $this->messages,
             'stream'     => $this->isStream(),
@@ -51,8 +54,14 @@ class AnthropicService
 
     public function client(): PendingRequest
     {
+        $key = $this->getKey();
+
+        if (! filled($key)) {
+            throw new RuntimeException('Anthropic API key is not configured for the selected DZEVA model.');
+        }
+
         return Http::withHeaders([
-            'x-api-key'         => $this->getKey(),
+            'x-api-key'         => $key,
             'Accept'            => 'application/json',
             'Content-Type'      => 'application/json',
             'anthropic-version' => '2023-06-01',
@@ -98,6 +107,13 @@ class AnthropicService
     public function setSystem(?string $system): self
     {
         $this->system = $system;
+
+        return $this;
+    }
+
+    public function setModel(?string $model): self
+    {
+        $this->model = $model;
 
         return $this;
     }

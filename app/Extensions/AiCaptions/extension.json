@@ -1,6 +1,6 @@
 {
     "name": "AI Captions",
     "type": "extension",
-    "version": "1.0",
-    "description": "AI Captions extension for DZEVA — automatically add stylized animated captions to videos via the Captions API."
+    "version": "1.2",
+    "description": "AI Captions extension for DZEVA â€” automatically add stylized animated captions to videos via the Captions API."
 }

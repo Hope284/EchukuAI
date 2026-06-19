@@ -7,8 +7,10 @@ namespace App\Extensions\MarketingBot\System;
 use App\Domains\Marketplace\Contracts\UninstallExtensionServiceProviderInterface;
 use App\Extensions\MarketingBot\System\Console\Commands\RunTelegramCampaignCommand;
 use App\Extensions\MarketingBot\System\Console\Commands\RunWhatsappCampaignCommand;
+use App\Extensions\MarketingBot\System\Http\Controllers\Admin\MarketingBotAdminSettingController;
 use App\Extensions\MarketingBot\System\Http\Controllers\Campaign\GenerateController;
 use App\Extensions\MarketingBot\System\Http\Controllers\Campaign\TelegramCampaignController;
+use App\Extensions\MarketingBot\System\Http\Controllers\Campaign\WhatsappCampaignAnalyticsController;
 use App\Extensions\MarketingBot\System\Http\Controllers\Campaign\WhatsappCampaignController;
 use App\Extensions\MarketingBot\System\Http\Controllers\InboxController;
 use App\Extensions\MarketingBot\System\Http\Controllers\MarketingBotTrainController;
@@ -16,12 +18,15 @@ use App\Extensions\MarketingBot\System\Http\Controllers\MarketingDashboardContro
 use App\Extensions\MarketingBot\System\Http\Controllers\Setting\TelegramSettingController;
 use App\Extensions\MarketingBot\System\Http\Controllers\Setting\ViewSettingController;
 use App\Extensions\MarketingBot\System\Http\Controllers\Setting\WhatsappSettingController;
+use App\Extensions\MarketingBot\System\Http\Controllers\Telegram\TelegramContactImportController;
 use App\Extensions\MarketingBot\System\Http\Controllers\Telegram\TelegramGroupController;
 use App\Extensions\MarketingBot\System\Http\Controllers\Telegram\TelegramSubscriberController;
 use App\Extensions\MarketingBot\System\Http\Controllers\Webhook\TelegramWebhookController;
 use App\Extensions\MarketingBot\System\Http\Controllers\Webhook\WhatsappWebhookController;
 use App\Extensions\MarketingBot\System\Http\Controllers\Whatsapp\ContactController;
 use App\Extensions\MarketingBot\System\Http\Controllers\Whatsapp\ContactListController;
+use App\Extensions\MarketingBot\System\Http\Controllers\Whatsapp\MetaWhatsappTemplateController;
+use App\Extensions\MarketingBot\System\Http\Controllers\Whatsapp\ContactListImportController;
 use App\Extensions\MarketingBot\System\Http\Controllers\Whatsapp\SegmentController;
 use App\Extensions\MarketingBot\System\Models\MarketingCampaign;
 use App\Extensions\MarketingBot\System\Models\MarketingConversation;
@@ -192,17 +197,40 @@ class MarketingBotServiceProvider extends ServiceProvider implements UninstallEx
                 $router->post('generate/content', [GenerateController::class, 'generateContent'])->name('generate.content');
 
                 $router->resource('telegram-campaign', TelegramCampaignController::class);
+
+                // Analytics routes must be declared before the resource to avoid {whatsappCampaign} capturing "analytics"
+                $router->get('whatsapp-campaign/analytics/templates', [WhatsappCampaignAnalyticsController::class, 'templates'])->name('whatsapp-campaign.analytics.templates');
+                $router->get('whatsapp-campaign/{whatsappCampaign}/analytics', [WhatsappCampaignAnalyticsController::class, 'index'])->name('whatsapp-campaign.analytics');
+
                 $router->resource('whatsapp-campaign', WhatsappCampaignController::class);
+
+                $router->get('whatsapp/meta-templates', MetaWhatsappTemplateController::class)->name('whatsapp.meta-templates');
 
                 $router->resource('contact', ContactController::class)->except('show', 'create');
                 $router->resource('segment', SegmentController::class)->except('show', 'create');
+
+                $router->post('contact-list/import/headers', [ContactListImportController::class, 'headers'])->name('contact-list.import.headers');
+                $router->post('contact-list/import/preview', [ContactListImportController::class, 'preview'])->name('contact-list.import.preview');
+                $router->post('contact-list/import', [ContactListImportController::class, 'import'])->name('contact-list.import');
                 $router->resource('contact-list', ContactListController::class)->except('show');
 
                 $router->resource('telegram-group', TelegramGroupController::class)
                     ->only(['index', 'destroy']);
 
+                $router->post('telegram-subscriber/import/headers', [TelegramContactImportController::class, 'headers'])->name('telegram-subscriber.import.headers');
+                $router->post('telegram-subscriber/import/preview', [TelegramContactImportController::class, 'preview'])->name('telegram-subscriber.import.preview');
+                $router->post('telegram-subscriber/import', [TelegramContactImportController::class, 'import'])->name('telegram-subscriber.import');
                 $router->resource('telegram-subscriber', TelegramSubscriberController::class)
                     ->only(['index', 'destroy']);
+            });
+        $this->router()
+            ->group([
+                'middleware' => ['web', 'auth', 'admin'],
+                'prefix'     => 'dashboard/admin/marketing-bot',
+                'as'         => 'dashboard.admin.marketing-bot.',
+            ], function (Router $router) {
+                $router->get('settings', [MarketingBotAdminSettingController::class, 'index'])->name('settings.index');
+                $router->put('settings', [MarketingBotAdminSettingController::class, 'update'])->name('settings.update');
             });
         $this->router()
             ->group([

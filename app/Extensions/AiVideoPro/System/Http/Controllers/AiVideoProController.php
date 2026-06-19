@@ -202,7 +202,33 @@ class AiVideoProController extends Controller
             return Entity::driver($entityEnum)->inputSecond($seconds)->calculateCredit();
         }
 
+        $seconds = $this->extractDurationSeconds($action, $validated);
+
+        if ($seconds !== null) {
+            return Entity::driver($entityEnum)->inputVideoCount($seconds)->calculateCredit();
+        }
+
         return Entity::driver($entityEnum)->inputVideoCount(1)->calculateCredit();
+    }
+
+    private function extractDurationSeconds(string $action, array $validated): ?int
+    {
+        return match ($action) {
+            'veo'                => isset($validated['duration']) ? (int) $validated['duration'] : null,
+            'grok-imagine-video' => isset($validated['grok_video_duration']) ? (int) $validated['grok_video_duration'] : null,
+            'kling'              => $this->extractKlingDurationSeconds($validated),
+            default              => null,
+        };
+    }
+
+    private function extractKlingDurationSeconds(array $validated): ?int
+    {
+        return match (true) {
+            isset($validated['kling25turbo_duration']) => (int) $validated['kling25turbo_duration'],
+            isset($validated['kling26pro_duration'])   => (int) $validated['kling26pro_duration'],
+            isset($validated['kling_v3_duration'])     => (int) $validated['kling_v3_duration'],
+            default                                    => null,
+        };
     }
 
     private function handleSora(array $validated, EntityEnum $entityEnum, $driver): RedirectResponse|JsonResponse

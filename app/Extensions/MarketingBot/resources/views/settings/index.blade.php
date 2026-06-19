@@ -47,6 +47,7 @@
                 {{ __('Marketing Bot Whatsapp Settings') }}
             </x-slot>
             <form
+                x-data="{ provider: '{{ $whatsapp?->whatsapp_provider ?? 'twilio' }}' }"
                 action="{{ route('dashboard.user.marketing-bot.settings.whatsapp') }}"
                 method="post"
             >
@@ -61,68 +62,129 @@
                     value="{{ \Illuminate\Support\Facades\Auth::id() }}"
                 >
                 @csrf
-                <div class="mb-3">
+
+                {{-- Provider selector --}}
+                <div class="mb-5">
                     <x-forms.input
-                        :label="__('Whatsapp sid')"
-                        name="whatsapp_sid"
-                        size="lg"
-                        required
-                        value="{{ $app_is_demo ? '**********' : $whatsapp?->whatsapp_sid }}"
-                    >
-                    </x-forms.input>
-                </div>
-                <div class="mb-3">
-                    <x-forms.input
-                        :label="__('Whatsapp token')"
-                        name="whatsapp_token"
-                        size="lg"
-                        required
-                        value="{{ $app_is_demo ? '**********' : $whatsapp?->whatsapp_token }}"
-                    >
-                    </x-forms.input>
-                </div>
-                <div class="mb-3">
-                    <x-forms.input
-                        :label="__('Whatsapp phone')"
-                        name="whatsapp_phone"
-                        size="lg"
-                        required
-                        value="{{ $app_is_demo ? '**********' : $whatsapp?->whatsapp_phone }}"
-                    >
-                    </x-forms.input>
-                </div>
-                <div class="mb-3">
-                    <x-forms.input
-                        :label="__('Whatsapp sandbox phone')"
-                        name="whatsapp_sandbox_phone"
-                        size="lg"
-                        value="{{ $app_is_demo ? '**********' : $whatsapp?->whatsapp_sandbox_phone }}"
-                    >
-                    </x-forms.input>
-                </div>
-                <div class="mb-3">
-                    <x-forms.input
-                        id="whatsapp_environment"
+                        id="whatsapp_provider"
                         type="select"
                         size="lg"
-                        name="whatsapp_environment"
-                        label="{{ __('Environment') }}"
+                        name="whatsapp_provider"
+                        label="{{ __('WhatsApp Provider') }}"
+                        x-model="provider"
                     >
-                        <option
-                            {{ $whatsapp?->whatsapp_environment === 'sandbox' ? 'selected' : '' }}
-                            value="sandbox"
-                        >@lang('SANDBOX')</option>
-                        <option
-                            {{ $whatsapp?->whatsapp_environment === 'production' ? 'selected' : '' }}
-                            value="production"
-                        >@lang('PRODUCTION')</option>
+                        @php $enabledProviders = \App\Extensions\MarketingBot\System\Http\Controllers\Admin\MarketingBotAdminSettingController::getEnabledProviders(); @endphp
+                        @if(in_array('twilio', $enabledProviders))
+                            <option value="twilio">@lang('Twilio')</option>
+                        @endif
+                        @if(in_array('meta', $enabledProviders))
+                            <option value="meta">@lang('Meta (Official API)')</option>
+                        @endif
                     </x-forms.input>
+                </div>
+
+                {{-- Twilio fields --}}
+                <div x-show="provider === 'twilio'" x-cloak>
+                    <div class="mb-3">
+                        <x-forms.input
+                            :label="__('Account SID')"
+                            name="whatsapp_sid"
+                            size="lg"
+                            value="{{ $app_is_demo ? '**********' : $whatsapp?->whatsapp_sid }}"
+                        >
+                        </x-forms.input>
+                    </div>
+                    <div class="mb-3">
+                        <x-forms.input
+                            :label="__('Auth Token')"
+                            name="whatsapp_token"
+                            size="lg"
+                            value="{{ $app_is_demo ? '**********' : $whatsapp?->whatsapp_token }}"
+                        >
+                        </x-forms.input>
+                    </div>
+                    <div class="mb-3">
+                        <x-forms.input
+                            :label="__('Phone Number')"
+                            name="whatsapp_phone"
+                            size="lg"
+                            value="{{ $app_is_demo ? '**********' : $whatsapp?->whatsapp_phone }}"
+                        >
+                        </x-forms.input>
+                    </div>
+                    <div class="mb-3">
+                        <x-forms.input
+                            :label="__('Sandbox Phone Number')"
+                            name="whatsapp_sandbox_phone"
+                            size="lg"
+                            value="{{ $app_is_demo ? '**********' : $whatsapp?->whatsapp_sandbox_phone }}"
+                        >
+                        </x-forms.input>
+                    </div>
+                    <div class="mb-3">
+                        <x-forms.input
+                            id="whatsapp_environment"
+                            type="select"
+                            size="lg"
+                            name="whatsapp_environment"
+                            label="{{ __('Environment') }}"
+                        >
+                            <option
+                                {{ $whatsapp?->whatsapp_environment === 'sandbox' ? 'selected' : '' }}
+                                value="sandbox"
+                            >@lang('SANDBOX')</option>
+                            <option
+                                {{ $whatsapp?->whatsapp_environment === 'production' ? 'selected' : '' }}
+                                value="production"
+                            >@lang('PRODUCTION')</option>
+                        </x-forms.input>
+                    </div>
+                </div>
+
+                {{-- Meta (Official API) fields --}}
+                <div x-show="provider === 'meta'" x-cloak>
+                    <div class="mb-3">
+                        <x-forms.input
+                            :label="__('Access Token')"
+                            name="meta_access_token"
+                            size="lg"
+                            value="{{ $app_is_demo ? '**********' : $whatsapp?->meta_access_token }}"
+                        >
+                        </x-forms.input>
+                    </div>
+                    <div class="mb-3">
+                        <x-forms.input
+                            :label="__('Phone Number ID')"
+                            name="meta_phone_number_id"
+                            size="lg"
+                            value="{{ $app_is_demo ? '**********' : $whatsapp?->meta_phone_number_id }}"
+                        >
+                        </x-forms.input>
+                    </div>
+                    <div class="mb-3">
+                        <x-forms.input
+                            :label="__('WhatsApp Business Account ID (WABA ID)')"
+                            name="meta_waba_id"
+                            size="lg"
+                            value="{{ $app_is_demo ? '**********' : $whatsapp?->meta_waba_id }}"
+                        >
+                        </x-forms.input>
+                    </div>
+                    <div class="mb-3">
+                        <x-forms.input
+                            :label="__('Webhook Verify Token')"
+                            name="meta_verify_token"
+                            size="lg"
+                            value="{{ $app_is_demo ? '**********' : $whatsapp?->meta_verify_token }}"
+                        >
+                        </x-forms.input>
+                    </div>
                 </div>
 
                 @if ($whatsapp)
                     <div class="mb-3">
                         <x-forms.input
-                            :label="__('Webhook Url')"
+                            :label="__('Webhook URL')"
                             name="webhook"
                             size="lg"
                             value="{{ route('api.marketing-bot.whatsapp.webhook', $whatsapp?->id) }}"

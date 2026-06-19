@@ -50,6 +50,8 @@
             @else
                 @include('ai-viral-clips::create-clips.steps.vizard.generate-clips')
             @endif
+
+            <x-cost-preview class="w-full justify-end" />
         </div>
     </div>
 </div>

@@ -2,10 +2,19 @@
 
 namespace App\Extensions\MarketingBot\System\Models\Telegram;
 
+use Database\Factories\TelegramGroupSubscriberFactory;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class TelegramGroupSubscriber extends Model
 {
+    use HasFactory;
+
+    protected static function newFactory(): TelegramGroupSubscriberFactory
+    {
+        return TelegramGroupSubscriberFactory::new();
+    }
+
     protected $table = 'ext_telegram_group_subscribers';
 
     protected $fillable = [

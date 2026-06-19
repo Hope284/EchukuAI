@@ -23,10 +23,17 @@
         <x-forms.input
             id="name"
             size="lg"
-            label="{{ __('Name') }}"
+            label="{{ __('First Name') }}"
             name="name"
             required
             value="{{ old('name', $item?->name) }}"
+        />
+        <x-forms.input
+            id="last_name"
+            size="lg"
+            label="{{ __('Last Name') }}"
+            name="last_name"
+            value="{{ old('last_name', $item?->last_name) }}"
         />
         <x-forms.input
             id="phone"

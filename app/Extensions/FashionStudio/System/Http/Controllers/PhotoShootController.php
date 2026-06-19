@@ -24,7 +24,9 @@ class PhotoShootController extends BaseFashionStudioController
 
     public function index(): View
     {
-        return view('fashion-studio::photoshoots.index');
+        return view('fashion-studio::photoshoots.index', [
+            'numImages' => $this->getNumImages(),
+        ]);
     }
 
     public function myPhotoshoots(): View

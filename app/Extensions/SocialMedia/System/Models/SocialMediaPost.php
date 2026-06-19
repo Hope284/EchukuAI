@@ -107,7 +107,7 @@ class SocialMediaPost extends Model
             return $this->social_media_platform;
         }
 
-        if ($this->platform->platform) {
+        if ($this->platform?->platform) {
             return PlatformEnum::from($this->platform->platform);
         }
 

@@ -159,7 +159,7 @@
                 x-show="embeddings.filter(e => e.type === 'website').length"
                 ::disabled="fetching"
             >
-                @lang('Train DZEVA')
+                @lang('Train GPT')
             </x-button>
 
         </div>

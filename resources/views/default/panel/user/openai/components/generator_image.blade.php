@@ -76,13 +76,31 @@
         activeGenerator: '{{ setting('dalle_hidden', 0) == 1 ? 'stable_diffusion' : 'openai' }}',
         changeActiveGenerator(tab) {
             if (tab === this.activeGenerator) return;
-    
+
             this.$dispatch('active-generator-changed', tab);
-    
+
             if (!document.startViewTransition) {
                 return this.activeGenerator = tab;
             }
             document.startViewTransition(() => this.activeGenerator = tab);
+        },
+        init() {
+            this.$nextTick(() => {
+                this.$dispatch('generator-changed', { generator: this.activeGenerator, quantity: this._getQuantity() });
+            });
+            this.$watch('activeGenerator', (value) => {
+                this.$dispatch('generator-changed', { generator: value, quantity: 1 });
+            });
+            // Watch for Number of Images changes
+            document.querySelectorAll('#image_number_of_images, #image_number_of_images_stable').forEach(el => {
+                el.addEventListener('change', () => {
+                    this.$dispatch('generator-changed', { generator: this.activeGenerator, quantity: parseInt(el.value) || 1 });
+                });
+            });
+        },
+        _getQuantity() {
+            const el = document.querySelector('#image_number_of_images') || document.querySelector('#image_number_of_images_stable');
+            return parseInt(el?.value) || 1;
         },
         prompts: [
             '{{ addslashes(__('Cityscape at sunset in retro vector illustration')) }}',
@@ -195,14 +213,16 @@
                 @includeIf('see-dream-v4::see-dream-v4-tab')
             @endif
         </div>
-        <div class="max-sm:-order-1 max-sm:mb-4 max-sm:w-full md:min-w-96">
-            <x-credit-list
-                class:legend-image-box="bg-primary/20 dark:bg-secondary"
-                class:progressbar-image="bg-primary/20 dark:bg-secondary"
-                :aiImage="true"
-                :showLegend="true"
-            />
-        </div>
+        @if (!(auth()->check() && auth()->user()->isSharedCreditUser() && app(\App\Services\SharedCredit\SharedCreditService::class)->isEnabled()))
+            <div class="max-sm:-order-1 max-sm:mb-4 max-sm:w-full md:min-w-96">
+                <x-credit-list
+                    class:legend-image-box="bg-primary/20 dark:bg-secondary"
+                    class:progressbar-image="bg-primary/20 dark:bg-secondary"
+                    :aiImage="true"
+                    :showLegend="true"
+                />
+            </div>
+        @endif
     </div>
     @if (setting('dalle_hidden', 0) !== 1)
         <div
@@ -271,26 +291,30 @@
                     </x-button>
                 </div>
 
-                <x-button
-                    class="lqd-generator-advanced-trigger group text-3xs font-semibold text-heading-foreground"
-                    ::class="{ 'active': advancedSettingsShow }"
-                    tag="button"
-                    type="button"
-                    variant="link"
-                    @click="advancedSettingsShow = !advancedSettingsShow"
-                >
-                    {{ __('Advanced Settings') }}
-                    <span class="inline-flex size-9 items-center justify-center rounded-full bg-background shadow-sm">
-                        <x-tabler-plus
-                            class="size-4"
-                            ::class="{ 'hidden': advancedSettingsShow }"
-                        />
-                        <x-tabler-minus
-                            class="hidden size-4"
-                            ::class="{ 'hidden': !advancedSettingsShow }"
-                        />
-                    </span>
-                </x-button>
+                <div class="flex w-full items-center justify-between">
+                    <x-button
+                        class="lqd-generator-advanced-trigger group text-3xs font-semibold text-heading-foreground"
+                        ::class="{ 'active': advancedSettingsShow }"
+                        tag="button"
+                        type="button"
+                        variant="link"
+                        @click="advancedSettingsShow = !advancedSettingsShow"
+                    >
+                        {{ __('Advanced Settings') }}
+                        <span class="inline-flex size-9 items-center justify-center rounded-full bg-background shadow-sm">
+                            <x-tabler-plus
+                                class="size-4"
+                                ::class="{ 'hidden': advancedSettingsShow }"
+                            />
+                            <x-tabler-minus
+                                class="hidden size-4"
+                                ::class="{ 'hidden': !advancedSettingsShow }"
+                            />
+                        </span>
+                    </x-button>
+
+                    <x-cost-preview class="mt-0" />
+                </div>
 
                 <div
                     class="hidden w-full flex-wrap justify-between gap-3"
@@ -371,26 +395,30 @@
                     </x-button>
                 </div>
 
-                <x-button
-                    class="lqd-generator-advanced-trigger group text-3xs font-semibold text-heading-foreground"
-                    ::class="{ 'active': advancedSettingsShow }"
-                    tag="button"
-                    type="button"
-                    variant="link"
-                    @click="advancedSettingsShow = !advancedSettingsShow"
-                >
-                    {{ __('Advanced Settings') }}
-                    <span class="inline-flex size-9 items-center justify-center rounded-full bg-background shadow-sm">
-                        <x-tabler-plus
-                            class="size-4"
-                            ::class="{ 'hidden': advancedSettingsShow }"
-                        />
-                        <x-tabler-minus
-                            class="hidden size-4"
-                            ::class="{ 'hidden': !advancedSettingsShow }"
-                        />
-                    </span>
-                </x-button>
+                <div class="flex w-full items-center justify-between">
+                    <x-button
+                        class="lqd-generator-advanced-trigger group text-3xs font-semibold text-heading-foreground"
+                        ::class="{ 'active': advancedSettingsShow }"
+                        tag="button"
+                        type="button"
+                        variant="link"
+                        @click="advancedSettingsShow = !advancedSettingsShow"
+                    >
+                        {{ __('Advanced Settings') }}
+                        <span class="inline-flex size-9 items-center justify-center rounded-full bg-background shadow-sm">
+                            <x-tabler-plus
+                                class="size-4"
+                                ::class="{ 'hidden': advancedSettingsShow }"
+                            />
+                            <x-tabler-minus
+                                class="hidden size-4"
+                                ::class="{ 'hidden': !advancedSettingsShow }"
+                            />
+                        </span>
+                    </x-button>
+
+                    <x-cost-preview class="mt-0" />
+                </div>
 
                 <div
                     class="hidden w-full flex-wrap justify-between gap-3"
@@ -471,26 +499,30 @@
                     </x-button>
                 </div>
 
-                <x-button
-                    class="lqd-generator-advanced-trigger group text-3xs font-semibold text-heading-foreground"
-                    ::class="{ 'active': advancedSettingsShow }"
-                    tag="button"
-                    type="button"
-                    variant="link"
-                    @click="advancedSettingsShow = !advancedSettingsShow"
-                >
-                    {{ __('Advanced Settings') }}
-                    <span class="inline-flex size-9 items-center justify-center rounded-full bg-background shadow-sm">
-                        <x-tabler-plus
-                            class="size-4"
-                            ::class="{ 'hidden': advancedSettingsShow }"
-                        />
-                        <x-tabler-minus
-                            class="hidden size-4"
-                            ::class="{ 'hidden': !advancedSettingsShow }"
-                        />
-                    </span>
-                </x-button>
+                <div class="flex w-full items-center justify-between">
+                    <x-button
+                        class="lqd-generator-advanced-trigger group text-3xs font-semibold text-heading-foreground"
+                        ::class="{ 'active': advancedSettingsShow }"
+                        tag="button"
+                        type="button"
+                        variant="link"
+                        @click="advancedSettingsShow = !advancedSettingsShow"
+                    >
+                        {{ __('Advanced Settings') }}
+                        <span class="inline-flex size-9 items-center justify-center rounded-full bg-background shadow-sm">
+                            <x-tabler-plus
+                                class="size-4"
+                                ::class="{ 'hidden': advancedSettingsShow }"
+                            />
+                            <x-tabler-minus
+                                class="hidden size-4"
+                                ::class="{ 'hidden': !advancedSettingsShow }"
+                            />
+                        </span>
+                    </x-button>
+
+                    <x-cost-preview class="mt-0" />
+                </div>
 
                 <div
                     class="hidden w-full flex-wrap justify-between gap-3"
@@ -891,26 +923,30 @@
                 class="mt-5 flex flex-col items-start"
                 x-data="{ advancedSettingsShow: false }"
             >
-                <x-button
-                    class="lqd-generator-advanced-trigger group text-3xs font-semibold text-heading-foreground"
-                    ::class="{ 'active': advancedSettingsShow }"
-                    tag="button"
-                    type="button"
-                    variant="link"
-                    @click="advancedSettingsShow = !advancedSettingsShow"
-                >
-                    {{ __('Advanced Settings') }}
-                    <span class="inline-flex size-9 items-center justify-center rounded-full bg-background shadow-sm">
-                        <x-tabler-plus
-                            class="size-4"
-                            ::class="{ 'hidden': advancedSettingsShow }"
-                        />
-                        <x-tabler-minus
-                            class="hidden size-4"
-                            ::class="{ 'hidden': !advancedSettingsShow }"
-                        />
-                    </span>
-                </x-button>
+                <div class="flex w-full items-center justify-between">
+                    <x-button
+                        class="lqd-generator-advanced-trigger group text-3xs font-semibold text-heading-foreground"
+                        ::class="{ 'active': advancedSettingsShow }"
+                        tag="button"
+                        type="button"
+                        variant="link"
+                        @click="advancedSettingsShow = !advancedSettingsShow"
+                    >
+                        {{ __('Advanced Settings') }}
+                        <span class="inline-flex size-9 items-center justify-center rounded-full bg-background shadow-sm">
+                            <x-tabler-plus
+                                class="size-4"
+                                ::class="{ 'hidden': advancedSettingsShow }"
+                            />
+                            <x-tabler-minus
+                                class="hidden size-4"
+                                ::class="{ 'hidden': !advancedSettingsShow }"
+                            />
+                        </span>
+                    </x-button>
+
+                    <x-cost-preview class="mt-0" />
+                </div>
 
                 <div
                     class="hidden w-full flex-col justify-between gap-4"

@@ -30,7 +30,8 @@ class CreateVideoController extends BaseFashionStudioController
     public function createVideo(?string $image_id = null): View
     {
         return view('fashion-studio::create-video', [
-            'image_id' => $image_id,
+            'image_id'     => $image_id,
+            'videoEntity'  => $this->getVideoModelEntity()->value,
         ]);
     }
 

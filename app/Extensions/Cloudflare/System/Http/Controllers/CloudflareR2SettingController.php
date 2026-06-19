@@ -4,38 +4,21 @@ namespace App\Extensions\Cloudflare\System\Http\Controllers;
 
 use App\Extensions\Cloudflare\System\Http\Requests\CloudflareR2Request;
 use App\Http\Controllers\Controller;
-use Exception;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\View\View;
+use Throwable;
 
 class CloudflareR2SettingController extends Controller
 {
-    public function index(): View
+    public function index()
     {
-        $disk = config('filesystems.disks.r2', []);
-        $requiredKeys = [
-            'key',
-            'secret',
-            'region',
-            'bucket',
-            'endpoint',
-            'url',
-        ];
-
-        $missingKeys = collect($requiredKeys)
-            ->filter(static fn (string $key): bool => blank($disk[$key] ?? null))
-            ->values();
-
-        return view('cloudflare::settings', [
-            'missingKeys'  => $missingKeys,
-            'isConfigured' => $missingKeys->isEmpty(),
-        ]);
+        return view('cloudflare::settings');
     }
 
     public function update(CloudflareR2Request $request): ?RedirectResponse
     {
         $data = $request->validated();
-        $data['CLOUDFLARE_R2_URL'] = $data['CLOUDFLARE_R2_URL'] ?: $data['CLOUDFLARE_R2_ENDPOINT'];
+
+        $request['CLOUDFLARE_R2_URL'] = $request['CLOUDFLARE_R2_URL'] ?: $request['CLOUDFLARE_R2_ENDPOINT'];
 
         try {
             \App\Helpers\Classes\Helper::setEnv($data);
@@ -44,11 +27,11 @@ class CloudflareR2SettingController extends Controller
                 'message' => __('Settings updated successfully.'),
                 'type'    => 'success',
             ]);
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
             report($e);
 
             return redirect()->back()->withInput()->with([
-                'message' => __('Cloudflare R2 settings could not be saved. Please verify the credentials and try again.'),
+                'message' => __('Cloud storage settings could not be saved. Please verify the values and try again.'),
                 'type'    => 'error',
             ]);
         }

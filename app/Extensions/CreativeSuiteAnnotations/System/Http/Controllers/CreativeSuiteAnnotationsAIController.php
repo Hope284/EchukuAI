@@ -47,6 +47,7 @@ class CreativeSuiteAnnotationsAIController extends Controller
         EntityEnum::GPT_5,
 
         // Anthropic — Claude 4.x supports vision
+        EntityEnum::CLAUDE_OPUS_4_8,
         EntityEnum::CLAUDE_OPUS_4_7,
         EntityEnum::CLAUDE_OPUS_4_6,
         EntityEnum::CLAUDE_SONNET_4_6,

@@ -65,6 +65,14 @@
         </div>
     </form>
 </x-card>
+
+<div
+    x-data
+    x-init="$nextTick(() => $dispatch('generator-changed', { generator: '{{ \App\Domains\Entity\Enums\EntityEnum::ISOLATOR->value }}', _force: Date.now() }))"
+>
+    <x-cost-preview class="w-full justify-end" />
+</div>
+
 <h2 class="font-bold">
     @lang('Audio Files')
 </h2>

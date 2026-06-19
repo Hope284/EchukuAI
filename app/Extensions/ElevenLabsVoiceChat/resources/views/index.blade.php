@@ -149,7 +149,7 @@
         </form>
 
         <h2 class="my-9 font-semibold">
-            @lang('Simply select the source and DZEVA will do the rest to train your GPT in seconds.')
+            @lang('Simply select the source and DZEVA will prepare your voice assistant in seconds.')
         </h2>
 
         <div x-data="trainVoiceChatbotData">

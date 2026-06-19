@@ -118,6 +118,12 @@
 
                     init() {
                         this.changePrompt = Alpine.debounce(this.changePrompt.bind(this), 350);
+
+                        this.$nextTick(() => {
+                            this.$dispatch('generator-changed', {
+                                generator: '{{ \App\Domains\Entity\Enums\EntityEnum::BLACK_FOREST_LABS_FLUX_1_SCHNELL->value }}',
+                            });
+                        });
                     },
 
                     switchView(view) {

@@ -8,6 +8,8 @@ use App\Extensions\MarketingBot\System\Models\MarketingMessageHistory;
 use App\Extensions\MarketingBot\System\Models\Telegram\TelegramBot;
 use App\Extensions\MarketingBot\System\Models\Telegram\TelegramContact;
 use App\Extensions\MarketingBot\System\Services\Common\Traits\HasMarketingCampaign;
+use App\Extensions\MarketingBot\System\Services\MarketingBotLimitService;
+use App\Models\User;
 use Exception;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -19,6 +21,8 @@ class TelegramSenderService
     use HasMarketingCampaign;
 
     public TelegramBot $telegramBot;
+
+    public ?MarketingBotLimitService $limitService = null;
 
     public function setBot($userId): self
     {
@@ -37,15 +41,22 @@ class TelegramSenderService
 
         $this->setBot($marketingCampaign->getAttribute('user_id'));
 
+        $user = User::find($marketingCampaign->getAttribute('user_id'));
+        $this->limitService = new MarketingBotLimitService($user);
+
+        if (! $this->limitService->canAccessChannel('telegram')) {
+            throw new Exception('Telegram channel is not enabled in your current plan.');
+        }
+
         $contactArray = $marketingCampaign->getAttribute('contacts');
 
         $contacts = TelegramContact::query()->whereIn('id', $contactArray)->get();
 
-        // For example, sending messages via Telegram API
-
-        // This is just a placeholder for demonstration purposes
         foreach ($contacts as $contact) {
-            // Send message to each contact
+            if (! $this->limitService->canSendMessage()) {
+                break;
+            }
+
             $this->sendMessageToContact($contact, $marketingCampaign->getAttribute('content'));
         }
 
@@ -72,6 +83,7 @@ class TelegramSenderService
                 'created_at'      => now(),
             ]);
 
+            $this->limitService?->incrementMonthlyMessages();
         } catch (Exception $e) {
             Log::error($e->getMessage());
         }

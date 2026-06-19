@@ -58,6 +58,7 @@ class Plan extends Model
         'social_media_agent_limits',
         'blogpilot_limits',
         'social_media_automation_limits',
+        'marketing_bot_limits',
         'reset_credits_on_renewal',
         'default_ai_model',
         'ai_models',
@@ -79,6 +80,14 @@ class Plan extends Model
         'ugc_creator_videos_limit',
         'ai_captions_access',
         'ai_captions_minutes',
+        'credit_system_type',
+        'shared_credits_amount',
+        'shared_credit_model_overrides',
+        'shared_credit_feature_limits',
+        'ai_agent_workflow_limit',
+        'ai_agent_channel_limit',
+        'ai_agent_message_limit',
+        'ai_agent_memory_limit',
     ];
 
     private ?array $mergedAiFeatures = null;
@@ -121,10 +130,23 @@ class Plan extends Model
         'chatbot_human_agent'            => 'boolean',
         'social_media_agent_limits'      => 'array',
         'blogpilot_limits'               => 'array',
+        'shared_credits_amount'          => 'float',
+        'shared_credit_model_overrides'  => 'array',
+        'shared_credit_feature_limits'   => 'array',
         'social_media_automation_limits' => 'array',
         'ai_captions_access'             => 'boolean',
         'ai_captions_minutes'            => 'integer',
+		'marketing_bot_limits'           => 'array',
+        'ai_agent_workflow_limit'        => 'integer',
+        'ai_agent_channel_limit'         => 'integer',
+        'ai_agent_message_limit'         => 'integer',
+        'ai_agent_memory_limit'          => 'integer',
     ];
+
+    public function isSharedCreditPlan(): bool
+    {
+        return $this->credit_system_type === 'shared';
+    }
 
     protected static function boot(): void
     {
@@ -396,25 +418,29 @@ class Plan extends Model
             'social_media_automation_limits' => [
                 'automations' => -1,
             ],
-            'default_ai_model'                  => Helper::defaultWordModel()->slug(),
-            'ai_models'                         => EngineEnum::getNestedPlanLimits(),
-            'hidden_url'                        => null,
-            'hidden'                            => false,
-            'reset_credits_on_renewal'          => false,
-            'max_subscribe'                     => 0,
-            'chatbot_limit'                     => null,
-            'chatbot_channels'                  => [],
-            'chatbot_human_agent'               => true,
-            'multi_model_support'               => false,
-            'model_council_support'             => false,
-            'last_date'                         => null,
-            'voice_call_seconds_limit'          => -1,
-            'deep_research_request_limit'       => 5,
-            'ugc_videos_limit'                  => -1,
-            'ugc_creator_videos_limit'          => -1,
-            'video_dubbing_seconds_limit'       => -1,
-            'ai_captions_access'                => true,
-            'ai_captions_minutes'               => 30,
+            'default_ai_model'               => Helper::defaultWordModel()->slug(),
+            'ai_models'                      => EngineEnum::getNestedPlanLimits(),
+            'hidden_url'                     => null,
+            'hidden'                         => false,
+            'reset_credits_on_renewal'       => false,
+            'max_subscribe'                  => 0,
+            'chatbot_limit'                  => null,
+            'chatbot_channels'               => [],
+            'chatbot_human_agent'            => true,
+            'multi_model_support'            => false,
+            'model_council_support'          => false,
+            'last_date'                      => null,
+            'voice_call_seconds_limit'       => -1,
+            'deep_research_request_limit'    => 5,
+            'ugc_videos_limit'               => -1,
+            'ugc_creator_videos_limit'       => -1,
+            'video_dubbing_seconds_limit'    => -1,
+            'ai_captions_access'             => true,
+            'ai_captions_minutes'            => 30,
+            'ai_agent_workflow_limit'        => -1,
+            'ai_agent_channel_limit'         => -1,
+            'ai_agent_message_limit'         => -1,
+            'ai_agent_memory_limit'          => -1,
         ];
     }
 

@@ -714,6 +714,33 @@
                 </span>
             </x-button>
         @endif
+
+		<div
+			x-init="$nextTick(() => {
+				if (selectedFeature) {
+					const durationFields = ['sora_seconds', 'duration', 'grok_video_duration', 'kling25turbo_duration', 'kling26pro_duration', 'kling_v3_duration'];
+					let quantity = 1;
+					for (const field of durationFields) {
+						const val = parseInt(formValues[field]);
+						if (val > 0) { quantity = val; break; }
+					}
+					$dispatch('generator-changed', { generator: selectedFeature, quantity: quantity });
+				}
+			})"
+			x-effect="
+				if (selectedFeature) {
+					const durationFields = ['sora_seconds', 'duration', 'grok_video_duration', 'kling25turbo_duration', 'kling26pro_duration', 'kling_v3_duration'];
+					let quantity = 1;
+					for (const field of durationFields) {
+						const val = parseInt(formValues[field]);
+						if (val > 0) { quantity = val; break; }
+					}
+					$dispatch('generator-changed', { generator: selectedFeature, quantity: quantity, _force: Date.now() });
+				}
+			"
+		>
+			<x-cost-preview class="w-full justify-end" />
+		</div>
     </form>
 </x-card>
 @push('script')

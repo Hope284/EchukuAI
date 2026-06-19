@@ -85,6 +85,7 @@
         <div
             class="lqd-ugc-factory flex flex-wrap items-start gap-10 lg:flex-nowrap"
             x-data="ugcFactory({{ json_encode($ugcFactoryInitial) }})"
+            x-init="$nextTick(() => $dispatch('generator-changed', { generator: 'veed/fabric-1.0', quantity: 1 }))"
         >
             <div class="w-full lg:sticky lg:top-1 lg:w-[35%] lg:shrink-0">
                 <p class="mb-5 border-b py-2.5 text-[12px] font-semibold text-heading-foreground transition">
@@ -250,6 +251,8 @@
                                         x-cloak
                                     >{{ __('Submitting…') }}</span>
                                 </x-button>
+
+                                <x-cost-preview class="w-full justify-end" />
                             </form>
                         </x-tabs.content>
 
@@ -284,6 +287,8 @@
                                         x-cloak
                                     >{{ __('Submitting…') }}</span>
                                 </x-button>
+
+                                <x-cost-preview class="w-full justify-end" />
                             </form>
                         </x-tabs.content>
 
@@ -317,6 +322,8 @@
                                         x-cloak
                                     >{{ __('Submitting…') }}</span>
                                 </x-button>
+
+                                <x-cost-preview class="w-full justify-end" />
                             </form>
                         </x-tabs.content>
                     </x-tabs.tabs>

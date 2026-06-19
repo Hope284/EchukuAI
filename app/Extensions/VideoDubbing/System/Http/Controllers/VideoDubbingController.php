@@ -12,6 +12,7 @@ use App\Extensions\VideoDubbing\System\Models\VideoDubbing;
 use App\Extensions\VideoDubbing\System\Services\VideoDubbingService;
 use App\Helpers\Classes\Helper;
 use App\Http\Controllers\Controller;
+use App\Services\SharedCredit\SharedCreditService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -326,6 +327,10 @@ class VideoDubbingController extends Controller
         $user = auth()->user();
 
         if ($user->isAdmin()) {
+            return true;
+        }
+
+        if (app(SharedCreditService::class)->isEnabled() && $user->isSharedCreditUser()) {
             return true;
         }
 

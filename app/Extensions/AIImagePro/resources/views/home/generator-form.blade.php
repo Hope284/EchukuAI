@@ -396,6 +396,8 @@
             </div>
         </form>
     </div>
+
+    <x-cost-preview class="w-full justify-end" />
 </div>
 
 @push('script')
@@ -548,10 +550,28 @@
 
                     this.initializeFormValues();
 
+                    // Dispatch cost preview on init
+                    this.$nextTick(() => {
+                        const slug = this.currentModel?.slug || this.selectedModel;
+                        if (slug) {
+                            this.$dispatch('generator-changed', { generator: slug, quantity: parseInt(this.formValues['image_count'] || 1), _force: Date.now() });
+                        }
+                    });
+
                     // Watch for model changes and save to localStorage
                     this.$watch('selectedModel', (value) => {
                         if (value) {
                             localStorage.setItem('aiImageProSelectedModel', value);
+                            const slug = this.currentModel?.slug || value;
+                            this.$dispatch('generator-changed', { generator: slug, quantity: parseInt(this.formValues['image_count'] || 1), _force: Date.now() });
+                        }
+                    });
+
+                    // Watch for image_count changes to update cost preview
+                    this.$watch('formValues.image_count', (value) => {
+                        const slug = this.currentModel?.slug || this.selectedModel;
+                        if (slug) {
+                            this.$dispatch('generator-changed', { generator: slug, quantity: parseInt(value || 1), _force: Date.now() });
                         }
                     });
                 },

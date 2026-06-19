@@ -9,13 +9,12 @@
         <h4 class="mb-20 mt-0 font-body text-[26px]">{{ __('Welcome to DZEVA Migrator') }}</h4>
         <p class="mb-9 text-[75px] leading-none">🪄</p>
         <h1 class="mb-10 mt-0 font-body text-[45px]">{{ __('Let’s start.') }}</h1>
-		<p class="mb-10 text-[20px]">{{ __('Thanks choosing DZEVA! You will be able to migrate your data in seconds and unlock the magic of AI. Let’s get you started!') }}</p>
+		<p class="mb-10 text-[20px]">{{ __('Thanks for choosing DZEVA. You can migrate your data securely and continue your work in one place.') }}</p>
 		<p class="mb-10 text-[20px]">
             {{ __('Need help?') }}
             <a
                 class="inline-flex items-center gap-1"
-                href="https://docs.magicproject.ai/magicai-migration-tool"
-                target="_blank"
+                href="{{ route('dashboard.support.list') }}"
             >
                 {{ __('See how it works') }}
                 <svg

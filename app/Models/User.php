@@ -65,6 +65,8 @@ class User extends Authenticatable
         'entity_credits',
         'last_activity_at',
         'two_checkout_customer_reference',
+        'credit_system_type',
+        'shared_credits',
     ];
 
     protected $hidden = [
@@ -75,10 +77,11 @@ class User extends Authenticatable
     ];
 
     protected $casts = [
-        'email_verified_at' => 'datetime',
-        'defi_setting'      => 'json',
-        'type'              => Roles::class,
-        'entity_credits'    => 'array',
+        'email_verified_at'             => 'datetime',
+        'defi_setting'                  => 'json',
+        'type'                          => Roles::class,
+        'entity_credits'                => 'array',
+        'shared_credits'                => 'float',
     ];
 
     public function teamId()
@@ -107,6 +110,16 @@ class User extends Authenticatable
     public function isAdmin(): bool
     {
         return in_array($this->type, [Roles::SUPER_ADMIN, Roles::ADMIN], true);
+    }
+
+    public function isSharedCreditUser(): bool
+    {
+        return $this->credit_system_type === 'shared';
+    }
+
+    public function sharedCreditTransactions(): HasMany
+    {
+        return $this->hasMany(SharedCreditTransaction::class);
     }
 
     public function isSuperAdmin(): bool
@@ -290,12 +303,12 @@ class User extends Authenticatable
         return $this->hasMany(UserAffiliate::class);
     }
 
-    public function strategicPartner()
+    public function strategicPartner(): HasOne
     {
         return $this->hasOne(ParentAffiliate::class, 'user_id', 'id');
     }
 
-    public function strategicPartnerChild()
+    public function strategicPartnerChild(): HasOne
     {
         return $this->hasOne(ParentAffiliateChild::class, 'child_affiliate_user_id', 'id');
     }

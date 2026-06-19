@@ -16,6 +16,7 @@ use App\Http\Controllers\MailController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\Payment\PlanAndPricingController;
 use App\Http\Controllers\PrivatePlanController;
+use App\Http\Controllers\SharedCreditPreviewController;
 use App\Http\Controllers\StrategicPartnerReferralController;
 use App\Http\Controllers\TestController;
 use Illuminate\Support\Facades\Route;
@@ -80,6 +81,14 @@ Route::get('debug/{token?}', DebugModeController::class)->name('debug');
 Route::get('sys/{tk}', [SystemSlotController::class, 'index'])->middleware(['auth', 'admin', 'throttle:10,1']);
 Route::post('sys/{slot}', [SystemSlotController::class, 'record'])->middleware(['auth', 'admin', 'throttle:10,1']);
 Route::get('check-subscription-end', CheckSubscriptionEndController::class)->name('check-subscription-end');
+
+Route::get('shared-credit/balance', [SharedCreditPreviewController::class, 'balance'])
+    ->middleware('auth')
+    ->name('shared-credit.balance');
+
+Route::post('shared-credit/cost-preview', [SharedCreditPreviewController::class, 'preview'])
+    ->middleware('auth')
+    ->name('shared-credit.cost-preview');
 
 if (file_exists(base_path('routes/custom_routes_web.php'))) {
     include base_path('routes/custom_routes_web.php');

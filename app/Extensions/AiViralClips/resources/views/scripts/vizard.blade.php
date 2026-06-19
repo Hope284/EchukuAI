@@ -1,5 +1,11 @@
 @push('script')
     <script>
+        document.addEventListener('alpine:initialized', () => {
+            window.dispatchEvent(new CustomEvent('generator-changed', {
+                detail: { generator: '{{ \App\Domains\Entity\Enums\EntityEnum::AI_CLIP_VIZARD->value }}', quantity: 1, _force: Date.now() }
+            }));
+        });
+
         document.addEventListener('alpine:init', () => {
             // create ai clips window data
             Alpine.data('createAiClipsData', () => ({

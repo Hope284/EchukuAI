@@ -79,12 +79,14 @@ trait HasApiKeys
     {
         $settings = $setting ?? Setting::getCache();
         if ($settings?->getAttribute('user_api_option') || auth()->user()?->relationPlan?->getAttribute('user_api')) {
-            $apiKeys = explode(',', auth()->user()?->getAttribute('anthropic_api_keys'));
+            $apiKeys = explode(',', (string) auth()->user()?->getAttribute('anthropic_api_keys'));
         } else {
-            $apiKeys = explode(',', setting('anthropic_api_secret'));
+            $apiKeys = explode(',', (string) setting('anthropic_api_secret'));
         }
 
-        return Arr::random($apiKeys);
+        $apiKeys = array_values(array_filter(array_map('trim', $apiKeys)));
+
+        return $apiKeys === [] ? '' : Arr::random($apiKeys);
     }
 
     public static function setXAiKey($setting = null, $all = false): array|string|null
@@ -127,11 +129,12 @@ trait HasApiKeys
     {
         $settings = $setting ?? Setting::getCache();
         if ($settings?->getAttribute('user_api_option') || auth()->user()?->relationPlan?->getAttribute('user_api')) {
-            $apiKeys = explode(',', auth()->user()?->getAttribute('gemini_api_keys'));
+            $apiKeys = explode(',', (string) auth()->user()?->getAttribute('gemini_api_keys'));
         } else {
-            $apiKeys = explode(',', setting('gemini_api_secret', ''));
+            $apiKeys = explode(',', (string) setting('gemini_api_secret', ''));
         }
-        config(['gemini.api_key' => $apiKeys[array_rand($apiKeys)]]);
+        $apiKeys = array_values(array_filter(array_map('trim', $apiKeys)));
+        config(['gemini.api_key' => $apiKeys === [] ? '' : Arr::random($apiKeys)]);
         config(['gemini.request_timeout' => 120]);
 
         return config('gemini.api_key');

@@ -11,6 +11,7 @@ class ContactListRequest extends FormRequest
         return [
             'user_id'      => 'required|integer',
             'name'         => 'required|string|max:255',
+            'last_name'    => 'nullable|string|max:255',
             'phone'        => 'required|string|max:255',
             'status'       => 'required',
             'country_code' => 'required|string|max:4',

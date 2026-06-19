@@ -286,7 +286,7 @@
                 size="lg"
                 name="guest_user_bottom_text"
                 tooltip="{{ __('This is the text that will be shown at the bottom of the chat for guest users.') }}"
-                value="{{ setting('guest_user_bottom_text', 'Login to save your current session. © DZEVA 2025. All rights reserved.') }}"
+                value="{{ setting('guest_user_bottom_text', 'Login to save your current session. © DZEVA 2026. All rights reserved.') }}"
             />
         </x-card>
 
