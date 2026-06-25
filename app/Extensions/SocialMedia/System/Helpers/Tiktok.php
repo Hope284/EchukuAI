@@ -3,6 +3,7 @@
 namespace App\Extensions\SocialMedia\System\Helpers;
 
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Str;
 use stdClass;
 
 class Tiktok
@@ -47,20 +48,27 @@ class Tiktok
         return $this;
     }
 
+    public function configured(): bool
+    {
+        return filled($this->config['app_key'] ?? null) && filled($this->config['app_secret'] ?? null);
+    }
+
     public static function authRedirect()
     {
         $tiktok = new self;
-        $client_key = $tiktok->config['app_key'];
-        $scope = collect($tiktok->config['scope'])->join(',');
-        $response_type = 'code';
-        $state = '';
-        $redirect_uri = $tiktok->config['redirect_uri'];
+        $state = Str::random(40);
 
-        $apiUri = "{$tiktok->config['base_url']}/{$tiktok->config['api_version']}/auth/authorize?client_key=$client_key&response_type=$response_type&scope=$scope&redirect_uri=$redirect_uri&state=$state";
+        session(['social_media_tiktok_oauth_state' => $state]);
 
-        //        return $apiUri;
+        $query = http_build_query([
+            'client_key'    => $tiktok->config['app_key'],
+            'response_type' => 'code',
+            'scope'         => collect($tiktok->config['scope'])->join(','),
+            'redirect_uri'  => $tiktok->config['redirect_uri'],
+            'state'         => $state,
+        ], '', '&', PHP_QUERY_RFC3986);
 
-        return redirect($apiUri);
+        return redirect("https://www.tiktok.com/v2/auth/authorize/?{$query}");
     }
 
     public function getAccessToken($code)

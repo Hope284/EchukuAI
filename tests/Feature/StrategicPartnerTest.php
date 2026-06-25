@@ -115,7 +115,7 @@ test('strategic partner commission is twenty percent of child affiliate commissi
     StrategicPartnerService::createCommissionForOrder($order->refresh());
 
     expect($childAffiliate->refresh()->affiliate_id)->toBeNull()
-        ->and($order->affiliate_earnings)->toBe(100)
+        ->and($order->affiliate_earnings)->toBe(100.0)
         ->and($partner->commissions()->count())->toBe(1)
         ->and((int) round($partner->commissions()->first()->amount))->toBe(20);
 });

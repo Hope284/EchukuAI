@@ -6,6 +6,7 @@ namespace Tests;
 
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
+use RachidLaasri\LaravelInstaller\Middleware\ApplicationStatus;
 use Spatie\Once\Cache as OnceCache;
 
 abstract class TestCase extends BaseTestCase
@@ -19,6 +20,8 @@ abstract class TestCase extends BaseTestCase
     protected function setUp(): void
     {
         parent::setUp();
+
+        $this->withoutMiddleware(ApplicationStatus::class);
 
         OnceCache::getInstance()->disable();
 

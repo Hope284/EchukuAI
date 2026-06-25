@@ -81,6 +81,11 @@ class PaystackService
         };
     }
 
+    private static function gatewayCurrencyCode(Gateways $gateway): string
+    {
+        return Currency::query()->where('id', $gateway->currency)->value('code') ?: 'NGN';
+    }
+
     // payment functions
     // tested
     public static function saveAllProducts()
@@ -153,7 +158,7 @@ class PaystackService
         try {
             // 1 begain db transaction
             DB::beginTransaction();
-            $currency = Currency::where('id', $gateway->currency)->first()->code;
+            $currency = self::gatewayCurrencyCode($gateway);
             $taxValue = taxToVal($plan->price, $gateway->tax);
             $total = $plan->price + $taxValue;
             $price = (int) (((float) $total) * 100); // Must be in cents level for paystack
@@ -280,7 +285,7 @@ class PaystackService
             $settings = Setting::getCache();
             $exception = null;
             $orderId = Str::random(12);
-            $currency = Currency::where('id', $gateway->currency)->first()->code;
+            $currency = self::gatewayCurrencyCode($gateway);
             $key = self::getKey($gateway);
             $user = auth()->user();
             $taxRate = $gateway->tax;
@@ -507,7 +512,7 @@ class PaystackService
                 // remove tax when coupon is applied because its included in the plan price.
                 $newDiscountedPrice -= $taxValue;
             }
-            $currency = Currency::where('id', $gateway->currency)->first()->code;
+            $currency = self::gatewayCurrencyCode($gateway);
             $orderId = null;
             $exception = null;
             if (self::getPaystackProductId($plan->id) == null) {

@@ -14,6 +14,8 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
+use Throwable;
 
 class TiktokController extends Controller
 {
@@ -37,6 +39,10 @@ class TiktokController extends Controller
 
         $this->setBackCacheRoute();
 
+        if (! $this->api->configured()) {
+            return $this->redirectToPlatforms('error', 'TikTok connection is not configured yet. Please contact an administrator.');
+        }
+
         if ($request->has('platform_id') && $request->get('platform_id')) {
             Cache::remember($this->cacheKey(), 60, function () use ($request) {
                 return $request->get('platform_id');
@@ -48,21 +54,43 @@ class TiktokController extends Controller
 
     public function callback(Request $request)
     {
+        if ($request->filled('error')) {
+            return $this->redirectToPlatforms('error', $request->get('error_description', 'TikTok connection was cancelled or denied.'));
+        }
+
+        $expectedState = session('social_media_tiktok_oauth_state');
+        if ($expectedState && ! hash_equals($expectedState, (string) $request->get('state'))) {
+            session()->forget('social_media_tiktok_oauth_state');
+
+            return $this->redirectToPlatforms('error', 'TikTok connection could not be verified. Please try again.');
+        }
+        session()->forget('social_media_tiktok_oauth_state');
+
         $code = $request->get('code');
 
         if (! $code) {
-            return back()->with([
-                'type'    => 'error',
-                'message' => trans('Something went wrong, please try again.'),
-            ]);
+            return $this->redirectToPlatforms('error', 'Something went wrong, please try again.');
         }
 
-        $response = $this->api->getAccessToken($code)
-            ->throw();
+        try {
+            $response = $this->api->getAccessToken($code);
+        } catch (Throwable $e) {
+            Log::warning('TikTok OAuth token request failed', [
+                'user_id' => Auth::id(),
+                'error'   => $e->getMessage(),
+            ]);
 
-        if ($response->json('error')) {
-            echo $response->status();
-            exit();
+            return $this->redirectToPlatforms('error', 'TikTok connection failed. Please try again.');
+        }
+
+        if ($response->failed() || $response->json('error')) {
+            Log::warning('TikTok OAuth returned an error response', [
+                'user_id' => Auth::id(),
+                'status'  => $response->status(),
+                'error'   => $response->json('error'),
+            ]);
+
+            return $this->redirectToPlatforms('error', 'TikTok connection failed. Please verify the app settings and try again.');
         }
 
         $tokenData = $response->object();

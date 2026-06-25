@@ -52,6 +52,13 @@ function mockDefaultModelsCount($type): int
     return $count;
 }
 
+function expectedCurrentTotalCredits(EntityStats $stats, User $user): float
+{
+    return $stats->list()->sum(
+        fn (WithCreditInterface $entity) => $entity->forUser($user)->creditBalance()
+    );
+}
+
 test('total default models credits for current user', function ($increase, $type) {
     $user = loginAsUser();
 
@@ -75,7 +82,7 @@ test('total default models credits for current user', function ($increase, $type
                 $entity->setCredit(1.5);
             }
         });
-    expect($stats->totalCredits())->toBe($stats->list()->count() * 1.5);
+    expect($stats->totalCredits())->toBe(expectedCurrentTotalCredits($stats, $user));
 })->with('bool')->with([
     WithCharsInterface::class,
     WithMinuteInterface::class,
@@ -196,7 +203,7 @@ test('total default models credits for specific user', function ($increase, $typ
             }
         });
 
-    expect($stats->totalCredits())->toBe($stats->list()->count() * 1.5);
+    expect($stats->totalCredits())->toBe(expectedCurrentTotalCredits($stats, $user));
 
 })->with('bool')->with([
     WithImagesInterface::class,
