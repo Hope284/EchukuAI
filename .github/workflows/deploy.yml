@@ -119,16 +119,20 @@ jobs:
             git checkout main
             git pull --ff-only origin main
             fix_laravel_permissions() {
-              sudo install -d -o ubuntu -g www-data -m 2775 storage/framework/cache/data storage/framework/cache/locks storage/framework/views storage/framework/sessions storage/framework/testing bootstrap/cache public/uploads public/uploads/media public/uploads/media/images public/uploads/media/videos public/uploads/media/other public/uploads/media/others public/uploads/media/voices public/uploads/guest public/uploads/thumbnail/default vendor/magicai/magicai-healthy/resources/views
-              sudo chown -R ubuntu:www-data storage bootstrap/cache public/uploads vendor/magicai/magicai-healthy/resources/views
-              sudo find storage bootstrap/cache public/uploads -type d -exec chmod 2775 {} \;
-              sudo find storage bootstrap/cache public/uploads -type f -exec chmod 664 {} \;
+              sudo install -d -o ubuntu -g www-data -m 2775 public public/vendor public/vendor/chatbot public/vendor/chatbot/js public/vendor/chatbot/images public/vendor/chatbot/icons storage/framework/cache/data storage/framework/cache/locks storage/framework/views storage/framework/sessions storage/framework/testing bootstrap/cache public/uploads public/uploads/media public/uploads/media/images public/uploads/media/videos public/uploads/media/other public/uploads/media/others public/uploads/media/voices public/uploads/guest public/uploads/thumbnail/default vendor/magicai/magicai-healthy/resources/views
+              sudo chown ubuntu:www-data public
+              sudo chmod 2775 public
+              sudo chown -R ubuntu:www-data storage bootstrap/cache public/uploads public/vendor vendor/magicai/magicai-healthy/resources/views
+              sudo find storage bootstrap/cache public/uploads public/vendor -type d -exec chmod 2775 {} \;
+              sudo find storage bootstrap/cache public/uploads public/vendor -type f -exec chmod 664 {} \;
               if ! command -v setfacl >/dev/null 2>&1; then
                 sudo apt-get update
                 sudo apt-get install -y acl
               fi
-              sudo setfacl -R -m u:ubuntu:rwx,u:www-data:rwx,g:www-data:rwx,m:rwx storage bootstrap/cache public/uploads
-              sudo setfacl -R -d -m u:ubuntu:rwx,u:www-data:rwx,g:www-data:rwx,m:rwx storage bootstrap/cache public/uploads
+              sudo setfacl -m u:ubuntu:rwx,u:www-data:rwx,g:www-data:rwx,m:rwx public
+              sudo setfacl -d -m u:ubuntu:rwx,u:www-data:rwx,g:www-data:rwx,m:rwx public
+              sudo setfacl -R -m u:ubuntu:rwx,u:www-data:rwx,g:www-data:rwx,m:rwx storage bootstrap/cache public/uploads public/vendor
+              sudo setfacl -R -d -m u:ubuntu:rwx,u:www-data:rwx,g:www-data:rwx,m:rwx storage bootstrap/cache public/uploads public/vendor
             }
             fix_laravel_permissions
             php -m | grep -E '^pdo_mysql$'
