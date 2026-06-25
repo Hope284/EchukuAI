@@ -3,6 +3,7 @@
 
 	$user = auth()->user();
 	$isAdmin = $user?->isAdmin();
+	$userPlan = $userPlan ?? \App\Helpers\Classes\PlanHelper::userPlan();
 
 @endphp
 

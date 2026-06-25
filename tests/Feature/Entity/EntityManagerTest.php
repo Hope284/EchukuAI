@@ -18,6 +18,7 @@ use App\Domains\Entity\Contracts\Calculate\WithWordsInterface;
 use App\Domains\Entity\Contracts\EntityDriverInterface;
 use App\Domains\Entity\Contracts\WithCreditInterface;
 use App\Domains\Entity\Enums\EntityEnum;
+use App\Domains\Entity\EntityStats;
 use App\Domains\Entity\Facades\Entity;
 use App\Models\Setting;
 use App\Models\SettingTwo;
