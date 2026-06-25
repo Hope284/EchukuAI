@@ -53,12 +53,25 @@ jobs:
 
             dirty_files="$(git status --porcelain)"
             if [ -n "$dirty_files" ]; then
-              dirty_count="$(printf '%s\n' "$dirty_files" | sed '/^[[:space:]]*$/d' | wc -l)"
-              if [ "$dirty_count" -eq 1 ] && printf '%s\n' "$dirty_files" | grep -Eq '^[[:space:]]*M[[:space:]]+version\.txt$'; then
-                echo "Production has only version.txt changed; preserving it before deployment."
-                version_txt_backup="$(mktemp)"
-                cp version.txt "$version_txt_backup"
-                git stash push -m "dzeva deployment preserved version.txt $(date -u +%Y%m%d-%H%M%S)" -- version.txt
+              allowed_dirty_pattern='^[[:space:]]*[MADRCUD?]{1,2}[[:space:]]+(version\.txt|public/vendor/|public/images/integrations/)'
+              unsafe_dirty="$(printf '%s\n' "$dirty_files" | grep -Ev "$allowed_dirty_pattern" || true)"
+
+              if [ -z "$unsafe_dirty" ]; then
+                echo "Production has only generated deployment artifacts changed; preserving them before deployment."
+                generated_artifacts_backup="$(mktemp -d)"
+                printf '%s\n' "$dirty_files" > "$generated_artifacts_backup/git-status.txt"
+                if [ -f version.txt ]; then
+                  cp version.txt "$generated_artifacts_backup/version.txt.production-before-deploy"
+                fi
+
+                stash_paths=()
+                [ -e version.txt ] && stash_paths+=(version.txt)
+                [ -e public/vendor ] && stash_paths+=(public/vendor)
+                [ -e public/images/integrations ] && stash_paths+=(public/images/integrations)
+
+                if [ "${#stash_paths[@]}" -gt 0 ]; then
+                  git stash push --include-untracked -m "dzeva deployment preserved generated artifacts $(date -u +%Y%m%d-%H%M%S)" -- "${stash_paths[@]}"
+                fi
               else
                 echo "Production worktree has uncommitted changes; deployment stopped."
                 git status --short
@@ -79,9 +92,10 @@ jobs:
             backup_dir="/home/ubuntu/backups/dzeva-update-${backup_stamp}"
             sudo install -d -o ubuntu -g ubuntu -m 0700 "$backup_dir"
             git rev-parse HEAD > "$backup_dir/commit.txt"
-            if [ -n "${version_txt_backup:-}" ] && [ -f "$version_txt_backup" ]; then
-              install -m 0600 "$version_txt_backup" "$backup_dir/version.txt.production-before-deploy"
-              rm -f "$version_txt_backup"
+            if [ -n "${generated_artifacts_backup:-}" ] && [ -d "$generated_artifacts_backup" ]; then
+              install -d -m 0700 "$backup_dir/generated-artifacts-before-deploy"
+              cp -a "$generated_artifacts_backup/." "$backup_dir/generated-artifacts-before-deploy/"
+              rm -rf "$generated_artifacts_backup"
             fi
             tar \
               --exclude='./.git' \
