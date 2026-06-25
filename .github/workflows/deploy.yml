@@ -139,7 +139,8 @@ jobs:
             php -m | grep -E '^sodium$'
             composer install --no-dev --prefer-dist --optimize-autoloader --no-interaction
             php artisan migrate --force
-            sudo -u www-data php artisan vendor:publish --tag=extension --force
+            php artisan vendor:publish --tag=extension --force
+            fix_laravel_permissions
             sudo -u www-data php artisan db:seed --class=DzevaPlanSeeder --force
             sudo -u www-data php artisan plans:ensure-gateway-products || echo "Gateway product backfill completed with reported errors; review the deployment log."
             sudo -u www-data php artisan optimize:clear
