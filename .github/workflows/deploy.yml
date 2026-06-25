@@ -46,9 +46,25 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script_stop: true
+          command_timeout: 30m
           script: |
             set -euo pipefail
             cd /var/www/dzeva
+
+            dirty_files="$(git status --porcelain)"
+            if [ -n "$dirty_files" ]; then
+              dirty_count="$(printf '%s\n' "$dirty_files" | sed '/^[[:space:]]*$/d' | wc -l)"
+              if [ "$dirty_count" -eq 1 ] && printf '%s\n' "$dirty_files" | grep -Eq '^[[:space:]]*M[[:space:]]+version\.txt$'; then
+                echo "Production has only version.txt changed; preserving it before deployment."
+                version_txt_backup="$(mktemp)"
+                cp version.txt "$version_txt_backup"
+                git stash push -m "dzeva deployment preserved version.txt $(date -u +%Y%m%d-%H%M%S)" -- version.txt
+              else
+                echo "Production worktree has uncommitted changes; deployment stopped."
+                git status --short
+                exit 1
+              fi
+            fi
 
             if [ -n "$(git status --porcelain)" ]; then
               echo "Production worktree has uncommitted changes; deployment stopped."
@@ -63,6 +79,10 @@ jobs:
             backup_dir="/home/ubuntu/backups/dzeva-update-${backup_stamp}"
             sudo install -d -o ubuntu -g ubuntu -m 0700 "$backup_dir"
             git rev-parse HEAD > "$backup_dir/commit.txt"
+            if [ -n "${version_txt_backup:-}" ] && [ -f "$version_txt_backup" ]; then
+              install -m 0600 "$version_txt_backup" "$backup_dir/version.txt.production-before-deploy"
+              rm -f "$version_txt_backup"
+            fi
             tar \
               --exclude='./.git' \
               --exclude='./.env' \
