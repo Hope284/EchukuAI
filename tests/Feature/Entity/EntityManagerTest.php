@@ -17,7 +17,6 @@ use App\Domains\Entity\Contracts\Calculate\WithVisionPreviewInterface;
 use App\Domains\Entity\Contracts\Calculate\WithWordsInterface;
 use App\Domains\Entity\Contracts\EntityDriverInterface;
 use App\Domains\Entity\Contracts\WithCreditInterface;
-use App\Domains\Entity\EntityStats;
 use App\Domains\Entity\Enums\EntityEnum;
 use App\Domains\Entity\Facades\Entity;
 use App\Models\Setting;
@@ -52,7 +51,7 @@ function mockDefaultModelsCount($type): int
     return $count;
 }
 
-function expectedCurrentTotalCredits(EntityStats $stats, User $user): float
+function expectedCurrentTotalCredits($stats, User $user): float
 {
     return $stats->list()->sum(
         fn (WithCreditInterface $entity) => $entity->forUser($user)->creditBalance()

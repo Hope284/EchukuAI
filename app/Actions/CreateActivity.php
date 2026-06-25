@@ -6,6 +6,8 @@ namespace App\Actions;
 
 use App\Models\User;
 use App\Services\Common\MenuService;
+use Illuminate\Support\Facades\Log;
+use Throwable;
 
 class CreateActivity
 {
@@ -17,19 +19,46 @@ class CreateActivity
     ): void {
         $user = $userOrId instanceof User ? $userOrId : User::findOrFail($userOrId);
 
-        $user->activities()->create([
-            'activity_type'  => $activity_type,
-            'activity_title' => $activity_title,
-            'url'            => $url,
-        ]);
+        try {
+            $user->activities()->create([
+                'activity_type'  => $activity_type,
+                'activity_title' => $activity_title,
+                'url'            => $url,
+            ]);
+        } catch (Throwable $exception) {
+            Log::warning('Activity logging failed', [
+                'user_id' => $user->id,
+                'activity_type' => $activity_type,
+                'activity_title' => $activity_title,
+                'error' => $exception->getMessage(),
+            ]);
+        }
 
-        app(MenuService::class)->regenerate();
+        try {
+            app(MenuService::class)->regenerate();
+        } catch (Throwable $exception) {
+            Log::warning('Menu regeneration after activity failed', [
+                'user_id' => $user->id,
+                'activity_type' => $activity_type,
+                'activity_title' => $activity_title,
+                'error' => $exception->getMessage(),
+            ]);
+        }
 
-        Notify::toMany(
-            User::admins()->get(),
-            $activity_type . ' "' . $activity_title . '"',
-            $user?->fullName(),
-            $url
-        );
+        try {
+            Notify::toMany(
+                User::admins()->get(),
+                $activity_type . ' "' . $activity_title . '"',
+                $user?->fullName(),
+                $url
+            );
+        } catch (Throwable $exception) {
+            Log::warning('Activity notification failed', [
+                'user_id' => $user->id,
+                'activity_type' => $activity_type,
+                'activity_title' => $activity_title,
+                'error' => $exception->getMessage(),
+            ]);
+        }
     }
 }

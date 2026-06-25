@@ -87,6 +87,30 @@ it('returns posts for x platform via api', function () {
                 ],
             ],
         ]),
+        '*api.x.com*' => Http::response([
+            'data' => [
+                [
+                    'id'         => 'tweet_1',
+                    'text'       => 'Hello X platform',
+                    'created_at' => '2024-01-01T12:00:00.000Z',
+                ],
+                [
+                    'id'          => 'tweet_2',
+                    'text'        => 'Tweet with image',
+                    'created_at'  => '2024-01-02T12:00:00.000Z',
+                    'attachments' => ['media_keys' => ['media_key_1']],
+                ],
+            ],
+            'includes' => [
+                'media' => [
+                    [
+                        'media_key' => 'media_key_1',
+                        'type'      => 'photo',
+                        'url'       => 'https://example.com/tweet-img.jpg',
+                    ],
+                ],
+            ],
+        ]),
     ]);
 
     $response = $this->actingAs($this->user)
@@ -116,6 +140,12 @@ it('filters x posts by search term', function () {
 
     Http::fake([
         '*api.twitter.com*' => Http::response([
+            'data' => [
+                ['id' => 'tweet_1', 'text' => 'Hello world', 'created_at' => '2024-01-01T12:00:00.000Z'],
+                ['id' => 'tweet_2', 'text' => 'Laravel is great', 'created_at' => '2024-01-02T12:00:00.000Z'],
+            ],
+        ]),
+        '*api.x.com*' => Http::response([
             'data' => [
                 ['id' => 'tweet_1', 'text' => 'Hello world', 'created_at' => '2024-01-01T12:00:00.000Z'],
                 ['id' => 'tweet_2', 'text' => 'Laravel is great', 'created_at' => '2024-01-02T12:00:00.000Z'],
