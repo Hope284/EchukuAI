@@ -5,8 +5,10 @@ namespace App\Extensions\AIChatPro\System\Http\Controllers;
 use App\Helpers\Classes\Helper;
 use App\Http\Controllers\Controller;
 use App\Services\Common\MenuService;
+use App\Support\Security\SafeUrl;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
 class AIChatProSettingsController extends Controller
 {
@@ -34,17 +36,41 @@ class AIChatProSettingsController extends Controller
                 'ai_chat_pro_entity_highlight_max'       => 'nullable|integer|min:1|max:10',
                 'ai_chat_pro_entity_highlight_threshold' => 'nullable|numeric|min:0.5|max:1.0',
                 'ai_chat_pro_typography'                 => 'nullable|json|max:5000',
+                'input_name'                             => 'nullable|array',
+                'input_name.*'                           => 'nullable|string|max:120',
+                'input_prompt'                           => 'nullable|array',
+                'input_prompt.*'                         => 'nullable|string|max:2048',
             ]);
 
-            $suggestions = collect($request->input('input_name'))
-                ->zip($request->input('input_prompt'))
-                ->map(function ($pair) {
+            $buttonUrls = $request->input('input_prompt', []);
+            $suggestions = collect($request->input('input_name', []))
+                ->map(function ($name, $index) use ($buttonUrls) {
+                    $name = trim((string) $name);
+                    $rawUrl = trim((string) ($buttonUrls[$index] ?? ''));
+
+                    if ($name === '' && $rawUrl === '') {
+                        return null;
+                    }
+
+                    if ($name === '') {
+                        throw ValidationException::withMessages([
+                            "input_name.$index" => __('Each scrolling button needs a title.'),
+                        ]);
+                    }
+
+                    $url = SafeUrl::normalize($rawUrl);
+                    if ($url === null) {
+                        throw ValidationException::withMessages([
+                            "input_prompt.$index" => __('Button URL must be an internal path or a valid http/https URL.'),
+                        ]);
+                    }
+
                     return [
-                        'name'   => trim($pair[0]),
-                        'prompt' => trim($pair[1]),
+                        'name'   => $name,
+                        'prompt' => $url,
                     ];
                 })
-                ->filter(fn ($item) => $item['name'] && $item['prompt']) // Safety net
+                ->filter()
                 ->values()
                 ->all();
             $suggestions = json_encode($suggestions, JSON_THROW_ON_ERROR);

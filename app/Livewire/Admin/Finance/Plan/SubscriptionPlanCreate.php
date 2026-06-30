@@ -59,7 +59,7 @@ class SubscriptionPlanCreate extends Component
             'plan.frequency'                                  => 'required_if:step,1|string|max:190',
             'plan.is_team_plan'                               => 'required_if:step,1|nullable|boolean',
             'plan.price_tax_included'                         => 'required_if:step,1|nullable|boolean',
-            'plan.plan_allow_seat'                            => 'nullable|numeric|min:0',
+            'plan.plan_allow_seat'                            => 'nullable|integer|min:-1',
             'plan.trial_days'                                 => 'required_if:step,1|numeric|min:0',
             'plan.chatbot_limit'                              => 'nullable|integer|min:0',
             'plan.chatbot_channels'                           => 'nullable|array',

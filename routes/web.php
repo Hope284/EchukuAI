@@ -66,8 +66,8 @@ Route::get('confirm/email/{email_confirmation_code}', [MailController::class, 'e
 
 Route::controller(InstallationController::class)
     ->group(static function () {
-        Route::get('upgrade-script', 'upgrade')->withoutMiddleware(ApplicationStatus::class)->name('upgrade-script');
-        Route::get('update-manual/{pass?}', 'updateManual')->withoutMiddleware(ApplicationStatus::class)->name('update-manual');
+        Route::get('upgrade-script', 'upgrade')->middleware(['auth', 'super_admin'])->withoutMiddleware(ApplicationStatus::class)->name('upgrade-script');
+        Route::get('update-manual/{pass?}', 'updateManual')->middleware(['auth', 'super_admin'])->withoutMiddleware(ApplicationStatus::class)->name('update-manual');
         Route::get('cache-clear-menu', 'menuClearCache')->name('menuClearCache');
         Route::post('install-extension/{slug}', 'installExtension')->name('install-extension');
         Route::post('uninstall-extension/{slug}', 'uninstallExtension')->name('uninstall-extension');

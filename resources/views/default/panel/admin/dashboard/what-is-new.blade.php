@@ -62,8 +62,8 @@
         size="lg"
     >
         <div class="flex flex-col gap-0.5">
-            <h3 class="font-semibold">{{ __('Magic AI is Up-to-date.') }}</h3>
-            <p class="mb-0">{{ __('Version') }} {{ format_double($setting->script_version) }}</p>
+            <h3 class="font-semibold">{{ __('DZEVA is up to date.') }}</h3>
+            <p class="mb-0">{{ dzeva_version_label() }}</p>
         </div>
         <x-tabler-checks
             class="size-12"

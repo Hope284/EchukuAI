@@ -25,6 +25,7 @@ use GuzzleHttp\Client;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 use JsonException;
@@ -415,26 +416,48 @@ class SettingsController extends Controller
             ],
         ];
 
-        $randomToken = ApiHelper::setGeminiKey();
-        $client = app(GeminiService::class);
-        $response = $client
-            ->setHistory($newhistory)
-            ->generateContent();
-        if ($response->ok()) {
-            echo ' <br>' . $randomToken . ' - SUCCESS <br>';
-        } else {
-            echo $response->json('error.message') . ' -FAILED <br>';
+        try {
+            ApiHelper::setGeminiKey();
+            $client = app(GeminiService::class);
+            $response = $client
+                ->setHistory($newhistory)
+                ->generateContent();
+
+            if ($response->ok()) {
+                return response()->json([
+                    'status'  => 'success',
+                    'message' => __('The configured research model key is working.'),
+                ]);
+            }
+
+            Log::warning('Gemini configuration test failed.', [
+                'status' => $response->status(),
+                'error'  => $response->json('error.message'),
+            ]);
+        } catch (Throwable $throwable) {
+            Log::warning('Gemini configuration test failed.', [
+                'error' => $throwable->getMessage(),
+            ]);
         }
+
+        return response()->json([
+            'status'  => 'error',
+            'message' => __('This model is temporarily unavailable. Check the saved key and billing configuration.'),
+        ], 422);
     }
 
     public function geminiSave(Request $request)
     {
         $data = $request->validate([
-            'gemini_api_secret'        => 'required|string',
+            'gemini_api_secret'        => 'nullable|string',
             'gemini_default_model'     => 'required|string',
             'gemini_max_input_length'  => 'required|string',
             'gemini_max_output_length' => 'required|string',
         ]);
+        if (blank($data['gemini_api_secret'] ?? null)) {
+            unset($data['gemini_api_secret']);
+        }
+
         setting($data)->save();
 
         return response()->json([], 200);

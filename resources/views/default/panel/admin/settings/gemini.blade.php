@@ -56,18 +56,13 @@
                                 id="gemini_api_secret"
                                 name="gemini_api_secret"
                                 multiple
-                            >
-                                @foreach (explode(',', setting('gemini_api_secret')) as $secret)
-                                    <option
-                                        value="{{ $secret }}"
-                                        selected
-                                    >{{ $secret }}</option>
-                                @endforeach
-                            </select>
+                                data-placeholder="{{ __('Enter a replacement key and press Enter') }}"
+                            ></select>
 
                             <x-alert class="mt-2">
                                 <p>
-                                    {{ __('You can enter as much API KEY as you want. Click "Enter" after each api key.') }}
+                                    {{ trans_choice(':count API key is securely stored and hidden.|:count API keys are securely stored and hidden.', collect(explode(',', (string) setting('gemini_api_secret')))->filter()->count(), ['count' => collect(explode(',', (string) setting('gemini_api_secret')))->filter()->count()]) }}
+                                    {{ __('Leave this field empty to keep the saved keys, or enter replacement keys and press Enter after each one.') }}
                                 </p>
                             </x-alert>
                             <x-alert class="mt-2">

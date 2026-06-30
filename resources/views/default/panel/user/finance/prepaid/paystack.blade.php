@@ -18,6 +18,7 @@
                             @csrf
                             <input type="hidden" name="planID" value="{{ $plan->id }}">
                             <input type="hidden" name="gateway" value="paystack">
+                            <input id="coupon" type="hidden" name="couponID">
                             <div class="form-submit">
                                 <button class="btn btn-info w-full"
                                     @if ($app_is_demo) type="button" onclick="return toastr.info('This feature is disabled in Demo version.')" @else type="submit" @endif>

@@ -290,6 +290,7 @@ class DzevaModelCatalog
             EntityEnum::LYRIA_3_CLIP->value => ['Ohùn Nnwom', 'Voice & Audio', 'Music', 'Music and audio creativity.'],
             EntityEnum::LYRIA_3_PRO->value => ['Ohùn Nnwom', 'Voice & Audio', 'Music', 'Music and audio creativity.'],
 
+            EntityEnum::CLAUDE_FABLE_5->value => ['Hikima Nazari', 'Writing & Professional Documents', 'FileText', 'Careful analysis and professional review.'],
             EntityEnum::CLAUDE_3_5_HAIKU->value => ['Hikima Rubutu', 'Writing & Professional Documents', 'FileText', 'Professional writing and reports.'],
             EntityEnum::CLAUDE_3_HAIKU->value => ['Hikima Takaita', 'Writing & Professional Documents', 'FileText', 'Summaries and briefs.'],
             EntityEnum::CLAUDE_3_5_SONNET->value => ['Hikima Nazari', 'Writing & Professional Documents', 'FileText', 'Careful analysis and review.'],

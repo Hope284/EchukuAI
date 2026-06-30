@@ -52,12 +52,14 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
+use Illuminate\Validation\ValidationException;
 use MagicAI\Updater\Facades\Updater;
 use Throwable;
 
@@ -566,11 +568,17 @@ class UserController extends Controller
 
     public static function sanitizeSVG($uploadedSVG)
     {
-
         $sanitizer = new Sanitizer;
-        $content = file_get_contents($uploadedSVG);
+        $content = file_get_contents($uploadedSVG->getRealPath());
         $cleanedData = $sanitizer->sanitize($content);
-        $added = file_put_contents($uploadedSVG, $cleanedData);
+
+        if (! is_string($cleanedData) || $cleanedData === '') {
+            throw ValidationException::withMessages([
+                'avatar' => __('The SVG profile image could not be sanitized.'),
+            ]);
+        }
+
+        file_put_contents($uploadedSVG->getRealPath(), $cleanedData);
 
         return $uploadedSVG;
     }
@@ -606,6 +614,8 @@ class UserController extends Controller
         $user->city = $request->city;
         $user->postal = $request->postal;
         $user->address = $request->address;
+        $oldAvatarToDelete = null;
+        $newAvatarPath = null;
 
         if ($request->filled('old_password')) {
             $request->validateWithBag('updatePassword', [
@@ -630,35 +640,69 @@ class UserController extends Controller
         }
 
         if ($request->hasFile('avatar')) {
-            $path = 'upload/images/avatar/';
+            $relativePath = 'upload/images/avatar/' . $user->id . '/';
+            $absolutePath = public_path($relativePath);
             $image = $request->file('avatar');
 
             if ($image->guessExtension() === 'svg') {
                 $image = self::sanitizeSVG($request->file('avatar'));
             }
 
-            $image_name = Str::random(4) . '-' . Str::slug($user?->fullName()) . '-avatar.' . $image->guessExtension();
-
-            // Image extension check
+            $extension = Str::lower((string) $image->guessExtension());
             $imageTypes = ['jpg', 'jpeg', 'png', 'svg', 'webp'];
-            if (! MarketplaceHelper::isRegistered('content-manager') && ! in_array(Str::lower($image->guessExtension()), $imageTypes)) {
-                $data = [
-                    'errors' => ['The file extension must be jpg, jpeg, png, webp or svg.'],
-                ];
-
-                return response()->json($data, 419);
+            if (! in_array($extension, $imageTypes, true)) {
+                throw ValidationException::withMessages([
+                    'avatar' => __('The profile image must be a JPG, JPEG, PNG, WebP, or SVG file.'),
+                ]);
             }
 
-            $image->move($path, $image_name);
+            try {
+                File::ensureDirectoryExists($absolutePath, 0775, true);
+                @chmod($absolutePath, 02775);
 
-            $user->avatar = $path . $image_name;
+                $imageName = bin2hex(random_bytes(12)) . '.' . $extension;
+                $oldAvatar = (string) $user->avatar;
+                $image->move($absolutePath, $imageName);
+                @chmod($absolutePath . DIRECTORY_SEPARATOR . $imageName, 0664);
+            } catch (Throwable $throwable) {
+                Log::error('Profile image upload failed.', [
+                    'user_id' => $user->id,
+                    'error'   => $throwable->getMessage(),
+                ]);
+
+                throw ValidationException::withMessages([
+                    'avatar' => __('The profile image could not be stored. Please try a smaller image or contact support.'),
+                ]);
+            }
+
+            $user->avatar = $relativePath . $imageName;
+            $newAvatarPath = $user->avatar;
+
+            $ownedPrefix = 'upload/images/avatar/' . $user->id . '/';
+            if ($oldAvatar !== '' && Str::startsWith($oldAvatar, $ownedPrefix) && $oldAvatar !== $user->avatar) {
+                $oldAvatarToDelete = $oldAvatar;
+            }
+        }
+
+        try {
+            $user->save();
+        } catch (Throwable $throwable) {
+            if ($newAvatarPath) {
+                File::delete(public_path($newAvatarPath));
+            }
+
+            throw $throwable;
+        }
+
+        if ($oldAvatarToDelete) {
+            File::delete(public_path($oldAvatarToDelete));
         }
 
         CreateActivity::for($user, 'Updated', 'Profile Information');
-        $user->save();
 
         return response()->json([
-            'message' => __('User settings saved successfully'),
+            'message'    => __('User settings saved successfully'),
+            'avatar_url' => $request->hasFile('avatar') ? custom_theme_url($user->avatar, true) : null,
         ]);
     }
 

@@ -8,7 +8,6 @@ use App\Extensions\SocialMedia\System\Models\SocialMediaPlatform;
 use App\Extensions\SocialMedia\System\Models\SocialMediaPost;
 use App\Extensions\SocialMedia\System\Models\SocialMediaSharedLog;
 use Illuminate\Http\Client\Response;
-use JetBrains\PhpStorm\NoReturn;
 
 class BasePublisherService
 {
@@ -24,7 +23,6 @@ class BasePublisherService
 
     private array|string|null|Response $publishResponse = null;
 
-    #[NoReturn]
     public function publish(): void
     {
         $this->credentials = $this->platform->credentials;
@@ -190,7 +188,7 @@ class BasePublisherService
 
     public function check(): bool
     {
-        if ($this->post->status !== StatusEnum::scheduled) {
+        if (! in_array($this->post->status, [StatusEnum::scheduled, StatusEnum::pending], true)) {
 
             SocialMediaSharedLog::query()->create([
                 'social_media_post_id' => $this->post->id,

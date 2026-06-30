@@ -2,24 +2,7 @@
     $test_commands = ['Explain an Image', 'Summarize a book for research', 'Translate a book'];
     $disable_actions = $app_is_demo && (isset($category) && ($category?->slug == 'ai_vision' || $category?->slug == 'ai_pdf' || $category?->slug == 'ai_chat_image'));
 
-    $example_prompts = collect([
-        ['name' => 'Transcribe my class notes', 'prompt' => 'Transcribe my class notes'],
-        ['name' => 'Morning Productivity Plan', 'prompt' => 'Morning Productivity Plan'],
-        ['name' => 'Cold Email', 'prompt' => 'Cold Email'],
-        ['name' => 'Newsletter', 'prompt' => 'Newsletter'],
-        ['name' => 'Summarize', 'prompt' => 'Summarize'],
-        ['name' => 'Study Vocabulary', 'prompt' => 'Study Vocabulary'],
-        ['name' => 'Create a workout plan', 'prompt' => 'Create a workout plan'],
-        ['name' => 'Translate This Book', 'prompt' => 'Translate This Book'],
-        ['name' => 'Generate a cute panda image', 'prompt' => 'Generate a cute panda image'],
-        ['name' => 'Plan a 3 day trip to Rome', 'prompt' => 'Plan a 3 day trip to Rome'],
-        ['name' => 'Pick an outfit', 'prompt' => 'Pick an outfit'],
-        ['name' => 'How can I learn coding?', 'prompt' => 'How can I learn coding?'],
-        ['name' => 'Experience Tokyo', 'prompt' => 'Experience Tokyo'],
-        ['name' => 'Create a 4 course menu', 'prompt' => 'Create a 4 course menu'],
-        ['name' => 'Help me write a story', 'prompt' => 'Help me write a story'],
-        ['name' => 'Translate', 'prompt' => 'Translate'],
-    ])
+    $example_prompts = collect(\App\Support\Dzeva\ScrollingButtonDefaults::items())
         ->map(fn($item) => (object) $item)
         ->toArray();
     $example_prompts_json = json_encode($example_prompts, JSON_THROW_ON_ERROR);
@@ -95,28 +78,7 @@
                         {{ __('Ask me anything') }}
                     </h2>
 
-                    <div
-                        class="flex w-full gap-4 [--mask-from:7rem] [--mask-to:calc(100%-7rem)]"
-                        style="mask-image: linear-gradient(to right, transparent, black var(--mask-from), black var(--mask-to), transparent);"
-                        x-data="marquee({ pauseOnHover: true })"
-                    >
-                        <div class="lqd-marquee-viewport relative flex w-full overflow-hidden">
-                            <div class="lqd-marquee-slider flex w-full gap-4 py-2 lg:px-14">
-                                @foreach ($example_prompts ?? [] as $prompt)
-                                    <button
-                                        class="lqd-marquee-cell inline-flex shrink-0 items-center justify-center whitespace-nowrap rounded-xl bg-surface-background px-2.5 py-3 text-base font-semibold leading-[1.15em] transition-all hover:-translate-y-1 hover:shadow dark:bg-heading-foreground/5 dark:hover:bg-white lg:text-[1.2vw]"
-                                        data-prompt="{{ __($prompt?->prompt) }}"
-                                        type="button"
-                                        @click.prevent="prompt = $event.currentTarget.getAttribute('data-prompt'); $nextTick(() => { $refs.prompt.focus(); $refs.prompt.dispatchEvent(new Event('input',{bubbles:true})); });"
-                                    >
-                                        <span class="bg-gradient-to-r from-gradient-from via-gradient-via to-gradient-to bg-clip-text text-transparent">
-                                            {{ __($prompt?->name) }}
-                                        </span>
-                                    </button>
-                                @endforeach
-                            </div>
-                        </div>
-                    </div>
+                    @include('ai-chat-pro::components.scrolling-buttons', ['items' => $example_prompts])
                 </div>
                 <div
                     @class([

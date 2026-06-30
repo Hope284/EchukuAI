@@ -55,6 +55,9 @@ return [
         'client_secret' => env('GOOGLE_CLIENT_SECRET'),
         'redirect'      => '/google/callback',
     ],
+    'google_fonts' => [
+        'api_key' => env('GOOGLE_FONTS_API_KEY'),
+    ],
     'facebook' => [
         'client_id'     => env('FACEBOOK_CLIENT_ID'),
         'client_secret' => env('FACEBOOK_CLIENT_SECRET'),

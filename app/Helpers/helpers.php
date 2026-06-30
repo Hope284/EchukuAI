@@ -1114,6 +1114,17 @@ function getVersion(?string $version = ''): string
     return implode('.', $parts);
 }
 
+function dzeva_version_label(?\App\Models\User $user = null): string
+{
+    $user ??= auth()->user();
+
+    if ($user?->isSuperAdmin()) {
+        return __('Version') . ': ' . getVersion((string) setting('script_version', ''));
+    }
+
+    return 'DZEVA Version 1.2';
+}
+
 function getMetaTitle($setting, $settingTwo, $ext_title = null)
 {
     $ext_title = $ext_title == null ? ' | ' . __('Home') : $ext_title;

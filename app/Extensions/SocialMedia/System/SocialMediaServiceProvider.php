@@ -64,12 +64,12 @@ class SocialMediaServiceProvider extends ServiceProvider implements UninstallExt
 
             $this->app->booted(function () {
                 $schedule = $this->app->make(Schedule::class);
-                $schedule->command('app:social-media-published-command')->everyTwoMinutes();
+                $schedule->command('app:social-media-published-command')->everyTwoMinutes()->withoutOverlapping(10);
                 $schedule->command('app:social-media-x-refresh')->everyThreeMinutes();
                 $schedule->command('app:social-media-facebook-post-metrics')->everyThreeMinutes();
                 $schedule->command('app:social-media-instagram-post-metrics')->everyThreeMinutes();
                 $schedule->command('app:social-media-daily-metrics')->hourly();
-                $schedule->command('php artisan app:social-media-sync-followers')->hourly();
+                $schedule->command('app:social-media-sync-followers')->hourly()->withoutOverlapping(30);
             });
         }
 

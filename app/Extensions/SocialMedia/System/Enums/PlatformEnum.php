@@ -64,7 +64,7 @@ enum PlatformEnum: string
     {
         $platforms = SocialMediaPlatform::query()
             ->where('user_id', Auth::id())
-            ->whereIn('platform', array_values(self::all()))
+            ->whereIn('platform', self::toArray())
             ->orderByDesc('expires_at')
             ->get();
 

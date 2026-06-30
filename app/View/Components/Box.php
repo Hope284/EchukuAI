@@ -14,7 +14,7 @@ class Box extends Component
     public function __construct(
         public string $style = '1',
         public string $title = 'AI Generator',
-        public string $desc = 'Generate <strong>text, image, code, chat</strong> and even more with MagicAI.',
+        public string $desc = 'Create <strong>text, images, code, conversations</strong> and more with DZEVA.',
         public string $badge = '',
         public string $wrapperClass = '',
     ) {

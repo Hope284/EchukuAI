@@ -42,7 +42,12 @@ class PaystackWebhookListener implements ShouldQueue
     {
         try {
             $payload = $event->payload;
-            $method = 'handle' . Str::studly(str_replace('.', '_', $payload['event']));
+            $eventName = data_get($payload, 'event');
+            if (! is_string($eventName) || $eventName === '') {
+                return;
+            }
+
+            $method = 'handle' . Str::studly(str_replace('.', '_', $eventName));
             if (method_exists($this, $method)) {
                 $response = $this->{$method}($payload);
             }

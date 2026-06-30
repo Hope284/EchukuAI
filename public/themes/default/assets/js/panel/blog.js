@@ -6,6 +6,7 @@ function blogSave( post_id ) {
 
 
 	var formData = new FormData();
+	formData.append( '_token', document.querySelector( '#post_form input[name="_token"]' )?.value || '' );
 
     if ( post_id !== undefined && post_id !== null && post_id !== 'undefined' ) {
         formData.append( 'post_id', post_id );
@@ -24,7 +25,7 @@ function blogSave( post_id ) {
 
 	$.ajax( {
 		type: "post",
-		url: "/dashboard/blog/save",
+		url: document.getElementById( 'post_form' ).action,
 		data: formData,
 		contentType: false,
 		processData: false,

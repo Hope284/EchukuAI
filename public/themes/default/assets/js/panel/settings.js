@@ -716,7 +716,7 @@ function geminiSettingsSave() {
     document.getElementById("settings_button").innerHTML = magicai_localize.please_wait;
 
     var formData = new FormData();
-    formData.append('gemini_api_secret', $("#gemini_api_secret").val());
+    formData.append('gemini_api_secret', ($("#gemini_api_secret").val() || []).join(','));
     formData.append('gemini_default_model', $("#gemini_default_model").val());
 	formData.append('gemini_max_input_length', $("#gemini_max_input_length").val());
     formData.append('gemini_max_output_length', $("#gemini_max_output_length").val());

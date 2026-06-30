@@ -322,7 +322,7 @@ Route::middleware(['auth', 'updateUserActivity'])
 
                 Route::prefix('settings')->name('settings.')->group(function () {
                     Route::get('/', [UserController::class, 'userSettings'])->name('index');
-                    Route::post('/save', [UserController::class, 'userSettingsSave']);
+                    Route::post('/save', [UserController::class, 'userSettingsSave'])->name('save');
                     Route::get('/delete-account', [UserController::class, 'deleteAccount'])->name('deleteAccount');
                     Route::post('/delete-account', [UserController::class, 'deleteAccountRequest'])->name('deleteAccount.send');
 
@@ -835,7 +835,7 @@ Route::middleware(['auth', 'updateUserActivity'])
                 Route::resource('advertis', AdvertisController::class)->parameter('advertis', 'advertis');
 
                 // Update
-                Route::view('update', 'panel.admin.update.index')->name('update.index');
+                Route::view('update', 'panel.admin.update.index')->middleware('super_admin')->name('update.index');
 
                 // Healt Page
                 Route::prefix('health')
@@ -897,7 +897,7 @@ Route::middleware(['auth', 'updateUserActivity'])
                     Route::get('/', [BlogController::class, 'blogList'])->name('list');
                     Route::get('/add-or-update/{id?}', [BlogController::class, 'blogAddOrUpdate'])->name('addOrUpdate');
                     Route::get('/delete/{id?}', [BlogController::class, 'blogDelete'])->name('delete');
-                    Route::post('/save', [BlogController::class, 'blogAddOrUpdateSave']);
+                    Route::post('/save', [BlogController::class, 'blogAddOrUpdateSave'])->name('save');
                 });
 
                 Route::prefix('admin/strategic-partners')

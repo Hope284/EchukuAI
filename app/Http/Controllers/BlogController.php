@@ -4,11 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Models\Blog;
 use App\Models\Frontend\FrontendSectionsStatus;
+use enshrined\svgSanitize\Sanitizer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
+use Throwable;
 
 class BlogController extends Controller
 {
@@ -161,7 +164,12 @@ class BlogController extends Controller
     public function blogDelete($id = null)
     {
         $post = Blog::where('id', $id)->firstOrFail();
+        $featureImage = (string) $post->feature_image;
         $post->delete();
+
+        if ($this->isOwnedBlogImage($featureImage)) {
+            File::delete(public_path($featureImage));
+        }
 
         return back()->with(['message' => __('Deleted Successfully'), 'type' => 'success']);
     }
@@ -174,7 +182,7 @@ class BlogController extends Controller
         $validator = Validator::make($request->all(), [
             'title'         => ['required', 'string', 'max:255'],
             'content'       => ['required', 'string'],
-            'feature_image' => ['nullable', 'file', 'mimes:jpg,jpeg,png,svg,webp'],
+            'feature_image' => ['nullable', 'file', 'mimes:jpg,jpeg,png,svg,webp', 'max:10240'],
             'status'        => ['nullable', 'boolean'],
         ]);
 
@@ -185,25 +193,50 @@ class BlogController extends Controller
         $post = $isUpdate
             ? Blog::where('id', $postId)->firstOrFail()
             : new Blog;
+        $oldFeatureImage = (string) $post->feature_image;
+        $feature_image = null;
 
         if ($request->hasFile('feature_image')) {
             $path = 'upload/images/blog/';
+            $absolutePath = public_path($path);
             $image = $request->file('feature_image');
             $baseSlug = Str::slug($request->input('slug') ?: $request->input('title'));
-            $image_name = Str::random(4) . '-' . $baseSlug . '.' . $image->guessExtension();
+            $extension = Str::lower((string) $image->guessExtension());
+            $image_name = bin2hex(random_bytes(10)) . '-' . $baseSlug . '.' . $extension;
 
-            // Resim uzantı kontrolü
             $imageTypes = ['jpg', 'jpeg', 'png', 'svg', 'webp'];
-            if (! in_array(Str::lower($image->guessExtension()), $imageTypes)) {
+            if (! in_array($extension, $imageTypes, true)) {
                 $data = [
                     'errors' => ['The file extension must be jpg, jpeg, png, webp or svg.'],
                 ];
 
-                return response()->json($data, 419);
+                return response()->json($data, 422);
             }
 
-            File::ensureDirectoryExists(public_path($path));
-            $image->move(public_path($path), $image_name);
+            if ($extension === 'svg') {
+                $sanitizer = new Sanitizer;
+                $cleanSvg = $sanitizer->sanitize((string) file_get_contents($image->getRealPath()));
+                if (! is_string($cleanSvg) || $cleanSvg === '') {
+                    return response()->json(['errors' => [__('The SVG image could not be sanitized.')]], 422);
+                }
+                file_put_contents($image->getRealPath(), $cleanSvg);
+            }
+
+            try {
+                File::ensureDirectoryExists($absolutePath, 0775, true);
+                @chmod($absolutePath, 02775);
+                $image->move($absolutePath, $image_name);
+                @chmod($absolutePath . DIRECTORY_SEPARATOR . $image_name, 0664);
+            } catch (Throwable $throwable) {
+                Log::error('Blog feature image upload failed.', [
+                    'user_id' => Auth::id(),
+                    'error'   => $throwable->getMessage(),
+                ]);
+
+                return response()->json([
+                    'errors' => [__('The feature image could not be stored. Please try a smaller image or contact support.')],
+                ], 422);
+            }
 
             $feature_image = $path . $image_name;
         }
@@ -218,7 +251,27 @@ class BlogController extends Controller
         $post->tag = $this->csvInput($request->input('tag'));
         $post->status = (bool) $request->input('status', 1);
         $post->user_id = Auth::user()->id;
-        $post->save();
+        try {
+            $post->save();
+        } catch (Throwable $throwable) {
+            if ($feature_image) {
+                File::delete(public_path($feature_image));
+            }
+
+            Log::error('Blog post save failed.', [
+                'user_id' => Auth::id(),
+                'post_id' => $postId,
+                'error'   => $throwable->getMessage(),
+            ]);
+
+            return response()->json([
+                'errors' => [__('The post could not be saved. Please review the form and try again.')],
+            ], 500);
+        }
+
+        if ($feature_image && $oldFeatureImage !== $feature_image && $this->isOwnedBlogImage($oldFeatureImage)) {
+            File::delete(public_path($oldFeatureImage));
+        }
 
         return response()->json([
             'message'  => __('Post saved successfully.'),
@@ -252,5 +305,12 @@ class BlogController extends Controller
         }
 
         return filled($value) ? (string) $value : null;
+    }
+
+    private function isOwnedBlogImage(string $path): bool
+    {
+        return $path !== ''
+            && Str::startsWith($path, 'upload/images/blog/')
+            && ! Str::contains($path, ['..', "\0", '\\']);
     }
 }

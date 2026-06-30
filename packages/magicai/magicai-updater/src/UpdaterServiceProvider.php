@@ -28,7 +28,7 @@ class UpdaterServiceProvider extends PackageServiceProvider
     {
         Route::prefix('updater')
             ->as('updater.')
-            ->middleware(['web', 'auth', 'admin'])
+            ->middleware(['web', 'auth', 'super_admin'])
             ->group(function (Router $router) {
                 $router->get('', [UpdaterController::class, 'index'])->name('index');
                 $router->get('check', [UpdaterController::class, 'check'])->name('check');

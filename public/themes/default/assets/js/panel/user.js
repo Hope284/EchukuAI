@@ -31,6 +31,7 @@ function userSave( user_id ) {
 	document.getElementById( "user_edit_button" ).innerHTML = magicai_localize.please_wait;
 
 	var formData = new FormData();
+	formData.append( '_token', document.querySelector( '#user_edit_form input[name="_token"]' )?.value || '' );
 	formData.append( 'user_id', user_id );
 	formData.append( 'name', $( "#name" ).val() );
 	formData.append( 'surname', $( "#surname" ).val() );
@@ -97,7 +98,7 @@ function userProfileSave() {
 
 	$.ajax( {
 		type: "post",
-		url: "/dashboard/user/settings/save",
+		url: document.getElementById( 'user_edit_form' ).action,
 		data: formData,
 		contentType: false,
 		processData: false,
@@ -105,6 +106,9 @@ function userProfileSave() {
 			toastr.success(data?.message || magicai_localize?.user_saved || 'User saved succesfully')
 			document.getElementById( "user_edit_button" ).disabled = false;
 			document.getElementById( "user_edit_button" ).innerHTML = "Save";
+			if ( data?.avatar_url ) {
+				window.setTimeout(() => window.location.reload(), 500);
+			}
 		},
 		error: function ( data ) {
 			var err = data.responseJSON?.errors || { error: [ data.responseJSON?.message || 'Unable to save profile.' ] };

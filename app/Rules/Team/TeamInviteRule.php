@@ -15,7 +15,7 @@ class TeamInviteRule implements ValidationRule
 
         $used_seats = $team->members()->count();
 
-        if ($allow_seats <= $used_seats) {
+        if ($allow_seats !== -1 && $allow_seats <= $used_seats) {
             $fail(__('You have reached the maximum number of seats allowed for this team.'));
         }
     }

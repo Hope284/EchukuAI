@@ -20,6 +20,8 @@ use App\Models\Plan;
 use App\Models\Setting;
 use App\Services\Finance\PlanService;
 use App\Support\Dzeva\DzevaModelCatalog;
+use App\Support\Dzeva\ScrollingButtonDefaults;
+use App\Support\Security\SafeUrl;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Schema;
 
@@ -40,6 +42,7 @@ class DzevaPlanSeeder extends Seeder
         $this->seedNgnCurrency();
         $this->seedPublicEntityLabels();
         $this->seedPublicHomepageCopy();
+        $this->seedScrollingButtons();
         $this->seedSubscriptionPlans();
         $this->seedPrepaidCapabilityPlans();
 
@@ -142,6 +145,33 @@ class DzevaPlanSeeder extends Seeder
                     'buy_link'     => 'Start with Dzeva',
                     'buy_link_url' => '/register',
                 ]);
+        }
+    }
+
+    private function seedScrollingButtons(): void
+    {
+        if (! Schema::hasTable('settings') || ! Schema::hasColumn('settings', 'ai_chat_pro_suggestions')) {
+            return;
+        }
+
+        $settings = Setting::query()->first();
+        if (! $settings) {
+            return;
+        }
+
+        $configured = json_decode((string) $settings->getAttribute('ai_chat_pro_suggestions'), true);
+        $hasValidButton = collect(is_array($configured) ? $configured : [])
+            ->contains(static fn (mixed $item): bool => is_array($item)
+                && filled($item['name'] ?? null)
+                && SafeUrl::normalize($item['prompt'] ?? null) !== null);
+
+        if (! $hasValidButton) {
+            $settings->setAttribute(
+                'ai_chat_pro_suggestions',
+                json_encode(ScrollingButtonDefaults::items(), JSON_THROW_ON_ERROR)
+            );
+            $settings->save();
+            Setting::forgetCache();
         }
     }
 
@@ -262,31 +292,65 @@ class DzevaPlanSeeder extends Seeder
             ]);
         }
 
+        $freshPlan = Plan::createFreshPlan();
+
         $this->persistPlan(TypeEnum::SUBSCRIPTION->value, [
             'active'                   => true,
             'hidden'                   => false,
             'name'                     => 'Lifetime Access',
-            'description'              => 'One-time Dzeva feature unlock for users who prefer prepaid token usage.',
+            'description'              => 'One-time DZEVA premium access with every user-facing feature and agentic capability enabled.',
             'features'                 => implode(',', [
-                'All Dzeva platform features unlocked',
-                'Zero included Dzeva credits',
-                'Buy prepaid token plans before using paid AI models',
-                'Best for pay-as-you-go usage',
+                'All DZEVA AI tools and models',
+                'Unlimited teams, agents, chatbots, and automations',
+                'All active SaaS extensions and agentic capabilities',
+                'One-time premium access',
             ]),
             'price'                    => 5000,
             'currency'                 => 'NGN',
             'frequency'                => FrequencyEnum::LIFETIME->value,
             'type'                     => TypeEnum::SUBSCRIPTION->value,
-            'is_featured'              => false,
+            'is_featured'              => true,
             'max_tokens'               => 0,
             'ai_name'                  => 'Dzeva',
             'default_ai_model'         => EntityEnum::GPT_5_MINI->slug(),
             'can_create_ai_images'     => true,
-            'ai_models'                => $this->aiModelsForCredits([]),
+            'ai_models'                => $this->unlimitedAiModels(),
+            'open_ai_items'            => $freshPlan->open_ai_items,
+            'plan_ai_tools'            => $freshPlan->plan_ai_tools,
+            'plan_features'            => $freshPlan->plan_features,
+            'user_api'                 => true,
+            'is_team_plan'             => true,
+            'plan_allow_seat'          => -1,
+            'chatbot_limit'            => -1,
+            'chatbot_channels'         => [
+                'telegram'  => true,
+                'whatsapp'  => true,
+                'messenger' => true,
+                'instagram' => true,
+            ],
+            'chatbot_human_agent'      => true,
+            'social_media_agent_limits' => ['agents' => -1, 'monthly_posts' => -1],
+            'blogpilot_limits'          => ['agents' => -1, 'monthly_posts' => -1],
+            'social_media_automation_limits' => ['automations' => -1],
+            'marketing_bot_limits'      => [
+                'max_contacts'     => -1,
+                'monthly_messages' => -1,
+                'channels'         => ['whatsapp', 'telegram'],
+            ],
             'reset_credits_on_renewal' => false,
             'multi_model_support'      => true,
             'model_council_support'    => true,
             'voice_call_seconds_limit' => -1,
+            'deep_research_request_limit' => -1,
+            'ugc_videos_limit'          => -1,
+            'ugc_creator_videos_limit'  => -1,
+            'video_dubbing_seconds_limit' => -1,
+            'ai_captions_access'        => true,
+            'ai_captions_minutes'       => -1,
+            'ai_agent_workflow_limit'   => -1,
+            'ai_agent_channel_limit'    => -1,
+            'ai_agent_message_limit'    => -1,
+            'ai_agent_memory_limit'     => -1,
         ]);
     }
 
@@ -344,6 +408,24 @@ class DzevaPlanSeeder extends Seeder
                 'isUnlimited' => false,
             ];
         }
+
+        return $aiModels;
+    }
+
+    private function unlimitedAiModels(): array
+    {
+        $aiModels = EngineEnum::getNestedPlanLimits();
+
+        foreach ($aiModels as &$models) {
+            foreach ($models as &$limits) {
+                $limits = [
+                    'credit'      => 0,
+                    'isUnlimited' => true,
+                ];
+            }
+            unset($limits);
+        }
+        unset($models);
 
         return $aiModels;
     }

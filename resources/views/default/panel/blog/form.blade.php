@@ -26,9 +26,11 @@
         class="[&_.tox]:bg-input-background"
         id="post_form"
         onsubmit="return blogSave({{ $blog != null ? $blog->id : null }});"
-        action=""
+        action="{{ route('dashboard.admin.blog.save') }}"
+        method="post"
         enctype="multipart/form-data"
     >
+        @csrf
         <div class="flex flex-wrap justify-between">
             <div class="flex w-full flex-col gap-5 lg:w-7/12">
                 <x-forms.input
@@ -66,7 +68,7 @@
                         size="lg"
                         name="feature_image"
                         value="/{{ $blog != null ? $blog->feature_image : null }}"
-                        accept="image/*"
+                        accept="image/jpeg,image/png,image/webp,image/svg+xml"
                         label="{{ __('Post Image') }}"
                     />
                 </div>

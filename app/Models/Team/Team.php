@@ -24,6 +24,7 @@ class Team extends Model
     protected $casts = [
         'entity_credits'    => 'array',
         'shared_credits'    => 'float',
+        'allow_seats'       => 'integer',
     ];
 
     public function isSharedCreditTeam(): bool

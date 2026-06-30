@@ -27,10 +27,21 @@ jobs:
         run: composer install --prefer-dist --no-interaction --no-progress
 
       - name: Validate PHP syntax
-        run: find app database routes resources/views -type f -name '*.php' -print0 | xargs -0 -n1 php -l
+        run: find app config database packages routes resources/views tests -type f -name '*.php' -print0 | xargs -0 -n1 php -l
 
       - name: Validate extension manifests
         run: find app/Extensions -type f -name 'extension.json' -print0 | xargs -0 -n1 jq empty
+
+      - name: Reject committed provider secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          leaked_files="$(git grep -IlE 'AIza[0-9A-Za-z_-]{20,}|sk_(live|test)_[0-9A-Za-z]{16,}' -- app config resources public/themes/default routes .env.example || true)"
+          if [ -n "$leaked_files" ]; then
+            echo "Provider credentials were found in tracked source files:"
+            printf '%s\n' "$leaked_files"
+            exit 1
+          fi
 
       - name: Run Laravel tests
         run: php artisan test
@@ -89,7 +100,7 @@ jobs:
             trap 'sudo systemctl start cron || true' EXIT
 
             backup_stamp="$(date -u +%Y%m%d-%H%M%S)"
-            backup_dir="/home/ubuntu/backups/dzeva-update-${backup_stamp}"
+            backup_dir="/home/ubuntu/backups/dzeva-fix-${backup_stamp}"
             sudo install -d -o ubuntu -g ubuntu -m 0700 "$backup_dir"
             git rev-parse HEAD > "$backup_dir/commit.txt"
             if [ -n "${generated_artifacts_backup:-}" ] && [ -d "$generated_artifacts_backup" ]; then
@@ -104,7 +115,12 @@ jobs:
               --exclude='./node_modules' \
               --exclude='./storage' \
               --exclude='./public/uploads' \
+              --exclude='./public/upload' \
               -czf "$backup_dir/app.tar.gz" .
+            [ ! -d storage ] || tar -czf "$backup_dir/storage.tar.gz" storage
+            [ ! -d public/uploads ] || tar -czf "$backup_dir/public-uploads.tar.gz" public/uploads
+            [ ! -d public/upload ] || tar -czf "$backup_dir/public-upload.tar.gz" public/upload
+            [ ! -d public/vendor ] || tar -czf "$backup_dir/public-extension-assets.tar.gz" public/vendor
             install -m 0600 .env "$backup_dir/.env.backup"
 
             db_host="$(php -r '$e=parse_ini_file(".env", false, INI_SCANNER_RAW); echo $e["DB_HOST"] ?? "127.0.0.1";')"
@@ -121,6 +137,7 @@ jobs:
             MYSQL_PWD="$db_password" mysqldump \
               --single-transaction \
               --quick \
+              --no-tablespaces \
               --skip-lock-tables \
               --host="$db_host" \
               --port="$db_port" \
@@ -133,20 +150,20 @@ jobs:
             git checkout main
             git pull --ff-only origin main
             fix_laravel_permissions() {
-              sudo install -d -o ubuntu -g www-data -m 2775 public public/vendor public/vendor/chatbot public/vendor/chatbot/js public/vendor/chatbot/images public/vendor/chatbot/icons storage/framework/cache/data storage/framework/cache/locks storage/framework/views storage/framework/sessions storage/framework/testing bootstrap/cache public/uploads public/uploads/media public/uploads/media/images public/uploads/media/videos public/uploads/media/other public/uploads/media/others public/uploads/media/voices public/uploads/guest public/uploads/thumbnail/default vendor/magicai/magicai-healthy/resources/views
+              sudo install -d -o ubuntu -g www-data -m 2775 public public/vendor public/vendor/chatbot public/vendor/chatbot/js public/vendor/chatbot/images public/vendor/chatbot/icons storage/framework/cache/data storage/framework/cache/locks storage/framework/views storage/framework/sessions storage/framework/testing bootstrap/cache public/uploads public/uploads/media public/uploads/media/images public/uploads/media/videos public/uploads/media/other public/uploads/media/others public/uploads/media/voices public/uploads/guest public/uploads/thumbnail/default public/upload public/upload/images public/upload/images/avatar public/upload/images/blog vendor/magicai/magicai-healthy/resources/views
               sudo chown ubuntu:www-data public
               sudo chmod 2775 public
-              sudo chown -R ubuntu:www-data storage bootstrap/cache public/uploads public/vendor vendor/magicai/magicai-healthy/resources/views
-              sudo find storage bootstrap/cache public/uploads public/vendor -type d -exec chmod 2775 {} \;
-              sudo find storage bootstrap/cache public/uploads public/vendor -type f -exec chmod 664 {} \;
+              sudo chown -R ubuntu:www-data storage bootstrap/cache public/uploads public/upload public/vendor vendor/magicai/magicai-healthy/resources/views
+              sudo find storage bootstrap/cache public/uploads public/upload public/vendor -type d -exec chmod 2775 {} \;
+              sudo find storage bootstrap/cache public/uploads public/upload public/vendor -type f -exec chmod 664 {} \;
               if ! command -v setfacl >/dev/null 2>&1; then
                 sudo apt-get update
                 sudo apt-get install -y acl
               fi
               sudo setfacl -m u:ubuntu:rwx,u:www-data:rwx,g:www-data:rwx,m:rwx public
               sudo setfacl -d -m u:ubuntu:rwx,u:www-data:rwx,g:www-data:rwx,m:rwx public
-              sudo setfacl -R -m u:ubuntu:rwx,u:www-data:rwx,g:www-data:rwx,m:rwx storage bootstrap/cache public/uploads public/vendor
-              sudo setfacl -R -d -m u:ubuntu:rwx,u:www-data:rwx,g:www-data:rwx,m:rwx storage bootstrap/cache public/uploads public/vendor
+              sudo setfacl -R -m u:ubuntu:rwx,u:www-data:rwx,g:www-data:rwx,m:rwx storage bootstrap/cache public/uploads public/upload public/vendor
+              sudo setfacl -R -d -m u:ubuntu:rwx,u:www-data:rwx,g:www-data:rwx,m:rwx storage bootstrap/cache public/uploads public/upload public/vendor
             }
             fix_laravel_permissions
             php -m | grep -E '^pdo_mysql$'
@@ -156,7 +173,8 @@ jobs:
             php artisan vendor:publish --tag=extension --force
             fix_laravel_permissions
             sudo -u www-data php artisan db:seed --class=DzevaPlanSeeder --force
-            sudo -u www-data php artisan plans:ensure-gateway-products || echo "Gateway product backfill completed with reported errors; review the deployment log."
+            sudo -u www-data php artisan dzeva:sync-premium-entitlements
+            sudo -u www-data php artisan plans:ensure-gateway-products --gateway=paystack --type=subscription --refresh
             sudo -u www-data php artisan optimize:clear
             fix_laravel_permissions
             sudo -u www-data php artisan config:cache
@@ -167,6 +185,10 @@ jobs:
             sudo -u www-data php artisan route:list --path=webhooks
             sudo -u www-data php artisan route:list --path=paystack
             sudo -u www-data php artisan dzeva:production-audit
+            cron_line='* * * * * cd /var/www/dzeva && php artisan schedule:run >> /dev/null 2>&1'
+            (crontab -l 2>/dev/null | grep -Fv 'cd /var/www/dzeva && php artisan schedule:run' || true; printf '%s\n' "$cron_line") | crontab -
+            crontab -l | grep -F 'cd /var/www/dzeva && php artisan schedule:run'
+            sudo -u www-data php artisan schedule:list
             sudo -u www-data php artisan view:cache
             sudo -u www-data php artisan theme:refresh-cache || true
             fix_laravel_permissions
@@ -194,8 +216,10 @@ jobs:
           check_url "https://dzeva.com"
           check_url "https://dzeva.com/login"
           check_url "https://dzeva.com/register"
+          check_url "https://dzeva.com/chat"
           check_url "https://dzeva.com/blog"
           check_url "https://dzeva.com/sitemap.xml"
+          check_url "https://dzeva.com/update-manual"
           check_url "https://dzeva.com/dashboard/user/strategic-partner"
           check_url "https://dzeva.com/dashboard/admin/strategic-partners"
           check_url "https://dzeva.com/dashboard/admin/strategic-partners/create"

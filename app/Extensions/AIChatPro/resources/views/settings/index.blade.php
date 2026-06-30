@@ -1,22 +1,5 @@
 @php
-    $example_prompts = collect([
-        ['name' => 'Transcribe my class notes', 'prompt' => 'Transcribe my class notes'],
-        ['name' => 'Morning Productivity Plan', 'prompt' => 'Morning Productivity Plan'],
-        ['name' => 'Cold Email', 'prompt' => 'Cold Email'],
-        ['name' => 'Newsletter', 'prompt' => 'Newsletter'],
-        ['name' => 'Summarize', 'prompt' => 'Summarize'],
-        ['name' => 'Study Vocabulary', 'prompt' => 'Study Vocabulary'],
-        ['name' => 'Create a workout plan', 'prompt' => 'Create a workout plan'],
-        ['name' => 'Translate This Book', 'prompt' => 'Translate This Book'],
-        ['name' => 'Generate a cute panda image', 'prompt' => 'Generate a cute panda image'],
-        ['name' => 'Plan a 3 day trip to Rome', 'prompt' => 'Plan a 3 day trip to Rome'],
-        ['name' => 'Pick an outfit', 'prompt' => 'Pick an outfit'],
-        ['name' => 'How can I learn coding?', 'prompt' => 'How can I learn coding?'],
-        ['name' => 'Experience Tokyo', 'prompt' => 'Experience Tokyo'],
-        ['name' => 'Create a 4 course menu', 'prompt' => 'Create a 4 course menu'],
-        ['name' => 'Help me write a story', 'prompt' => 'Help me write a story'],
-        ['name' => 'Translate', 'prompt' => 'Translate'],
-    ])
+    $example_prompts = collect(\App\Support\Dzeva\ScrollingButtonDefaults::items())
         ->map(fn($item) => (object) $item)
         ->toArray();
     $example_prompts_json = json_encode($example_prompts, JSON_THROW_ON_ERROR);
@@ -320,7 +303,7 @@
             <x-form-step
                 class="py-2"
                 auto-increment
-                label="{{ __('Scrolling (suggestion) Texts/Prompt') }}"
+                label="{{ __('Scrolling Buttons') }}"
             >
                 <x-button
                     class="ms-auto inline-flex size-8 items-center justify-center rounded-full bg-background text-foreground transition-all"
@@ -355,7 +338,7 @@
                                 />
                                 <span
                                     class="w-full truncate"
-                                    x-text="item.name || '{{ __('New suggestion') }}'"
+                                    x-text="item.name || '{{ __('New button') }}'"
                                 ></span>
                             </button>
 
@@ -378,21 +361,21 @@
                             <div class="flex flex-col gap-4 px-3 py-4">
                                 <x-forms.input
                                     size="lg"
-                                    label="{{ __('Name') }}"
+                                    label="{{ __('Button Title') }}"
                                     name="input_name[]"
-                                    tooltip="{{ __('The primary text will be shown in the chat box.') }}"
+                                    tooltip="{{ __('The text shown on the scrolling button.') }}"
                                     x-model="item.name"
                                 />
 
                                 <x-forms.input
-                                    type="textarea"
+                                    type="text"
                                     size="lg"
-                                    rows="2"
                                     name="input_prompt[]"
-                                    label="{{ __('Prompt') }}"
-                                    tooltip="{{ __('The prompt will be shown in the prompt box when the suggestion is clicked.') }}"
+                                    label="{{ __('Button URL') }}"
+                                    placeholder="/chat or https://example.com"
+                                    tooltip="{{ __('Use an internal path or a complete http/https URL.') }}"
                                     x-model="item.prompt"
-                                ></x-forms.input>
+                                />
                             </div>
                         </div>
                     </x-card>
@@ -422,7 +405,7 @@
                 },
 
                 addItem() {
-                    if (this.items.some(item => !item.name.trim() || !item.prompt.trim())) {
+                    if (this.items.some(item => !String(item.name || '').trim() || !String(item.prompt || '').trim())) {
                         return toastr.error("{{ __('Please fill all fields before adding a new one.') }}");
                     }
 

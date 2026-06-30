@@ -165,7 +165,7 @@ class SocialMediaPost extends Model
     {
         if ($this->social_media_agent_post_id && MarketplaceHelper::isRegistered('social-media-agent')) {
             $agentPost = SocialMediaAgentPost::query()
-                ->where('id', $this->post->social_media_agent_post_id)
+                ->where('id', $this->social_media_agent_post_id)
                 ->first();
 
             if ($agentPost) {
@@ -178,7 +178,7 @@ class SocialMediaPost extends Model
     {
         if ($this->social_media_agent_post_id && MarketplaceHelper::isRegistered('social-media-agent')) {
             $agentPost = SocialMediaAgentPost::query()
-                ->where('id', $this->post->social_media_agent_post_id)
+                ->where('id', $this->social_media_agent_post_id)
                 ->first();
 
             if ($agentPost) {

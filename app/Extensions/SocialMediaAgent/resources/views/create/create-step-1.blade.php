@@ -1,7 +1,3 @@
-@php
-    $videoPlatforms = ['youtube', 'youtube-shorts'];
-@endphp
-
 <div
     class="col-start-1 col-end-1 row-start-1 row-end-1 w-full transition duration-300"
     x-show="currentStep === 1"
@@ -99,9 +95,6 @@
                 >
 
                     @foreach ($platforms as $platform)
-                        @if (in_array($platform->platform, $videoPlatforms))
-                            @continue
-                        @endif
                         @php
                             $image = 'vendor/social-media/icons/' . $platform->platform . '.svg';
                             $image_dark_version = 'vendor/social-media/icons/' . $platform->platform . '-light.svg';
@@ -122,13 +115,13 @@
                                 <img
                                     @class(['w-full h-auto', 'dark:hidden' => $darkImageExists])
                                     src="{{ asset($image) }}"
-                                    alt="{{ $platform->name }}"
+                                    alt="{{ $platform->platformLabel() }}"
                                 />
                                 @if ($darkImageExists)
                                     <img
                                         class="hidden h-auto w-full dark:block"
                                         src="{{ asset($image_dark_version) }}"
-                                        alt="{{ $platform->name }}"
+                                        alt="{{ $platform->platformLabel() }}"
                                     />
                                 @endif
                             </figure>

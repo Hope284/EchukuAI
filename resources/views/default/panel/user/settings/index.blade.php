@@ -9,9 +9,11 @@
                     <form
                         id="user_edit_form"
                         onsubmit="return userProfileSave();"
-                        action=""
+                        action="{{ route('dashboard.user.settings.save') }}"
+                        method="post"
                         enctype="multipart/form-data"
                     >
+                        @csrf
                         <x-card class="max-md:text-center">
 
                             <div class="mb-[10px]">
@@ -21,7 +23,7 @@
                                     id="avatar"
                                     type="file"
                                     name="avatar"
-                                    accept="image/*"
+                                    accept="image/jpeg,image/png,image/webp,image/svg+xml"
                                 >
                             </div>
                             <div class="mb-[10px]">

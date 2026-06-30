@@ -66,6 +66,7 @@ enum EntityEnum: string
     use StringBackedEnumTrait;
 
     // Anthropic
+    case CLAUDE_FABLE_5 = 'claude-fable-5';
     case CLAUDE_SONNET_4_5 = 'claude-sonnet-4-5-20250929';
     case CLAUDE_SONNET_4_6 = 'claude-sonnet-4-6';
     case CLAUDE_SONNET_4 = 'claude-sonnet-4-20250514';
@@ -617,6 +618,7 @@ enum EntityEnum: string
             self::CLAUDE_OPUS_4_6,
             self::CLAUDE_OPUS_4_7,
             self::CLAUDE_OPUS_4_8 => 0.0333,
+            self::CLAUDE_FABLE_5  => 0.0666,
             self::CLAUDE_2_1,
             self::CLAUDE_2_0 => 0.0319,
 
@@ -1241,6 +1243,7 @@ enum EntityEnum: string
             self::SORA_2_PRO,
             self::GPT_O_4_MINI => EngineEnum::OPEN_AI,
             // Anthropic
+            self::CLAUDE_FABLE_5,
             self::CLAUDE_SONNET_4_5,
             self::CLAUDE_SONNET_4_6,
             self::CLAUDE_OPUS_4_8,
@@ -1455,6 +1458,7 @@ enum EntityEnum: string
             self::SORA_2_PRO                  => OpenAI\Sora2ProDriver::class,
 
             // Anthropic
+            self::CLAUDE_FABLE_5       => Anthropic\ClaudeFable5Driver::class,
             self::CLAUDE_SONNET_4_5    => Anthropic\ClaudeSonnet45Driver::class,
             self::CLAUDE_SONNET_4_6    => Anthropic\ClaudeSonnet46Driver::class,
             self::CLAUDE_OPUS_4_8      => Anthropic\ClaudeOpus48Driver::class,
@@ -1713,7 +1717,7 @@ enum EntityEnum: string
             self::SORA_2_PRO                  => 0.50,
 
             // Anthropic
-            self::CLAUDE_SONNET_4_5, self::CLAUDE_SONNET_4_6, self::CLAUDE_OPUS_4_8, self::CLAUDE_OPUS_4_7, self::CLAUDE_OPUS_4_6, self::CLAUDE_OPUS_4_1, self::CLAUDE_OPUS_4_5, self::CLAUDE_OPUS_4, self::CLAUDE_SONNET_4, self::CLAUDE_3_7_SONNET, self::CLAUDE_3_5_SONNET_V2, self::CLAUDE_3_5_SONNET, self::CLAUDE_3_SONNET => 0.000015,
+            self::CLAUDE_FABLE_5, self::CLAUDE_SONNET_4_5, self::CLAUDE_SONNET_4_6, self::CLAUDE_OPUS_4_8, self::CLAUDE_OPUS_4_7, self::CLAUDE_OPUS_4_6, self::CLAUDE_OPUS_4_1, self::CLAUDE_OPUS_4_5, self::CLAUDE_OPUS_4, self::CLAUDE_SONNET_4, self::CLAUDE_3_7_SONNET, self::CLAUDE_3_5_SONNET_V2, self::CLAUDE_3_5_SONNET, self::CLAUDE_3_SONNET => 0.000015,
             self::CLAUDE_3_5_HAIKU => 0.000003,
             self::CLAUDE_3_OPUS    => 0.000015,
             self::CLAUDE_3_HAIKU   => 0.000003,

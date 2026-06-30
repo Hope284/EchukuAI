@@ -12,6 +12,7 @@ use App\Http\Middleware\Custom\ThemeMiddleware;
 use App\Http\Middleware\DemoCheckMiddleware;
 use App\Http\Middleware\EncryptCookies;
 use App\Http\Middleware\EnsureStrategicPartner;
+use App\Http\Middleware\EnsureSuperAdmin;
 use App\Http\Middleware\PreventRequestsDuringMaintenance;
 use App\Http\Middleware\RedirectIfAuthenticated;
 use App\Http\Middleware\RefererMiddleware;
@@ -110,6 +111,7 @@ class Kernel extends HttpKernel
         'throttle'              => ThrottleRequests::class,
         'verified'              => EnsureEmailIsVerified::class,
         'admin'                 => AdminPermissionMiddleware::class,
+        'super_admin'           => EnsureSuperAdmin::class,
         'strategic_partner'     => EnsureStrategicPartner::class,
         'is_not_demo'           => DemoCheckMiddleware::class,
         'newExtensionInstalled' => NewExtensionInstalled::class,

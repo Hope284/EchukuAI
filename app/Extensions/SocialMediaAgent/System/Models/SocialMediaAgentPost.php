@@ -90,7 +90,7 @@ class SocialMediaAgentPost extends Model
 
     public function getPlatformEnum()
     {
-        if ($this->platform->platform) {
+        if ($this->platform?->platform) {
             return PlatformEnum::from($this->platform->platform);
         }
 

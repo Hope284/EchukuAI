@@ -17,13 +17,27 @@ use Throwable;
 
 class EnsurePlanGatewayProductsCommand extends Command
 {
-    protected $signature = 'plans:ensure-gateway-products {--gateway= : Limit to one gateway code}';
+    protected $signature = 'plans:ensure-gateway-products
+        {--gateway= : Limit to one gateway code}
+        {--type= : Limit to subscription or token_pack plans}
+        {--refresh : Revalidate complete remote mappings}';
 
     protected $description = 'Ensure active plans have missing gateway product/price mappings without duplicating existing mappings.';
 
     public function handle(): int
     {
-        $plans = Plan::query()->where('active', 1)->orderBy('id')->get();
+        $type = $this->option('type');
+        if ($type && ! in_array($type, [TypeEnum::SUBSCRIPTION->value, TypeEnum::TOKEN_PACK->value], true)) {
+            $this->error('The --type option must be subscription or token_pack.');
+
+            return self::FAILURE;
+        }
+
+        $plans = Plan::query()
+            ->where('active', 1)
+            ->when($type, fn ($query) => $query->where('type', $type))
+            ->orderBy('id')
+            ->get();
         $gateways = Gateways::query()
             ->where('is_active', 1)
             ->when($this->option('gateway'), fn ($query, $gateway) => $query->where('code', $gateway))
@@ -47,7 +61,7 @@ class EnsurePlanGatewayProductsCommand extends Command
                     ->where('gateway_code', $gateway->code)
                     ->first();
 
-                if ($mapping?->product_id && $mapping?->price_id) {
+                if ($mapping?->product_id && $mapping?->price_id && ! $this->option('refresh')) {
                     $skipped++;
                     continue;
                 }
@@ -138,6 +152,12 @@ class EnsurePlanGatewayProductsCommand extends Command
 
     private function hasGatewayCredentials(Gateways $gateway): bool
     {
+        if ($gateway->code === 'paystack') {
+            return $gateway->isSandbox()
+                ? filled($gateway->sandbox_client_secret)
+                : filled($gateway->live_client_secret);
+        }
+
         return $gateway->isSandbox()
             ? filled($gateway->sandbox_client_id) || filled($gateway->sandbox_client_secret)
             : filled($gateway->live_client_id) || filled($gateway->live_client_secret) || filled($gateway->live_app_id);

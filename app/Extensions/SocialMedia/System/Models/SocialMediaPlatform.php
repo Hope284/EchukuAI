@@ -31,7 +31,11 @@ class SocialMediaPlatform extends Model
 
     public function scopeConnected(Builder $builder)
     {
-        return $builder->where('expires_at', '>=', now());
+        return $builder
+            ->whereNotNull('connected_at')
+            ->where(static function (Builder $query): void {
+                $query->whereNull('expires_at')->orWhere('expires_at', '>=', now());
+            });
     }
 
     public function username(): string
@@ -62,6 +66,6 @@ class SocialMediaPlatform extends Model
 
     public function isConnected(): bool
     {
-        return $this->connected_at && $this->expires_at && $this->expires_at->gt(now());
+        return (bool) $this->connected_at && (! $this->expires_at || $this->expires_at->gte(now()));
     }
 }

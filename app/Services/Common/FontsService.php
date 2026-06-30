@@ -19,10 +19,20 @@ class FontsService
 
         $fonts = Cache::rememberForever($cacheKey, static function () use ($fileName) {
             try {
+                $apiKey = (string) config('services.google_fonts.api_key');
+                if ($apiKey === '') {
+                    throw new RuntimeException('Google Fonts API key is not configured.');
+                }
+
                 $client = new Client;
                 $sort = 'popularity';
 
-                $response = $client->get("https://www.googleapis.com/webfonts/v1/webfonts?key=AIzaSyBfkS4mQ0jGvdP13yAlEb88LHZ3ddRoCXU&sort={$sort}");
+                $response = $client->get('https://www.googleapis.com/webfonts/v1/webfonts', [
+                    'query' => [
+                        'key'  => $apiKey,
+                        'sort' => $sort,
+                    ],
+                ]);
                 if ($response->getStatusCode() !== 200) {
                     throw new RuntimeException('Google Fonts API returned status code: ' . $response->getStatusCode());
                 }

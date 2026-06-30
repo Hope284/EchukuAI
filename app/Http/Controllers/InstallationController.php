@@ -193,32 +193,9 @@ class InstallationController extends Controller
         return 'Your system is at final version. This method is deprecated please update via admin panel.';
     }
 
-    public function updateManual(Request $request)
+    public function updateManual()
     {
-        $version = '10.81';
-
-        Artisan::call('migrate', [
-            '--force' => true,
-        ]);
-
-        $check = $request->pass ?? true;
-        // Run the installation
-        InstallationHelper::runInstallation($check);
-
-        File::put(base_path() . '/version.txt', $version);
-
-        $settings = Setting::getCache();
-        $settings->script_version = $version;
-        $settings->save();
-
-        Artisan::call('optimize:clear');
-
-        return "<p>DZEVA Updated to the version: $version. Please don't forget to clear your browser cache. You can close this window.";
-    }
-
-    public function updateManual2(): string
-    {
-        return $this->updateManual(false);
+        return view('panel.admin.update.manual');
     }
 
     public function installTheme($slug)

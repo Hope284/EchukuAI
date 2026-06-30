@@ -15,7 +15,7 @@ class SectionHeader extends Component
         public string $width = 'w-2/5',
         public string $mb = '14',
         public string $title = 'The future of AI.',
-        public string $subtitle = 'MagicAI is designed to help you generate high-quality content instantly, without breaking a sweat.'
+        public string $subtitle = 'DZEVA helps you create high-quality content, automate work, and move faster.'
     ) {
         //
     }

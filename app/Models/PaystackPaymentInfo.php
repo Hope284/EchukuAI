@@ -13,6 +13,7 @@ class PaystackPaymentInfo extends Model
         'user_id',
         'email',
         'reference',
+        'reference_hash',
         'trans',
         'status',
         'message',

@@ -94,8 +94,8 @@ class MenuService
 
     public function generate(bool $active = true): array
     {
-        $data = Cache::rememberForever(self::MENU_KEY . ($active ? '_active' : ''), function () use ($active) {
-            $items = Menu::query()
+        $items = Cache::rememberForever(self::MENU_KEY . ($active ? '_active' : ''), function () use ($active) {
+            return Menu::query()
                 ->with('children')
                 ->withCount('children')
                 ->whereNull('parent_id')
@@ -104,9 +104,9 @@ class MenuService
                 })
                 ->orderBy('order', 'asc')
                 ->get();
-
-            return $this->merge($items);
         });
+
+        $data = $this->merge($items);
 
         if (Helper::appIsDemo() && isset($data['api_keys'], $data['more'])) {
             $apiKeysItem = $data['api_keys'];
@@ -2342,7 +2342,7 @@ class MenuService
                 'key'              => 'strategic_partner',
                 'route'            => 'dashboard.user.strategic-partner.index',
                 'route_slug'       => null,
-                'label'            => 'Strategic Partner',
+                'label'            => 'Partner Dashboard',
                 'icon'             => 'tabler-affiliate',
                 'svg'              => null,
                 'order'            => 22.1,
@@ -4389,7 +4389,7 @@ class MenuService
                 'type'             => 'item',
                 'extension'        => null,
                 'active_condition' => ['dashboard.admin.update.index'],
-                'show_condition'   => true,
+                'show_condition'   => auth()->user()?->isSuperAdmin() === true,
                 'is_admin'         => true,
             ],
             'menu_setting' => [

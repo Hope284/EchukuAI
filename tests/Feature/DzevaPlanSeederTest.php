@@ -57,7 +57,7 @@ test('required dzeva subscription plans are seeded in the existing plans table',
     }
 });
 
-test('lifetime access unlock has zero included credits', function () {
+test('lifetime access is premium while keeping numeric included credits at zero', function () {
     $plan = Plan::query()
         ->where('name', 'Lifetime Access')
         ->where('type', TypeEnum::SUBSCRIPTION->value)
@@ -68,9 +68,17 @@ test('lifetime access unlock has zero included credits', function () {
     foreach ($plan->ai_models as $models) {
         foreach ($models as $limits) {
             expect((float) ($limits['credit'] ?? 0))->toBe(0.0)
-                ->and((bool) ($limits['isUnlimited'] ?? false))->toBeFalse();
+                ->and((bool) ($limits['isUnlimited'] ?? false))->toBeTrue();
         }
     }
+
+    expect($plan->is_team_plan)->toBeTrue()
+        ->and((int) $plan->plan_allow_seat)->toBe(-1)
+        ->and((int) $plan->chatbot_limit)->toBe(-1)
+        ->and((int) $plan->ai_agent_workflow_limit)->toBe(-1)
+        ->and((int) $plan->ai_captions_minutes)->toBe(-1)
+        ->and(collect($plan->plan_ai_tools)->every(fn ($enabled) => $enabled === true))->toBeTrue()
+        ->and(collect($plan->plan_features)->every(fn ($enabled) => $enabled === true))->toBeTrue();
 });
 
 test('thirty two dzeva prepaid capability token plans are seeded', function () {

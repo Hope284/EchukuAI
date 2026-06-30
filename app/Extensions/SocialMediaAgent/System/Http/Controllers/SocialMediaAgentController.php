@@ -35,6 +35,7 @@ use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
 class SocialMediaAgentController extends Controller
@@ -83,8 +84,9 @@ class SocialMediaAgentController extends Controller
             ->paginate(10);
 
         $platforms = SocialMediaPlatform::query()
-            ->whereNotIn('platform', [PlatformEnum::youtube->value, PlatformEnum::youtube_shorts->value])
             ->where('user_id', Auth::id())
+            ->whereIn('platform', PlatformEnum::toArray())
+            ->connected()
             ->get();
 
         $agentsQuery = SocialMediaAgent::query()
@@ -855,8 +857,9 @@ class SocialMediaAgentController extends Controller
     public function create(): View
     {
         $platforms = SocialMediaPlatform::query()
-            ->whereNotIn('platform', [PlatformEnum::youtube->value, PlatformEnum::youtube_shorts->value])
             ->where('user_id', Auth::id())
+            ->whereIn('platform', PlatformEnum::toArray())
+            ->connected()
             ->get();
 
         return view('social-media-agent::create.index', [
@@ -884,7 +887,16 @@ class SocialMediaAgentController extends Controller
         $validated = $request->validate([
             'name'                      => 'required|string|max:255',
             'platform_ids'              => 'required|array|min:1',
-            'platform_ids.*'            => 'exists:ext_social_media_platforms,id',
+            'platform_ids.*'            => [
+                Rule::exists('ext_social_media_platforms', 'id')->where(static function ($query) {
+                    $query->where('user_id', Auth::id())
+                        ->whereIn('platform', PlatformEnum::toArray())
+                        ->whereNotNull('connected_at')
+                        ->where(static function ($expiryQuery) {
+                            $expiryQuery->whereNull('expires_at')->orWhere('expires_at', '>=', now());
+                        });
+                }),
+            ],
             'site_url'                  => 'nullable|string|max:255|regex:/^(https?:\/\/)?([\w\-]+\.)+[\w\-]+(\/[\w\-._~:\/?#[\]@!$&\'()*+,;=]*)?$/i',
             'site_description'          => 'nullable|string',
             'scraped_content'           => 'nullable', // JSON string

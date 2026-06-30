@@ -23,7 +23,6 @@ use App\Services\PaymentGateways\Contracts\CreditUpdater;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -79,6 +78,170 @@ class PaystackService
             FrequencyEnum::LIFETIME->value         => null,
             default                                => Carbon::now()->addYears(1),
         };
+    }
+
+    private static function recurringEndsAt(Plan $plan): Carbon
+    {
+        return match ($plan->frequency) {
+            FrequencyEnum::YEARLY->value => Carbon::now()->addYear(),
+            default                      => Carbon::now()->addMonth(),
+        };
+    }
+
+    private static function callbackPayload(Request $request): array
+    {
+        $response = $request->input('response');
+        $payload = is_array($response) ? $response : json_decode((string) $response, true);
+        $payload = is_array($payload) ? $payload : [];
+
+        $reference = data_get($payload, 'reference')
+            ?: data_get($payload, 'trxref')
+            ?: $request->input('reference')
+            ?: $request->input('trxref');
+
+        if (! is_string($reference) || ! preg_match('/^[A-Za-z0-9.=_-]{4,200}$/', $reference)) {
+            throw new RuntimeException('The payment reference is missing or invalid.');
+        }
+
+        $payload['reference'] = $reference;
+
+        return $payload;
+    }
+
+    private static function verifiedTransaction(string $reference, string $key): array
+    {
+        $response = self::curl_req_get(self::$transaction_verify_endpoint . rawurlencode($reference), $key);
+        $data = data_get($response, 'data');
+
+        if (data_get($response, 'status') !== true || ! is_array($data)) {
+            throw new RuntimeException('The payment could not be verified.');
+        }
+
+        if (data_get($data, 'status') !== 'success') {
+            throw new RuntimeException('The payment was not completed successfully.');
+        }
+
+        $verifiedReference = data_get($data, 'reference');
+        if (! is_string($verifiedReference) || ! hash_equals($reference, $verifiedReference)) {
+            throw new RuntimeException('The verified payment reference does not match the callback.');
+        }
+
+        return $data;
+    }
+
+    private static function assertVerifiedPayment(array $transaction, UserOrder|float|int $expected, string $currency, string $email): void
+    {
+        $expectedAmount = $expected instanceof UserOrder ? (float) $expected->price : (float) $expected;
+        $expectedMinor = (int) round($expectedAmount * 100);
+        $actualMinor = (int) data_get($transaction, 'amount', -1);
+
+        if ($actualMinor !== $expectedMinor) {
+            throw new RuntimeException('The verified payment amount does not match the order.');
+        }
+
+        $actualCurrency = strtoupper((string) data_get($transaction, 'currency'));
+        if ($actualCurrency === '' || $actualCurrency !== strtoupper($currency)) {
+            throw new RuntimeException('The verified payment currency does not match the order.');
+        }
+
+        $customerEmail = strtolower(trim((string) data_get($transaction, 'customer.email')));
+        if ($customerEmail === '' || ! hash_equals(strtolower($email), $customerEmail)) {
+            throw new RuntimeException('The verified payment customer does not match the signed-in user.');
+        }
+    }
+
+    private static function verifiedBillingPlanId(
+        array $transaction,
+        GatewayProducts $product,
+        Plan $plan,
+        ?string $submittedPlanId
+    ): string {
+        if ($product->price_id === 'Not Needed') {
+            return 'Not Needed';
+        }
+
+        $transactionPlan = data_get($transaction, 'plan');
+        $providerPlanId = is_string($transactionPlan) && $transactionPlan !== ''
+            ? $transactionPlan
+            : data_get($transaction, 'plan_object.plan_code');
+        $billingPlanId = trim((string) ($providerPlanId ?: $submittedPlanId));
+
+        if ($billingPlanId === '') {
+            throw new RuntimeException('The verified subscription plan is missing.');
+        }
+
+        $isMainPlan = is_string($product->price_id) && hash_equals($product->price_id, $billingPlanId);
+        $isKnownCustomPlan = CustomBilingPlans::query()
+            ->where('gateway', self::$GATEWAY_CODE)
+            ->where('plan_id', $plan->id)
+            ->where('main_plan_price_id', $product->price_id)
+            ->where('custom_plan_price_id', $billingPlanId)
+            ->exists();
+
+        if (! $isMainPlan && ! $isKnownCustomPlan) {
+            throw new RuntimeException('The verified subscription plan does not match the selected plan.');
+        }
+
+        return $billingPlanId;
+    }
+
+    private static function subscriptionCode(array $transaction, string $billingPlanId, string $key): string
+    {
+        $existingCode = data_get($transaction, 'subscription.subscription_code')
+            ?: data_get($transaction, 'subscription_code');
+        if (is_string($existingCode) && $existingCode !== '') {
+            return $existingCode;
+        }
+
+        $customer = data_get($transaction, 'customer.customer_code') ?: data_get($transaction, 'customer.id');
+        $transactionPlan = data_get($transaction, 'plan');
+        $plan = is_string($transactionPlan) && $transactionPlan !== ''
+            ? $transactionPlan
+            : (data_get($transaction, 'plan_object.plan_code') ?: $billingPlanId);
+
+        if (blank($customer) || blank($plan)) {
+            throw new RuntimeException('The verified subscription details are incomplete.');
+        }
+
+        $response = self::curl_req_get(
+            self::$subscription_endpoint . '?customer=' . rawurlencode((string) $customer) . '&plan=' . rawurlencode((string) $plan),
+            $key
+        );
+        $subscriptions = data_get($response, 'data', []);
+        $subscriptions = is_array($subscriptions) ? $subscriptions : [];
+        $subscription = collect($subscriptions)->first(static fn ($item) => data_get($item, 'status') === 'active')
+            ?? collect($subscriptions)->first();
+        $code = data_get($subscription, 'subscription_code');
+
+        if (! is_string($code) || $code === '') {
+            throw new RuntimeException('The payment was verified, but the recurring subscription is not ready yet.');
+        }
+
+        return $code;
+    }
+
+    private static function storePaymentInfo(array $payload, array $transaction, int $userId, string $email, int $planId): void
+    {
+        $reference = (string) $payload['reference'];
+        $plan = data_get($transaction, 'plan');
+        $planCode = is_string($plan) ? $plan : (string) data_get($transaction, 'plan_object.plan_code', '');
+
+        PaystackPaymentInfo::query()->create([
+            'user_id'       => $userId,
+            'email'         => $email,
+            'reference'     => $reference,
+            'reference_hash' => hash('sha256', $reference),
+            'trans'         => (string) data_get($payload, 'trans', ''),
+            'status'        => (string) data_get($transaction, 'status', ''),
+            'message'       => (string) data_get($payload, 'message', ''),
+            'transaction'   => (string) data_get($payload, 'transaction', data_get($transaction, 'id', '')),
+            'trxref'        => (string) data_get($payload, 'trxref', ''),
+            'amount'        => (string) ((int) data_get($transaction, 'amount', 0) / 100),
+            'customer_code' => (string) data_get($transaction, 'customer.customer_code', ''),
+            'plan_code'     => $planCode . ' / ' . $planId,
+            'currency'      => (string) data_get($transaction, 'currency', ''),
+            'other'         => (string) (data_get($transaction, 'paid_at') ?: data_get($transaction, 'paidAt', '')),
+        ]);
     }
 
     private static function gatewayCurrencyCode(Gateways $gateway): string
@@ -216,6 +379,10 @@ class PaystackService
                     'description' => $product->product_id,
                     'currency'    => $currency,
                 ]);
+                $newPlanCode = data_get($billingPlan, 'data.plan_code');
+                if (! is_string($newPlanCode) || $newPlanCode === '') {
+                    throw new RuntimeException('Paystack did not return a recurring plan code.');
+                }
                 if ($product->price_id != null) {
                     $history = new OldGatewayProducts;
                     $history->plan_id = $plan->id;
@@ -224,12 +391,12 @@ class PaystackService
                     $history->product_id = $product->product_id;
                     $history->old_product_id = $product->product_id;
                     $history->old_price_id = $product->price_id;
-                    $history->new_price_id = $billingPlan['data']['plan_code'];
+                    $history->new_price_id = $newPlanCode;
                     $history->status = 'check';
                     $history->save();
-                    $tmp = self::updateUserData();
+                    self::updateUserData();
                 }
-                $product->price_id = $billingPlan['data']['plan_code'];
+                $product->price_id = $newPlanCode;
                 $product->payload = self::mappingPayload($price, $currency, $plan, $interval);
             } else {
                 $product->price_id = 'Not Needed';
@@ -294,6 +461,7 @@ class PaystackService
 
             $productId = self::getPaystackProductId($plan->id);
             $billingPlanId = self::getPaystackPriceId($plan->id);
+            $mainBillingPlanId = $billingPlanId;
             if ($productId == null) {
                 $exception = __('Product ID is not set! Please save Membership Plan again.');
 
@@ -308,7 +476,7 @@ class PaystackService
             if ($coupon && $plan->price != 0) {
                 $newDiscountedPrice -= ($plan->price * ($coupon->discount / 100));
                 if ($newDiscountedPrice != floor($newDiscountedPrice)) {
-                    $newDiscountedPrice = number_format($newDiscountedPrice, 2);
+                    $newDiscountedPrice = round((float) $newDiscountedPrice, 2);
                 }
                 if ($plan->price != 0 && $plan->type == TypeEnum::SUBSCRIPTION->value && ! self::isLifetimeSubscription($plan)) {
                     $interval = $plan->frequency == FrequencyEnum::MONTHLY->value ? FrequencyEnum::MONTHLY->value : 'annually';
@@ -319,10 +487,18 @@ class PaystackService
                         'description' => 'coupon_' . $coupon->code . '_user_' . $user->id . '_plan_' . $plan->id,
                         'currency'    => $currency,
                     ]);
-                    $billingPlanId = $billingPlan['data']['plan_code'];
+                    $billingPlanId = data_get($billingPlan, 'data.plan_code');
+                    if (! is_string($billingPlanId) || $billingPlanId === '') {
+                        throw new RuntimeException('Paystack did not return a recurring plan code.');
+                    }
+
+                    CustomBilingPlans::query()->firstOrCreate([
+                        'gateway'              => self::$GATEWAY_CODE,
+                        'plan_id'              => $plan->id,
+                        'main_plan_price_id'   => $mainBillingPlanId,
+                        'custom_plan_price_id' => $billingPlanId,
+                    ]);
                 }
-                // remove tax when coupon is applied because its included in the plan price.
-                $newDiscountedPrice -= $taxValue;
             }
             $payment = new UserOrder;
             $payment->order_id = $orderId;
@@ -349,147 +525,143 @@ class PaystackService
     public static function subscribeCheckout(Request $request, $referral = null)
     {
         $gateway = Gateways::where('code', self::$GATEWAY_CODE)->where('is_active', 1)->first() ?? abort(404);
+        $user = $request->user();
+        $dashboardRoute = 'dashboard.' . $user->type->value . '.index';
+        $reference = null;
 
         try {
-            $planId = $request->input('planID', null);
-            $couponID = $request->input('couponID', null);
-            $orderId = $request->input('orderID', null);
-            $billingPlanId = $request->input('billingPlanId', null);
-            $productId = $request->input('productID', null);
-            DB::beginTransaction();
+            $payload = self::callbackPayload($request);
+            $reference = $payload['reference'];
+            $planId = (int) $request->input('planID');
+            $orderId = (string) $request->input('orderID');
+            $couponCode = $request->string('couponID')->trim()->toString();
 
-            $payment_response = json_decode($request->response, true);
-            $payment_response_status = $payment_response['status'];
-            $payment_response_message = $payment_response['message'];
-            $payment_response_reference = $payment_response['reference'];
+            $plan = Plan::query()->findOrFail($planId);
+            $payment = UserOrder::query()
+                ->where('order_id', $orderId)
+                ->where('plan_id', $planId)
+                ->where('user_id', $user->id)
+                ->firstOrFail();
+            $product = GatewayProducts::query()
+                ->where('plan_id', $planId)
+                ->where('gateway_code', self::$GATEWAY_CODE)
+                ->firstOrFail();
+            $key = self::getKey($gateway);
+            $transaction = self::verifiedTransaction($payload['reference'], $key);
 
-            $plan = Plan::where('id', $planId)->first();
-            $payment = UserOrder::where('order_id', $orderId)->first();
-            $user = auth()->user();
+            self::assertVerifiedPayment($transaction, $payment, self::gatewayCurrencyCode($gateway), $user->email);
+            $billingPlanId = self::verifiedBillingPlanId(
+                $transaction,
+                $product,
+                $plan,
+                $request->input('billingPlanId')
+            );
 
-            $product = GatewayProducts::where(['plan_id' => $plan->id, 'product_id' => $productId, 'gateway_code' => self::$GATEWAY_CODE])->first();
-            // check if $product->price_id != to $billingPlanId, if not thats means its custom plan then save it in custom plans table.
-            if ($product->price_id != $billingPlanId) {
-                $newcustom = new CustomBilingPlans;
-                $newcustom->gateway = self::$GATEWAY_CODE;
-                $newcustom->plan_id = $planId;
-                $newcustom->main_plan_price_id = $product->price_id;
-                $newcustom->custom_plan_price_id = $billingPlanId;
-                $newcustom->save();
-            }
+            $subscriptionCode = $billingPlanId === 'Not Needed'
+                ? 'PSLS-' . strtoupper(substr(hash('sha256', $payload['reference']), 0, 24))
+                : self::subscriptionCode($transaction, $billingPlanId, $key);
 
-            if ($gateway->mode == 'sandbox') {
-                $key = $gateway->sandbox_client_secret;
-            } else {
-                $key = $gateway->live_client_secret;
-            }
+            $processed = DB::transaction(function () use (
+                $billingPlanId,
+                $couponCode,
+                $gateway,
+                $orderId,
+                $payload,
+                $plan,
+                $planId,
+                $product,
+                $subscriptionCode,
+                $transaction,
+                $user
+            ): bool {
+                $payment = UserOrder::query()
+                    ->where('order_id', $orderId)
+                    ->where('user_id', $user->id)
+                    ->lockForUpdate()
+                    ->firstOrFail();
 
-            // verify transaction with paystack if it was successful then continue
-            $reqs = self::curl_req_get(self::$transaction_verify_endpoint . $payment_response_reference, $key);
-
-            if ($reqs['status'] == false) { // if something went wrong with the request
-                abort(404);
-            }
-            // failed or success
-            if ($reqs['data']['status'] != 'success') { // if the transaction was not successful
-                abort(400, $reqs['data']['gateway_response']);
-            }
-
-            // log the transaction data to database
-            $info = new PaystackPaymentInfo;
-            $info->user_id = $user->id;
-            $info->email = $user->email;
-            $info->reference = $payment_response['reference'] ?? '';
-            $info->trans = $payment_response['trans'] ?? '';
-            $info->status = $payment_response['status'] ?? '';
-            $info->message = $payment_response['message'] ?? '';
-            $info->transaction = $payment_response['transaction'] ?? '';
-            $info->trxref = $payment_response['trxref'] ?? '';
-            $info->amount = ($reqs['data']['amount'] / 100) ?? '';
-            $info->customer_code = $reqs['data']['customer']['customer_code'] ?? '';
-            $info->plan_code = ($reqs['data']['plan'] ?? '') . ' / ' . $planId;
-            $info->currency = $reqs['data']['currency'] ?? '';
-            $info->other = $reqs['data']['paidAt'] ?? '';
-            $info->save();
-
-            if ($payment != null) {
-
-                $total = $plan->price;
-                $taxValue = taxToVal(($plan->price - $gateway->tax), $gateway->tax);
-                if ($couponID) {
-                    $coupon = Coupon::where('code', $couponID)->first();
-                    if ($coupon) {
-                        $coupon->usersUsed()->attach($user->id);
-                        $couponID = $coupon->discount;
-                        $total -= ($plan->price * ($coupon->discount / 100));
-                        if ($total != floor($total)) {
-                            $total = number_format($total, 2);
-                        }
-                    }
-                }
-                $subscription = new Subscriptions;
-                // if its lifetime subscription
-                if ($billingPlanId == 'Not Needed') {
-                    $subscription->stripe_id = 'PSLS-' . strtoupper(Str::random(13));
-                    $subscription->stripe_price = $product->price_id;
-                    $subscription->ends_at = self::lifetimeEndsAt($plan);
-                    $subscription->auto_renewal = $plan->frequency === FrequencyEnum::LIFETIME->value ? 0 : 1;
-                    $subscription->stripe_status = 'paystack_approved';
-                } else {
-                    $bill_customer_id = $reqs['data']['customer']['id'];
-                    $bill_plan_id = $reqs['data']['plan_object']['id'];
-                    $subscription_billing = self::curl_req_get(self::$subscription_endpoint . '?customer=' . $bill_customer_id . '&plan=' . $bill_plan_id, $key);
-                    if ($subscription_billing['status'] == false) { // if something went wrong with the request
-                        abort(404);
-                    }
-                    $subscription_billing_code = $subscription_billing['data'][0]['subscription_code'];
-
-                    $subscription->stripe_id = $subscription_billing_code;
-                    $subscription->stripe_price = $billingPlanId;
-                    $subscription->stripe_status = 'active';
-                    $subscription->ends_at = $plan->trial_days != 0 ? Carbon::now()->addDays($plan->trial_days) : Carbon::now()->addDays(30);
+                if ($payment->status === 'Success'
+                    || PaystackPaymentInfo::query()->where('reference', $payload['reference'])->exists()) {
+                    return false;
                 }
 
+                if ($product->price_id !== $billingPlanId) {
+                    CustomBilingPlans::query()->firstOrCreate([
+                        'gateway'             => self::$GATEWAY_CODE,
+                        'plan_id'             => $planId,
+                        'main_plan_price_id'  => $product->price_id,
+                        'custom_plan_price_id' => $billingPlanId,
+                    ]);
+                }
+
+                $coupon = $couponCode !== '' ? Coupon::query()->where('code', $couponCode)->first() : null;
+                $total = (float) $payment->price;
+                $taxValue = taxToVal($plan->price, $gateway->tax);
+
+                $subscription = Subscriptions::query()->firstOrNew([
+                    'stripe_id' => $subscriptionCode,
+                ]);
+                $subscription->stripe_price = $billingPlanId === 'Not Needed' ? $product->price_id : $billingPlanId;
+                $subscription->stripe_status = $billingPlanId === 'Not Needed' ? 'paystack_approved' : 'active';
+                $subscription->ends_at = $billingPlanId === 'Not Needed'
+                    ? self::lifetimeEndsAt($plan)
+                    : ($plan->trial_days ? Carbon::now()->addDays($plan->trial_days) : self::recurringEndsAt($plan));
+                $subscription->auto_renewal = $billingPlanId === 'Not Needed' && $plan->frequency === FrequencyEnum::LIFETIME->value ? 0 : 1;
                 $subscription->user_id = $user->id;
-                $subscription->name = $planId;
+                $subscription->name = (string) $planId;
                 $subscription->quantity = 1;
                 $subscription->plan_id = $planId;
                 $subscription->paid_with = self::$GATEWAY_CODE;
                 $subscription->tax_rate = $gateway->tax;
                 $subscription->tax_value = $taxValue;
-                $subscription->coupon = $couponID;
+                $subscription->coupon = $coupon?->discount;
                 $subscription->total_amount = $total;
                 $subscription->save();
 
-                $payment->status = 'Success';
-                $payment->save();
-
-                self::creditIncreaseSubscribePlan($user, $plan);
-
-                CreateActivity::for($user, __('Subscribed'), $plan->name . ' ' . __('Plan'));
-                EmailPaymentConfirmation::create($user, $plan)->send();
-                Usage::getSingle()->updateSalesCount($total);
-                DB::commit();
-
-                if (class_exists('App\Extensions\Affilate\System\Events\AffiliateEvent')) {
-                    event(new AffiliateEvent($total, $gateway->currency));
+                if ($coupon) {
+                    $coupon->usersUsed()->syncWithoutDetaching([$user->id]);
                 }
 
-                return redirect()->route('dashboard.' . $user->type->value . '.index')->with(['message' => __('Thank you for your purchase. Enjoy your remaining words and images.'), 'type' => 'success']);
+                $payment->status = 'Success';
+                $payment->save();
+                self::storePaymentInfo($payload, $transaction, $user->id, $user->email, $planId);
+                self::creditIncreaseSubscribePlan($user, $plan);
 
+                return true;
+            }, 3);
+
+            if ($processed) {
+                CreateActivity::for($user, __('Subscribed'), $plan->name . ' ' . __('Plan'));
+                EmailPaymentConfirmation::create($user, $plan)->send();
+                Usage::getSingle()->updateSalesCount((float) $payment->price);
+
+                if (class_exists('App\Extensions\Affilate\System\Events\AffiliateEvent')) {
+                    event(new AffiliateEvent((float) $payment->price, $gateway->currency));
+                }
             }
 
-            DB::rollBack();
-            $msg = 'PaystackController::subscribePay(): Could not find required payment order!';
-            Log::error($msg);
+            return redirect()->route($dashboardRoute)->with([
+                'message' => __('Payment verified successfully. Your plan is active.'),
+                'type'    => 'success',
+            ]);
+        } catch (Throwable $throwable) {
+            if ($reference && PaystackPaymentInfo::query()->where('reference', $reference)->exists()) {
+                return redirect()->route($dashboardRoute)->with([
+                    'message' => __('This payment was already processed successfully.'),
+                    'type'    => 'success',
+                ]);
+            }
 
-            return redirect()->route('dashboard.' . $user->type->value . '.index')->with(['message' => $msg, 'type' => 'error']);
+            Log::error('Paystack subscription callback failed.', [
+                'user_id'  => $user->id,
+                'order_id' => $request->input('orderID'),
+                'error'    => $throwable->getMessage(),
+            ]);
 
-        } catch (Exception $th) {
-            DB::rollBack();
-            Log::error('PaystackController::subscribePay(): ' . $th->getMessage());
-
-            return redirect()->route('dashboard.' . $user->type->value . '.index')->with(['message' => $th->getMessage(), 'type' => 'error']);
+            return redirect()->route($dashboardRoute)->with([
+                'message' => __('We could not confirm this payment. No access was granted. Please contact support if you were charged.'),
+                'type'    => 'error',
+            ]);
         }
     }
 
@@ -507,10 +679,8 @@ class PaystackService
             if ($coupone) {
                 $newDiscountedPrice = $plan->price - ($plan->price * ($coupone->discount / 100));
                 if ($newDiscountedPrice != floor($newDiscountedPrice)) {
-                    $newDiscountedPrice = number_format($newDiscountedPrice, 2);
+                    $newDiscountedPrice = round((float) $newDiscountedPrice, 2);
                 }
-                // remove tax when coupon is applied because its included in the plan price.
-                $newDiscountedPrice -= $taxValue;
             }
             $currency = self::gatewayCurrencyCode($gateway);
             $orderId = null;
@@ -529,85 +699,84 @@ class PaystackService
     public static function prepaidCheckout(Request $request)
     {
         $gateway = Gateways::where('code', self::$GATEWAY_CODE)->where('is_active', 1)->first() ?? abort(404);
+        $user = $request->user();
+        $dashboardRoute = 'dashboard.' . $user->type->value . '.index';
+        $reference = null;
 
         try {
-            DB::beginTransaction();
-            $previousRequest = app('request')->create(url()->previous());
-            $payment_response = json_decode($request->response, true);
-            $payment_response_reference = $payment_response['reference'];
-
-            if ($gateway->mode == 'sandbox') {
-                $key = $gateway->sandbox_client_secret;
-            } else {
-                $key = $gateway->live_client_secret;
+            $payload = self::callbackPayload($request);
+            $reference = $payload['reference'];
+            $plan = Plan::query()->findOrFail((int) $request->input('planID'));
+            $couponCode = $request->string('couponID')->trim()->toString();
+            $coupon = $couponCode !== '' ? Coupon::query()->where('code', $couponCode)->first() : null;
+            $price = (float) $plan->price;
+            if ($coupon) {
+                $price -= $price * ((float) $coupon->discount / 100);
             }
 
-            // verify transaction with paystack if it was successful then continue
-            $reqs = self::curl_req_get(self::$transaction_verify_endpoint . $payment_response_reference, $key);
-            if ($reqs['status'] == false) { // if something went wrong with the request
-                abort(404);
-            }
-            // failed or success
-            if ($reqs['data']['status'] != 'success') { // if the transaction was not successful
-                abort(400, $reqs['data']['gateway_response']);
-            }
-            $user = auth()->user();
-            // log the transaction data to database
-            $info = new PaystackPaymentInfo;
-            $info->user_id = $user->id;
-            $info->email = $user->email;
-            $info->reference = $payment_response['reference'] ?? '';
-            $info->trans = $payment_response['trans'] ?? '';
-            $info->status = $payment_response['status'] ?? '';
-            $info->message = $payment_response['message'] ?? '';
-            $info->transaction = $payment_response['transaction'] ?? '';
-            $info->trxref = $payment_response['trxref'] ?? '';
+            $transaction = self::verifiedTransaction($payload['reference'], self::getKey($gateway));
+            self::assertVerifiedPayment($transaction, $price, self::gatewayCurrencyCode($gateway), $user->email);
 
-            $info->amount = ($reqs['data']['amount'] / 100) ?? '';
-            $info->customer_code = $reqs['data']['customer']['customer_code'] ?? '';
-            $info->plan_code = ($reqs['data']['plan'] ?? '') . ' / ' . $request->planID;
-            $info->currency = $reqs['data']['currency'] ?? '';
-            $info->other = $reqs['data']['paidAt'] ?? '';
-            $info->save();
+            $processed = DB::transaction(function () use ($coupon, $gateway, $payload, $plan, $price, $transaction, $user): bool {
+                if (PaystackPaymentInfo::query()->where('reference', $payload['reference'])->lockForUpdate()->exists()) {
+                    return false;
+                }
 
-            $plan = Plan::find($request->planID);
-            $user = Auth::user();
-            $settings = Setting::getCache();
+                $settings = Setting::getCache();
+                $payment = new UserOrder;
+                $payment->order_id = 'PS-' . strtoupper(substr(hash('sha256', $payload['reference']), 0, 20));
+                $payment->plan_id = $plan->id;
+                $payment->type = 'prepaid';
+                $payment->user_id = $user->id;
+                $payment->payment_type = self::$GATEWAY_CODE;
+                $payment->price = $price;
+                $payment->affiliate_earnings = ($price * $settings->affiliate_commission_percentage) / 100;
+                $payment->status = 'Success';
+                $payment->country = $user->country ?? 'Unknown';
+                $payment->save();
 
-            $newDiscountedPrice = $plan->price;
-            if ($previousRequest->has('coupon')) {
-                $coupon = Coupon::where('code', $previousRequest->input('coupon'))->first();
                 if ($coupon) {
-                    $newDiscountedPrice = $plan->price - ($plan->price * ($coupon->discount / 100));
-                    $coupon->usersUsed()->attach($user->id);
+                    $coupon->usersUsed()->syncWithoutDetaching([$user->id]);
+                }
+
+                self::storePaymentInfo($payload, $transaction, $user->id, $user->email, $plan->id);
+                self::creditIncreaseSubscribePlan($user, $plan);
+
+                return true;
+            }, 3);
+
+            if ($processed) {
+                CreateActivity::for($user, __('Purchased'), $plan->name . ' ' . __('Token Pack'));
+                EmailPaymentConfirmation::create($user, $plan)->send();
+                Usage::getSingle()->updateSalesCount($price);
+
+                if (class_exists('App\Extensions\Affilate\System\Events\AffiliateEvent')) {
+                    event(new AffiliateEvent($price, $gateway->currency));
                 }
             }
 
-            $payment = new UserOrder;
-            $payment->order_id = Str::random(12);
-            $payment->plan_id = $plan->id;
-            $payment->type = 'prepaid';
-            $payment->user_id = $user->id;
-            $payment->payment_type = 'Credit, Debit Card';
-            $payment->price = $newDiscountedPrice;
-            $payment->affiliate_earnings = ($newDiscountedPrice * $settings->affiliate_commission_percentage) / 100;
-            $payment->status = 'Success';
-            $payment->country = $user->country ?? 'Unknown';
-            $payment->save();
+            return redirect()->route($dashboardRoute)->with([
+                'message' => __('Payment verified successfully. Your tokens are ready.'),
+                'type'    => 'success',
+            ]);
+        } catch (Throwable $throwable) {
+            if ($reference && PaystackPaymentInfo::query()->where('reference', $reference)->exists()) {
+                return redirect()->route($dashboardRoute)->with([
+                    'message' => __('This payment was already processed successfully.'),
+                    'type'    => 'success',
+                ]);
+            }
 
-            self::creditIncreaseSubscribePlan($user, $plan);
+            Log::error('Paystack prepaid callback failed.', [
+                'user_id' => $user->id,
+                'plan_id' => $request->input('planID'),
+                'error'   => $throwable->getMessage(),
+            ]);
 
-            CreateActivity::for($user, __('Purchased'), $plan->name . ' ' . __('Token Pack'));
-            EmailPaymentConfirmation::create($user, $plan)->send();
-            Usage::getSingle()->updateSalesCount($newDiscountedPrice);
-            DB::commit();
-
-            return redirect()->route('dashboard.' . $user->type->value . '.index')->with(['message' => __('Thank you for your purchase. Enjoy your remaining words and images.'), 'type' => 'success']);
-        } catch (Exception $th) {
-            DB::rollBack();
-            Log::error('PaystackController::subscribePay(): ' . $th->getMessage());
-
-            return redirect()->route('dashboard.' . $user->type->value . '.index')->with(['message' => $th->getMessage(), 'type' => 'error']);
+            return redirect()->route($dashboardRoute)->with([
+                'message' => __('We could not confirm this payment. No tokens were added. Please contact support if you were charged.'),
+                'type'    => 'error',
+            ]);
         }
 
     }
@@ -834,8 +1003,12 @@ class PaystackService
     }
 
     // tested
-    private static function isValidWebhookSignature($input, $secret, $signature)
+    private static function isValidWebhookSignature(string $input, string $secret, ?string $signature): bool
     {
+        if (blank($signature)) {
+            return false;
+        }
+
         $expectedSignature = hash_hmac('sha512', $input, $secret);
 
         return hash_equals($expectedSignature, $signature);
@@ -846,15 +1019,19 @@ class PaystackService
     {
         $input = $request->getContent();
         $secret = self::getKey();
-        // Validate the Paystack webhook signature
-        if (self::isValidWebhookSignature($input, $secret, $request->header('HTTP_X_PAYSTACK_SIGNATURE'))) {
-            // Handle the webhook events
-            $payload = json_decode($input, true);
-            event(new PaystackWebhookEvent($payload));
+
+        if (! self::isValidWebhookSignature($input, $secret, $request->header('x-paystack-signature'))) {
+            return response()->json(['status' => 'error'], 401);
         }
 
-        // Invalid signature
-        return response()->json(['status' => 'error'], 400);
+        $payload = json_decode($input, true);
+        if (! is_array($payload) || blank(data_get($payload, 'event')) || ! is_array(data_get($payload, 'data'))) {
+            return response()->json(['status' => 'error'], 422);
+        }
+
+        event(new PaystackWebhookEvent($payload));
+
+        return response()->json(['status' => 'ok']);
     }
 
     // tested
