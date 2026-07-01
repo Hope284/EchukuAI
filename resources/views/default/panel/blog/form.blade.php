@@ -26,7 +26,7 @@
         class="[&_.tox]:bg-input-background"
         id="post_form"
         onsubmit="return blogSave({{ $blog != null ? $blog->id : null }});"
-        action="{{ route('dashboard.admin.blog.save') }}"
+        action="{{ route('dashboard.blog.save') }}"
         method="post"
         enctype="multipart/form-data"
     >

@@ -1094,9 +1094,12 @@ function displayDiscountOrCouponName(?Plan $plan): ?string
 
 function getVersion(?string $version = ''): string
 {
-    $fileVersion = file_get_contents(base_path('version.txt'));
-    if ($fileVersion) {
-        $version = trim($fileVersion);
+    $versionFile = base_path('version.txt');
+    if (is_file($versionFile) && is_readable($versionFile)) {
+        $fileVersion = file_get_contents($versionFile);
+        if (is_string($fileVersion) && trim($fileVersion) !== '') {
+            $version = trim($fileVersion);
+        }
     }
     $parts = explode('.', $version ?? '');
     if (count($parts) === 1) {

@@ -275,7 +275,7 @@ class BlogController extends Controller
 
         return response()->json([
             'message'  => __('Post saved successfully.'),
-            'redirect' => route('dashboard.admin.blog.addOrUpdate', $post->id),
+            'redirect' => route('dashboard.blog.addOrUpdate', $post->id),
             'preview'  => $post->status ? route('blog.post', $post->slug) : null,
         ]);
     }
