@@ -14,6 +14,7 @@ use App\Models\Extension;
 use App\Models\Plan;
 use App\Models\Setting;
 use App\Models\SettingTwo;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
@@ -173,33 +174,42 @@ class MenuService
         $data = [];
 
         $staticData = $this->data();
+        $databaseFields = array_merge(['id', 'created_at', 'updated_at'], (new Menu)->getFillable());
 
         foreach ($items as $item) {
+            $itemData = $item instanceof Menu ? $item->toArray() : (array) $item;
+            $key = $itemData['key'] ?? null;
+            if (! is_string($key) || $key === '') {
+                continue;
+            }
 
-            if (isset($staticData[$item['key']])) {
+            $parentId = $itemData['parent_id'] ?? null;
+            $isActive = (bool) ($itemData['is_active'] ?? true);
+            $children = $item instanceof Menu
+                ? $item->getAttribute('children')
+                : collect(array_values((array) ($itemData['children'] ?? [])));
+            $databaseData = Arr::only($itemData, $databaseFields);
 
-                $data[$item['key']] = array_merge($staticData[$item['key']], $item->toArray());
+            if (isset($staticData[$key])) {
 
-                if ($item->parent_id) {
-                    $data[$item['key']]['show_condition'] = (isset($data[$item['key']]['show_condition']) && $data[$item['key']]['show_condition']) && $item->is_active;
+                $data[$key] = array_merge($staticData[$key], $databaseData);
+
+                if ($parentId) {
+                    $data[$key]['show_condition'] = (isset($data[$key]['show_condition']) && $data[$key]['show_condition']) && $isActive;
                 }
 
-                if ($item->parent_id == null && $else) {
-                    $children = $item->getAttribute('children');
-
-                    $data[$item['key']]['children'] = $this->merge($children);
+                if ($parentId === null && $else) {
+                    $data[$key]['children'] = $this->merge($children);
                 }
 
             } elseif ($else) {
-                $data[$item['key']] = array_merge($item->toArray(), [
+                $data[$key] = array_merge($databaseData, [
                     'active_condition' => false,
                     'show_condition'   => true,
                     'extension'        => false,
                 ]);
-                if ($item->parent_id == null && $else) {
-                    $children = $item->getAttribute('children');
-
-                    $data[$item['key']]['children'] = $this->merge($children);
+                if ($parentId === null) {
+                    $data[$key]['children'] = $this->merge($children);
                 }
             }
         }

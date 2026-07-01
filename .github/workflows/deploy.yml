@@ -172,6 +172,7 @@ jobs:
             php artisan migrate --force
             php artisan vendor:publish --tag=extension --force
             fix_laravel_permissions
+            sudo -u www-data php artisan optimize:clear
             sudo -u www-data php artisan db:seed --class=DzevaPlanSeeder --force
             sudo -u www-data php artisan dzeva:sync-premium-entitlements
             sudo -u www-data php artisan plans:ensure-gateway-products --gateway=paystack --type=subscription --refresh
