@@ -88,6 +88,44 @@
             </x-form.group>
         </x-card>
 
+        @if (
+            view()->exists('ai-chat-pro-gmail::settings.allow-button')
+            || view()->exists('ai-chat-pro-outlook::settings.allow-button')
+            || view()->exists('ai-chat-pro-notion::settings.allow-button')
+            || view()->exists('ai-chat-pro-google-drive::settings.allow-button')
+            || view()->exists('ai-chat-pro-google-calendar::settings.allow-button')
+        )
+            <x-form-step
+                auto-increment
+                label="{{ __('Connectors') }}"
+            >
+            </x-form-step>
+            <x-card
+                class="mb-2 max-md:text-center"
+                szie="lg"
+            >
+                <x-form.group class="flex flex-col gap-4">
+                    <p class="m-0 text-2xs text-foreground/60">
+                        {{ __('Let users connect external services (Gmail, Outlook, Notion, Google Drive, Calendar) so AI Chat Pro can fetch context during conversations. Configure OAuth credentials for each installed connector below.') }}
+                    </p>
+
+                    <x-form.checkbox
+                        class="border-input rounded-input border !px-2.5 !py-3"
+                        name="ai_chat_pro_connectors_enabled"
+                        label="{{ __('Enable Connectors') }}"
+                        checked="{{ (bool) setting('ai_chat_pro_connectors_enabled', '1') }}"
+                        tooltip="{{ __('Master switch — when off, the Connectors button is hidden in the chat composer regardless of which provider extensions are installed.') }}"
+                    />
+
+                    @includeIf('ai-chat-pro-gmail::settings.allow-button')
+                    @includeIf('ai-chat-pro-outlook::settings.allow-button')
+                    @includeIf('ai-chat-pro-notion::settings.allow-button')
+                    @includeIf('ai-chat-pro-google-drive::settings.allow-button')
+                    @includeIf('ai-chat-pro-google-calendar::settings.allow-button')
+                </x-form.group>
+            </x-card>
+        @endif
+
         @if (\App\Helpers\Classes\MarketplaceHelper::isRegistered('ai-chat-pro-smart-image') || \App\Helpers\Classes\MarketplaceHelper::isRegistered('ai-chat-pro-entity-highlight'))
             <x-form-step
                 auto-increment
@@ -269,7 +307,7 @@
                 size="lg"
                 name="guest_user_bottom_text"
                 tooltip="{{ __('This is the text that will be shown at the bottom of the chat for guest users.') }}"
-                value="{{ setting('guest_user_bottom_text', 'Login to save your current session. © DZEVA 2026. All rights reserved.') }}"
+                value="{{ setting('guest_user_bottom_text', 'Login to save your current session. © ECHUKU 2026. All rights reserved.') }}"
             />
         </x-card>
 
@@ -363,19 +401,19 @@
                                     size="lg"
                                     label="{{ __('Button Title') }}"
                                     name="input_name[]"
-                                    tooltip="{{ __('The text shown on the scrolling button.') }}"
+                                    tooltip="{{ __('The primary text will be shown in the chat box.') }}"
                                     x-model="item.name"
                                 />
 
                                 <x-forms.input
-                                    type="text"
+                                    type="textarea"
                                     size="lg"
+                                    rows="2"
                                     name="input_prompt[]"
                                     label="{{ __('Button URL') }}"
-                                    placeholder="/chat or https://example.com"
-                                    tooltip="{{ __('Use an internal path or a complete http/https URL.') }}"
+                                    tooltip="{{ __('Use an internal path such as /blog or a full https URL.') }}"
                                     x-model="item.prompt"
-                                />
+                                ></x-forms.input>
                             </div>
                         </div>
                     </x-card>
@@ -405,7 +443,7 @@
                 },
 
                 addItem() {
-                    if (this.items.some(item => !String(item.name || '').trim() || !String(item.prompt || '').trim())) {
+                    if (this.items.some(item => !item.name.trim() || !item.prompt.trim())) {
                         return toastr.error("{{ __('Please fill all fields before adding a new one.') }}");
                     }
 

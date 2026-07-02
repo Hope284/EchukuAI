@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Models\GatewayProducts;
 use App\Models\Gateways;
 use App\Models\Plan;
+use App\Models\Extension;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
@@ -31,6 +32,10 @@ class DzevaProductionAuditCommand extends Command
             'ext_ai_agent_workflows',
             'ext_ai_agent_channels',
             'ext_ai_agent_memories',
+            'ext_ai_chat_pro_connectors',
+            'ext_phone_call_agents',
+            'ext_phone_call_agent_calls',
+            'ext_phone_call_agent_trains',
         ] as $table) {
             $exists = Schema::hasTable($table);
             $this->{$exists ? 'info' : 'error'}("table {$table}: " . ($exists ? 'ready' : 'missing'));
@@ -42,6 +47,8 @@ class DzevaProductionAuditCommand extends Command
             'dashboard.admin.strategic-partners.index',
             'dashboard.admin.strategic-partners.create',
             'strategic-partner.referral',
+            'dashboard.phone-call-agent.index',
+            'dashboard.user.ai-chat-pro.connectors.index',
         ] as $route) {
             $exists = Route::has($route);
             $this->{$exists ? 'info' : 'error'}("route {$route}: " . ($exists ? 'ready' : 'missing'));
@@ -50,6 +57,22 @@ class DzevaProductionAuditCommand extends Command
 
         $this->line('Amamihe credential: ' . (filled(setting('gemini_api_secret')) ? 'configured' : 'missing'));
         $this->line('Hikima credential: ' . (filled(setting('anthropic_api_secret')) ? 'configured' : 'missing'));
+
+        foreach ([
+            'ai-chat-pro'                 => '3.7',
+            'ai-agent'                    => '1.1',
+            'phone-call-agent'            => '1.0',
+            'ai-chat-pro-gmail'           => '1.0',
+            'ai-chat-pro-google-calendar' => '1.0',
+            'ai-chat-pro-google-drive'    => '1.0',
+            'ai-chat-pro-notion'          => '1.0',
+            'ai-chat-pro-outlook'         => '1.0',
+        ] as $slug => $version) {
+            $extension = Extension::query()->where('slug', $slug)->first();
+            $ready = $extension?->installed && (string) $extension?->version === $version;
+            $this->{$ready ? 'info' : 'error'}("extension {$slug}: " . ($ready ? "ready ({$version})" : 'missing or inactive'));
+            $failed = $failed || ! $ready;
+        }
 
         $subscriptionPlans = Plan::query()->where('active', 1)->where('type', 'subscription')->count();
         $prepaidPlans = Plan::query()->where('active', 1)->where('type', 'prepaid')->count();

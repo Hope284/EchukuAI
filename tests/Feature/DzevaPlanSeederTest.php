@@ -77,6 +77,8 @@ test('lifetime access is premium while keeping numeric included credits at zero'
         ->and((int) $plan->chatbot_limit)->toBe(-1)
         ->and((int) $plan->ai_agent_workflow_limit)->toBe(-1)
         ->and((int) $plan->ai_captions_minutes)->toBe(-1)
+        ->and((int) $plan->phone_call_agent_seconds_limit)->toBe(-1)
+        ->and(collect($plan->ai_chat_pro_connectors)->every(fn ($enabled) => $enabled === true))->toBeTrue()
         ->and(collect($plan->plan_ai_tools)->every(fn ($enabled) => $enabled === true))->toBeTrue()
         ->and(collect($plan->plan_features)->every(fn ($enabled) => $enabled === true))->toBeTrue();
 });

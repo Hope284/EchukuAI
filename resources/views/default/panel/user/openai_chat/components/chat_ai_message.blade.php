@@ -95,6 +95,35 @@
                         @endforeach
                     </div>
                 @endif
+                @if ($is_chat_pro && !empty($message->used_connectors))
+                    <div class="lqd-connectors-used mb-3 flex flex-wrap items-center gap-1.5 text-xs text-foreground/50">
+                        @foreach ($message->used_connectors as $connector)
+                            @php
+                                $connectorIcon = $connector['icon'] ?? null;
+                                $connectorIconIsBlade = is_string($connectorIcon) && str_contains($connectorIcon, '::') && view()->exists($connectorIcon);
+                                $connectorIconSvg = '';
+                                if (is_string($connectorIcon) && $connectorIcon !== '' && ! $connectorIconIsBlade) {
+                                    // Stored icon may reference an uninstalled provider — fall back silently.
+                                    try {
+                                        $connectorIconSvg = (string) svg($connectorIcon, 'size-3.5 opacity-70')->toHtml();
+                                    } catch (\Throwable) {
+                                        $connectorIconSvg = '';
+                                    }
+                                }
+                            @endphp
+                            <span class="inline-flex items-center gap-1">
+                                @if ($connectorIconIsBlade)
+                                    <span class="inline-grid size-3.5 place-items-center opacity-70 [&>svg]:size-full">
+                                        @include($connectorIcon)
+                                    </span>
+                                @elseif ($connectorIconSvg !== '')
+                                    {!! $connectorIconSvg !!}
+                                @endif
+                                {{ __('Used :name Connector', ['name' => $connector['name'] ?? '']) }}
+                            </span>
+                        @endforeach
+                    </div>
+                @endif
                 @php
                     $has_canvas_content = $canvas_enabled && $message->tiptapContent?->output;
                     $output = $has_canvas_content ? $message->tiptapContent?->output : $message->output;

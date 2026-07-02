@@ -74,6 +74,8 @@ class Plan extends Model
         'updated_at',
         'affiliate_status',
         'voice_call_seconds_limit',
+        'phone_call_agent_seconds_limit',
+        'ai_chat_pro_connectors',
         'video_dubbing_seconds_limit',
         'deep_research_request_limit',
         'ugc_videos_limit',
@@ -118,6 +120,7 @@ class Plan extends Model
         'plan_ai_tools'                  => 'json',
         'plan_features'                  => 'json',
         'ai_models'                      => 'array',
+        'ai_chat_pro_connectors'         => 'array',
         'ai_models.*.credit'             => 'float',
         'ai_models.*.isUnlimited'        => 'boolean',
         'is_featured'                    => 'boolean',
@@ -146,6 +149,17 @@ class Plan extends Model
     public function isSharedCreditPlan(): bool
     {
         return $this->credit_system_type === 'shared';
+    }
+
+    public function allowsAiChatProConnector(string $key): bool
+    {
+        $map = $this->ai_chat_pro_connectors;
+
+        if (empty($map) || ! is_array($map)) {
+            return true;
+        }
+
+        return (bool) ($map[$key] ?? true);
     }
 
     protected static function boot(): void
@@ -431,6 +445,7 @@ class Plan extends Model
             'model_council_support'          => false,
             'last_date'                      => null,
             'voice_call_seconds_limit'       => -1,
+            'phone_call_agent_seconds_limit' => -1,
             'deep_research_request_limit'    => 5,
             'ugc_videos_limit'               => -1,
             'ugc_creator_videos_limit'       => -1,

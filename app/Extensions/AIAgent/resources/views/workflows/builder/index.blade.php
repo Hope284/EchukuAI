@@ -31,6 +31,7 @@
             avatarPresets: @json($avatarPresets ?? []),
             copilotMessages: @json($copilotMessages ?? []),
             templateData: @json($templateData ?? null),
+            templateAvatar: @json($templateAvatar ?? null),
             copilotInit: @json($copilotInit ?? null),
             sendUrl: @json(route('dashboard.user.ai-agent.messages.send')),
             threadBaseUrl: @json(route('dashboard.user.ai-agent.messages.index')),
@@ -858,6 +859,9 @@
                             this.triggerConfig.cron = templateData.cron;
                         }
                         this.triggerConfigured = true;
+                        if (window.__workflowData.templateAvatar) {
+                            this.workflowAvatarUrl = window.__workflowData.templateAvatar;
+                        }
                         if (Array.isArray(templateData.steps)) {
                             this.steps = templateData.steps.map((s, i) => {
                                 const config = Object.assign({}, s.config ?? {});

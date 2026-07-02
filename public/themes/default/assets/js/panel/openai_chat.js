@@ -1518,6 +1518,24 @@ function onAiResponse(responseObj) {
 		}
 	}
 
+	// Prepend "Used X Connector" badge if connectors were used
+	if (responseObj._usedConnectors?.length) {
+		const existing = formattedResponse?.includes?.('lqd-connectors-used');
+		if (!existing) {
+			let badge = '<div class="lqd-connectors-used mb-3 flex flex-wrap items-center gap-1.5 text-xs text-foreground/50">';
+			responseObj._usedConnectors.forEach(function(connector) {
+				badge += '<span class="inline-flex items-center gap-1">'
+					+ (connector.icon_svg || '')
+					+ (magicai_localize.used ?? 'Used') + ' '
+					+ escapeHtml(connector.name) + ' '
+					+ (magicai_localize.connector ?? 'Connector')
+					+ '</span>';
+			});
+			badge += '</div>';
+			formattedResponse = badge + (formattedResponse || '');
+		}
+	}
+
 	// When the response contains a social media post card, bypass the VDOM diff
 	// and use direct innerHTML so Alpine can properly initialize the component.
 	// The VDOM's cloneNode approach prevents Alpine from detecting new x-data elements.
@@ -2320,7 +2338,7 @@ function sendCouncilModelRequest(type, modelSlug, sharedMessageUUID, councilResp
 					}
 
 					// Skip non-content SSE events in council sub-requests
-					if (e.event === 'smart_image_search' || e.event === 'entity_highlights' || e.event === 'suggestions' || e.event === 'title' || e.event === 'skills_used') {
+					if (e.event === 'smart_image_search' || e.event === 'entity_highlights' || e.event === 'suggestions' || e.event === 'title' || e.event === 'skills_used' || e.event === 'connectors_used') {
 						return;
 					}
 
@@ -2951,6 +2969,17 @@ function sendRequest(type, images, responseObj, sharedMessageUUID = null, reques
 					const skillsData = JSON.parse(txt);
 					if (skillsData?.skills?.length) {
 						responseObj._usedSkills = skillsData.skills;
+						throttledOnAiResponse(responseObj);
+					}
+				} catch (err) {}
+				return;
+			}
+
+			if (e.event === 'connectors_used') {
+				try {
+					const connectorsData = JSON.parse(txt);
+					if (connectorsData?.connectors?.length) {
+						responseObj._usedConnectors = connectorsData.connectors;
 						throttledOnAiResponse(responseObj);
 					}
 				} catch (err) {}

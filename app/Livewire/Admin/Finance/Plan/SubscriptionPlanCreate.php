@@ -6,6 +6,7 @@ use App\Domains\Engine\Enums\EngineEnum;
 use App\Domains\Entity\Enums\EntityEnum;
 use App\Domains\Entity\Models\Entity;
 use App\Enums\AccessType;
+use App\Extensions\AIChatPro\System\Connectors\ConnectorRegistry;
 use App\Extensions\Chatbot\System\Helpers\ChatbotHelper;
 use App\Helpers\Classes\Helper;
 use App\Http\Controllers\Finance\PaymentProcessController;
@@ -39,6 +40,22 @@ class SubscriptionPlanCreate extends Component
         $this->useOrCreatePlan($plan);
         $this->privatePlanData();
         $this->hydrateChatbotChannels();
+        $this->hydrateAiChatProConnectors();
+    }
+
+    private function hydrateAiChatProConnectors(): void
+    {
+        if (! class_exists(ConnectorRegistry::class)) {
+            return;
+        }
+
+        $existing = (array) ($this->plan->ai_chat_pro_connectors ?? []);
+
+        foreach (array_keys(app(ConnectorRegistry::class)->enabled()) as $key) {
+            $existing[$key] = (bool) ($existing[$key] ?? true);
+        }
+
+        $this->plan->ai_chat_pro_connectors = $existing;
     }
 
     #[On('updateEntities')]
@@ -85,6 +102,9 @@ class SubscriptionPlanCreate extends Component
             'plan.blogpilot_limits.agents'                    => 'nullable|integer|min:-1',
             'plan.blogpilot_limits.monthly_posts'             => 'nullable|integer|min:-1',
             'plan.voice_call_seconds_limit'                   => 'nullable|integer|min:-1',
+            'plan.phone_call_agent_seconds_limit'             => 'nullable|integer|min:-1',
+            'plan.ai_chat_pro_connectors'                     => 'nullable|array',
+            'plan.ai_chat_pro_connectors.*'                   => 'boolean',
             'plan.marketing_bot_limits.max_contacts'          => 'nullable|integer|min:-1',
             'plan.marketing_bot_limits.monthly_messages'      => 'nullable|integer|min:-1',
             'plan.marketing_bot_limits.channels'              => 'nullable|array',

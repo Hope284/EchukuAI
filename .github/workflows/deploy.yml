@@ -171,8 +171,10 @@ jobs:
             composer install --no-dev --prefer-dist --optimize-autoloader --no-interaction
             php artisan migrate --force
             php artisan vendor:publish --tag=extension --force
+            php artisan vendor:publish --tag=phone-call-agent-assets --force
             fix_laravel_permissions
             sudo -u www-data php artisan optimize:clear
+            sudo -u www-data php artisan db:seed --class=DzevaExtensionSeeder --force
             sudo -u www-data php artisan db:seed --class=DzevaPlanSeeder --force
             sudo -u www-data php artisan dzeva:sync-premium-entitlements
             sudo -u www-data php artisan plans:ensure-gateway-products --gateway=paystack --type=subscription --refresh
@@ -185,6 +187,8 @@ jobs:
             sudo -u www-data php artisan route:list --path=affiliate
             sudo -u www-data php artisan route:list --path=webhooks
             sudo -u www-data php artisan route:list --path=paystack
+            sudo -u www-data php artisan route:list --path=phone-call-agent
+            sudo -u www-data php artisan route:list --path=ai-chat-pro/connectors
             sudo -u www-data php artisan dzeva:production-audit
             cron_line='* * * * * cd /var/www/dzeva && php artisan schedule:run >> /dev/null 2>&1'
             (crontab -l 2>/dev/null | grep -Fv 'cd /var/www/dzeva && php artisan schedule:run' || true; printf '%s\n' "$cron_line") | crontab -
@@ -225,3 +229,5 @@ jobs:
           check_url "https://dzeva.com/dashboard/admin/strategic-partners"
           check_url "https://dzeva.com/dashboard/admin/strategic-partners/create"
           check_url "https://dzeva.com/partner/invalid-code"
+          check_url "https://dzeva.com/dashboard/phone-call-agent"
+          check_url "https://dzeva.com/dashboard/user/ai-chat-pro/connectors"

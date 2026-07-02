@@ -61,6 +61,18 @@ class AIAgentWorkflow extends Model
         return $this->belongsTo(User::class, 'user_id');
     }
 
+    public function channel(): BelongsTo
+    {
+        return $this->belongsTo(AIAgentChannel::class, 'channel_id');
+    }
+
+    public function getChannelIdAttribute(): ?int
+    {
+        $id = $this->trigger_config['channel_id'] ?? null;
+
+        return $id !== null ? (int) $id : null;
+    }
+
     public function runs(): HasMany
     {
         return $this->hasMany(AIAgentWorkflowRun::class, 'workflow_id');

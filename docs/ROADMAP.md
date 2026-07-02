@@ -4,7 +4,7 @@ Production completion is measured by an automated test, a successful deployment 
 
 | Item | Status | Priority | Milestone | Acceptance criteria | Dependencies |
 | --- | --- | --- | --- | --- | --- |
-| DZEVA 10.8.1 deployment | Complete | Critical | DZEVA 1.2 | Core, extensions, migrations, assets, branding, and routes are live | Production workflow |
+| DZEVA 10.9 deployment | Complete | Critical | DZEVA 1.2 | Core, AIChatPro 3.7, AI Agent 1.1, connectors, phone agent, migrations, assets, branding, and routes are live | Production workflow |
 | Strategic Partner routes | Complete | Critical | DZEVA 1.2 | Protected partner and admin routes load without server errors | Auth and partner profile |
 | Paystack product mapping | Complete | Critical | DZEVA 1.2 | Every active subscription has a valid server-side mapping | Paystack credentials |
 | Paystack callback hardening | In verification | Critical | Production recovery | Verification is exact, idempotent, and grants access once | Paystack API and orders |

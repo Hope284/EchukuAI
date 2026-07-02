@@ -42,6 +42,7 @@ use App\Http\Controllers\Dashboard\AdminController;
 use App\Http\Controllers\Dashboard\AdminStrategicPartnerController;
 use App\Http\Controllers\Dashboard\BrandController;
 use App\Http\Controllers\Dashboard\DebugController;
+use App\Http\Controllers\Dashboard\GlobalSearchController;
 use App\Http\Controllers\Dashboard\NotificationController;
 use App\Http\Controllers\Dashboard\SearchController;
 use App\Http\Controllers\Dashboard\SettingsController;
@@ -933,6 +934,9 @@ Route::middleware(['auth', 'updateUserActivity'])
 
         Route::post('/api/search', [SearchController::class, 'search']);
         Route::delete('/api/search/delete-search-key/{key}', [SearchController::class, 'deleteSearchkey']);
+
+        Route::post('/api/global-search', [GlobalSearchController::class, 'search']);
+        Route::get('/api/global-search/ai', [GlobalSearchController::class, 'aiStream']);
     });
 
 Route::group(['prefix' => config('elseyyid-location.prefix'), 'middleware' => config('elseyyid-location.middlewares'), 'as' => 'elseyyid.translations.'], function () {

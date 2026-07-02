@@ -167,6 +167,8 @@
                                     @includeIf('ai-chat-pro-deep-research::deep-research-button', ['category' => $category])
                                 @endif
 
+                                @include('ai-chat-pro::connectors.chat-connectors-button')
+
                                 @if ($canvas_enabled)
                                     @includeIf('canvas::includes.canvas-button')
                                 @elseif ($dr_canvas_enabled)
@@ -410,7 +412,7 @@
 
     @guest
         <p class="relative z-2 mx-auto text-center text-2xs text-heading-foreground/30 max-lg:px-6 lg:mb-0 lg:mt-6 lg:max-w-screen-md">
-            {{ __(setting('guest_user_bottom_text', 'Login to save your current session. © DZEVA 2026. All rights reserved.')) }}
+            {{ __(setting('guest_user_bottom_text', 'Login to save your current session. © ECHUKU 2026. All rights reserved.')) }}
             <br>
             <x-button
                 class="text-4xs uppercase tracking-widest text-heading-foreground/50 hover:text-heading-foreground"

@@ -6,6 +6,8 @@ use App\Domains\Engine\Enums\EngineEnum;
 use App\Domains\Entity\Enums\EntityEnum;
 use App\Domains\Entity\Facades\Entity as EntityFacade;
 use App\Domains\Entity\Models\Entity;
+use App\Extensions\AIChatPro\System\Connectors\ConnectorPlanGate;
+use App\Extensions\AIChatPro\System\Connectors\Models\AIChatProConnector;
 use App\Extensions\AiChatProImageChat\System\Services\AIChatImageService;
 use App\Extensions\AIChatProMemory\System\Models\UserChatInstruction;
 use App\Extensions\AIChatProSkills\System\Models\Skill;
@@ -1157,6 +1159,33 @@ class GeneratorController extends Controller
                     'role'    => $systemRole,
                     'content' => "You have access to specialized skill tools. When the user's request matches a skill's purpose, you MUST call that skill's tool function to load its detailed instructions before responding. The skill tool will return expert instructions that you should follow to generate your response.\n\nAvailable skills:\n{$skillList}\n\nCall the matching use_skill_* function when a skill is relevant to the user's request. If no skill matches, respond normally without calling any tool.",
                 ];
+            }
+        }
+
+        if (class_exists(AIChatProConnector::class)
+            && auth()->check()
+            && (bool) setting('ai_chat_pro_connectors_enabled', '1')) {
+            $connectorPlan = ConnectorPlanGate::resolvePlan(auth()->user());
+
+            $autoConnectors = AIChatProConnector::query()
+                ->where('user_id', auth()->id())
+                ->where('is_active', true)
+                ->where('is_paused', false)
+                ->get()
+                ->filter(fn (AIChatProConnector $connector): bool => ConnectorPlanGate::allowsForPlan($connectorPlan, $connector->type))
+                ->values();
+
+            $pausedConnectors = AIChatProConnector::query()
+                ->where('user_id', auth()->id())
+                ->where('is_paused', true)
+                ->get();
+
+            if ($autoConnectors->isNotEmpty()) {
+                $chatParams['auto_connectors'] = $autoConnectors;
+            }
+
+            if ($pausedConnectors->isNotEmpty()) {
+                $chatParams['paused_connectors'] = $pausedConnectors;
             }
         }
 

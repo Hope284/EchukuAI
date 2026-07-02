@@ -39,6 +39,8 @@
             @endif
         </div>
 
+        @includeIf('ai-chat-pro::admin.plan.connectors')
+
         <hr class="col-span-2 border-border" />
 
         <div class="grid grid-cols-1 gap-8 sm:grid-cols-2">
@@ -57,6 +59,21 @@
                 >
                     <x-form.stepper
                         wire:model="plan.voice_call_seconds_limit"
+                        step="1"
+                        min="-1"
+                    />
+                </x-form.group>
+            @endif
+
+            @if (collect($planAiToolsMenu)->contains('key', 'ext_phone_call_agent'))
+                <x-form.group
+                    class="col-span-2 sm:col-span-1"
+                    label="{{ __('Phone Call Agent Seconds Limit') }}"
+                    tooltip="{{ __('-1 for unlimited, 0 to disable, >0 for max seconds per month') }}"
+                    error="plan.phone_call_agent_seconds_limit"
+                >
+                    <x-form.stepper
+                        wire:model="plan.phone_call_agent_seconds_limit"
                         step="1"
                         min="-1"
                     />

@@ -143,4 +143,16 @@
     >
         {{ __('Start Conversation') }}
     </x-button>
+
+    @if (isset($workflow->channel) && filled($workflow->channel))
+        <div class="mt-4 flex items-center justify-center gap-2">
+            <img
+                class="size-4 object-contain"
+                src="{{ custom_theme_url('/vendor/ai-agent/images/platforms/') }}{{ $workflow->channel->type }}.png"
+                alt="{{ $workflow->channel->type }}"
+                aria-hidden="true"
+            >
+            <span class="text-2xs">{{ $workflow->channel->name ?: $workflow->channel->type }}</span>
+        </div>
+    @endif
 </x-card>

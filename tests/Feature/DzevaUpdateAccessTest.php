@@ -7,7 +7,7 @@ use App\Models\Setting;
 use App\Models\User;
 
 beforeEach(function () {
-    Setting::factory()->create(['script_version' => '10.81']);
+    Setting::factory()->create(['script_version' => '10.90']);
 });
 
 it('redirects guests away from the update manual', function () {
@@ -27,7 +27,7 @@ it('shows the update manual to super administrators without running an update', 
         ->get('/update-manual')
         ->assertOk()
         ->assertSee('DZEVA Update Status')
-        ->assertSee('10.8.1');
+        ->assertSee('10.9.0');
 });
 
 it('shows the public version label only to regular users', function () {
@@ -35,5 +35,5 @@ it('shows the public version label only to regular users', function () {
     $admin = User::factory()->make(['type' => Roles::SUPER_ADMIN->value]);
 
     expect(dzeva_version_label($user))->toBe('DZEVA Version 1.2')
-        ->and(dzeva_version_label($admin))->toContain('10.8.1');
+        ->and(dzeva_version_label($admin))->toContain('10.9.0');
 });

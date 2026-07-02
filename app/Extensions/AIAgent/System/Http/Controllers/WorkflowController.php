@@ -10,6 +10,7 @@ use App\Extensions\AIAgent\System\Engine\AIAgentActionRegistry;
 use App\Extensions\AIAgent\System\Enums\ChannelEnum;
 use App\Extensions\AIAgent\System\Enums\WorkflowStatusEnum;
 use App\Extensions\AIAgent\System\Exceptions\PlanLimitExceededException;
+use App\Extensions\AIAgent\System\Http\Controllers\Concerns\ResolvesTemplateAvatars;
 use App\Extensions\AIAgent\System\Http\Requests\StoreWorkflowRequest;
 use App\Extensions\AIAgent\System\Models\AIAgentAvatar;
 use App\Extensions\AIAgent\System\Models\AIAgentChannel;
@@ -38,6 +39,8 @@ use Throwable;
 
 class WorkflowController extends Controller
 {
+    use ResolvesTemplateAvatars;
+
     public function __construct(
         private readonly AIAgentPlanService $planService,
         private readonly AIAgentChatService $chatService,
@@ -46,6 +49,7 @@ class WorkflowController extends Controller
     public function index(): View
     {
         $workflows = AIAgentWorkflow::query()
+            ->with('channel')
             ->where('user_id', Auth::id())
             ->latest()
             ->paginate(15);
@@ -54,7 +58,7 @@ class WorkflowController extends Controller
             'title'     => __('Agents'),
             'workflows' => $workflows,
             'templates' => collect(config('ai-agent.workflow_templates', []))
-                ->map(fn ($t, $k) => array_merge(['key' => $k, 'trigger' => $t['config']['trigger_type'] ?? 'schedule'], $t))
+                ->map(fn ($t, $k) => array_merge(['key' => $k, 'avatar' => $this->templateAvatar($k), 'trigger' => $t['config']['trigger_type'] ?? 'schedule'], $t))
                 ->values()
                 ->all(),
         ]);
@@ -65,6 +69,9 @@ class WorkflowController extends Controller
         $templateKey = $request->query('template');
         $templateData = $templateKey
             ? config("ai-agent.workflow_templates.{$templateKey}.config")
+            : null;
+        $templateAvatar = $templateKey
+            ? $this->templateAvatar($templateKey)
             : null;
         $userName = explode(' ', Auth::user()->name ?? '')[0];
 
@@ -77,6 +84,7 @@ class WorkflowController extends Controller
             'memories'       => AIAgentMemory::query()->where('user_id', Auth::id())->latest()->get(['id', 'memory']),
             'avatarPresets'  => $this->avatarPresets(),
             'templateData'   => $templateData,
+            'templateAvatar' => $templateAvatar,
             'copilotInit'    => $request->query('copilot_init'),
         ]);
     }

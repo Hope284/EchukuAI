@@ -377,7 +377,7 @@ class ElevenLabsService
      */
     public function getAgent(string $agent_id): JsonResponse
     {
-        $url = $this->endpoint . '/v1/convai/agents/' . $agent_id;
+        $url = $this->endpoint . 'v1/convai/agents/' . $agent_id;
 
         $res = Http::withHeaders($this->getHeaders())->get($url);
 
@@ -415,8 +415,6 @@ class ElevenLabsService
             'platform_settings'   => $platform_settings,
             'name'                => $name,
         ]);
-        Log::info('here', $requestParams);
-
         $res = Http::withHeaders($this->getHeaders())->patch($url, $requestParams);
 
         return $this->statusJsonResponse($res, 'update voice chatbot error:');
@@ -432,6 +430,25 @@ class ElevenLabsService
         $res = Http::withHeaders($this->getHeaders())->delete($url);
 
         return $this->statusJsonResponse($res, 'delete agent error:');
+    }
+
+    /** @param array<string, mixed> $tool_config */
+    public function createTool(array $tool_config): JsonResponse
+    {
+        $res = Http::withHeaders($this->getHeaders())
+            ->post($this->endpoint . 'v1/convai/tools', ['tool_config' => $tool_config]);
+
+        return $this->statusJsonResponse($res, 'create tool error:');
+    }
+
+    public function deleteTool(string $tool_id, bool $force = true): JsonResponse
+    {
+        $url = $this->endpoint . 'v1/convai/tools/' . $tool_id . '?force=' . ($force ? 'true' : 'false');
+
+        return $this->statusJsonResponse(
+            Http::withHeaders($this->getHeaders())->delete($url),
+            'delete tool error:'
+        );
     }
 
     // ======= Knowledge Base =======//
@@ -653,7 +670,7 @@ class ElevenLabsService
     public function getSignedUrl(
         string $agent_id
     ): JsonResponse {
-        $url = $this->endpoint . 'v1/convai/conversations/get_signed_url';
+        $url = $this->endpoint . 'v1/convai/conversation/token';
         $res = Http::withHeaders($this->getHeaders())->get($url, ['agent_id' => $agent_id]);
 
         return $this->statusJsonResponse($res, 'get signed url error:');

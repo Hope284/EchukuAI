@@ -5,14 +5,23 @@ declare(strict_types=1);
 namespace App\Extensions\AIChatPro\System;
 
 use App\Domains\Marketplace\Contracts\UninstallExtensionServiceProviderInterface;
+use App\Extensions\AIChatPro\System\Connectors\ConnectorRegistry;
+use App\Extensions\AIChatPro\System\Connectors\Middleware\EnsureConnectorPlanAccess;
+use App\Extensions\AIChatPro\System\Connectors\Models\AIChatProConnector;
+use App\Extensions\AIChatPro\System\Connectors\Policies\AIChatProConnectorPolicy;
+use App\Extensions\AIChatPro\System\Events\ConnectorTokenInvalidated;
 use App\Extensions\AIChatPro\System\Http\Controllers\AIChatProController;
 use App\Extensions\AIChatPro\System\Http\Controllers\AIChatProSettingsController;
+use App\Extensions\AIChatPro\System\Http\Controllers\ConnectorController;
 use App\Extensions\AIChatPro\System\Http\Controllers\EditImageStreamController;
+use App\Extensions\AIChatPro\System\Listeners\NotifyUserOfConnectorFailure;
 use App\Helpers\Classes\MarketplaceHelper;
 use App\Http\Controllers\AIChatController;
 use App\Http\Controllers\OpenAi\GeneratorController;
 use Illuminate\Contracts\Http\Kernel;
 use Illuminate\Routing\Router;
+use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use Mcamara\LaravelLocalization\Facades\LaravelLocalization;
@@ -25,17 +34,38 @@ use Mcamara\LaravelLocalization\Facades\LaravelLocalization;
  */
 class AIChatProServiceProvider extends ServiceProvider implements UninstallExtensionServiceProviderInterface
 {
-    public function register(): void {}
+    public function register(): void
+    {
+        $this->app->singleton(ConnectorRegistry::class);
+    }
 
     public function boot(Kernel $kernel): void
     {
+        $this->router()->aliasMiddleware('ai-chat-pro.connector', EnsureConnectorPlanAccess::class);
+
         $this->registerTranslations()
             ->registerViews()
             ->registerRoutes()
             ->registerMigrations()
+            ->registerConnectorPolicies()
+            ->registerConnectorEvents()
             ->publishAssets()
             ->registerComponents();
 
+    }
+
+    private function registerConnectorEvents(): static
+    {
+        Event::listen(ConnectorTokenInvalidated::class, NotifyUserOfConnectorFailure::class);
+
+        return $this;
+    }
+
+    private function registerConnectorPolicies(): static
+    {
+        Gate::policy(AIChatProConnector::class, AIChatProConnectorPolicy::class);
+
+        return $this;
     }
 
     public function registerComponents(): static
@@ -100,6 +130,18 @@ class AIChatProServiceProvider extends ServiceProvider implements UninstallExten
                     ->group(function (Router $router) {
                         $router->get('chat/{slug?}', 'index')->name('index');
                         $router->get('message-suggestions/{messageId}', 'getMessageSuggestions')->name('message-suggestions');
+                    });
+
+                $router
+                    ->prefix('dashboard/user/ai-chat-pro/connectors')
+                    ->name('dashboard.user.ai-chat-pro.connectors.')
+                    ->group(function (Router $router) {
+                        $router->get('/', [ConnectorController::class, 'index'])->name('index');
+                        $router->delete('{connector}', [ConnectorController::class, 'destroy'])->name('destroy');
+                        $router->get('pre-consent/{key}', [ConnectorController::class, 'preConsent'])->name('pre-consent');
+                        $router->get('{connector}/access', [ConnectorController::class, 'accessShow'])->name('access.show');
+                        $router->put('{connector}/access', [ConnectorController::class, 'accessUpdate'])->name('access.update');
+                        $router->post('{connector}/toggle-pause', [ConnectorController::class, 'togglePause'])->name('toggle-pause');
                     });
             });
 
