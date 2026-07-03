@@ -174,7 +174,7 @@ class MenuService
         $data = [];
 
         $staticData = $this->data();
-        $databaseFields = array_merge(['id', 'created_at', 'updated_at'], (new Menu)->getFillable());
+        $databaseFields = array_merge(['id', 'created_at', 'updated_at', 'children_count'], (new Menu)->getFillable());
 
         foreach ($items as $item) {
             $itemData = $item instanceof Menu ? $item->toArray() : (array) $item;
@@ -189,6 +189,7 @@ class MenuService
                 ? $item->getAttribute('children')
                 : collect(array_values((array) ($itemData['children'] ?? [])));
             $databaseData = Arr::only($itemData, $databaseFields);
+            $databaseData['children_count'] = (int) ($itemData['children_count'] ?? $children->count());
 
             if (isset($staticData[$key])) {
 
