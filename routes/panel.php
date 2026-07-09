@@ -78,7 +78,7 @@ use Illuminate\Support\Facades\Route;
 use Livewire\Livewire;
 
 Livewire::setUpdateRoute(static function ($handle) {
-    return Route::post('/livewire/update', $handle);
+    return Route::post('/livewire/update', $handle)->name('default.livewire.update');
 });
 
 Route::middleware(['auth', 'updateUserActivity'])
