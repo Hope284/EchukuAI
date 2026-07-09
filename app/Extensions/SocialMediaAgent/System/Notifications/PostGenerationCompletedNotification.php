@@ -37,14 +37,8 @@ class PostGenerationCompletedNotification extends Notification
      */
     public function toBroadcast(object $notifiable): BroadcastMessage
     {
-        return new BroadcastMessage([
-            'agent_id'        => $this->agent->id,
-            'agent_name'      => $this->agent->name,
-            'generated_count' => $this->generatedCount,
-            'failed_count'    => $this->failedCount,
-            'message'         => $this->getMessage(),
-            'action_url'      => route('dashboard.user.social-media.agent.show', $this->agent),
-            'type'            => 'post_generation_completed',
+        return new BroadcastMessage($this->payload() + [
+            'type' => 'post_generation_completed',
         ]);
     }
 
@@ -53,13 +47,27 @@ class PostGenerationCompletedNotification extends Notification
      */
     public function toArray(object $notifiable): array
     {
+        return $this->payload();
+    }
+
+    protected function payload(): array
+    {
+        $message = $this->getMessage();
+        $link = route('dashboard.user.social-media.agent.show', $this->agent);
+
         return [
             'agent_id'        => $this->agent->id,
             'agent_name'      => $this->agent->name,
             'generated_count' => $this->generatedCount,
             'failed_count'    => $this->failedCount,
-            'message'         => $this->getMessage(),
-            'action_url'      => route('dashboard.user.social-media.agent.show', $this->agent),
+            'title'           => __('Social media post generation completed'),
+            'message'         => $message,
+            'action_url'      => $link,
+            'data'            => [
+                'title'   => __('Social media post generation completed'),
+                'message' => $message,
+                'link'    => $link,
+            ],
         ];
     }
 

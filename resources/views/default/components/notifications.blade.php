@@ -2,10 +2,11 @@
     $notifications = [];
     $unreadNotifications = auth()->user()->unreadNotifications;
     foreach ($unreadNotifications as $notification) {
+        $payload = $notification->data;
         $notifications[] = [
-            'title' => $notification->data['data']['title'],
-            'message' => $notification->data['data']['message'],
-            'link' => $notification->data['data']['link'],
+            'title' => data_get($payload, 'data.title', data_get($payload, 'title', data_get($payload, 'agent_name', __('Notification')))),
+            'message' => data_get($payload, 'data.message', data_get($payload, 'message', '')),
+            'link' => data_get($payload, 'data.link', data_get($payload, 'link', data_get($payload, 'action_url', '#'))),
             'unread' => true,
             'id' => $notification->id,
         ];

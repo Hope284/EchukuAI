@@ -5,6 +5,8 @@ declare(strict_types=1);
 use App\Domains\Marketplace\MarketplaceServiceProvider;
 use App\Extensions\AIChatPro\System\Connectors\ConnectorPlanGate;
 use App\Extensions\AIChatPro\System\Connectors\Models\AIChatProConnector;
+use App\Extensions\SocialMediaAgent\System\Models\SocialMediaAgent;
+use App\Extensions\SocialMediaAgent\System\Notifications\PostGenerationCompletedNotification;
 use App\Models\Plan;
 use App\Support\Security\SafeRemoteUrl;
 use Illuminate\Support\Facades\Crypt;
@@ -91,4 +93,18 @@ it('keeps connector client secrets out of admin html', function () {
         expect($contents)->not->toMatch('/name=["\'](?:ai_chat_pro_)?[^"\']*client_secret/i')
             ->and($contents)->not->toMatch('/value=["\'][^"\']*client_secret/i');
     }
+});
+
+it('keeps social media agent notifications compatible with the 10.9 notification menu', function () {
+    $agent = new SocialMediaAgent(['name' => 'DZEVA QA Agent']);
+    $agent->id = 123;
+
+    $payload = (new PostGenerationCompletedNotification($agent, 2, 1))->toArray(new stdClass());
+    $view = file_get_contents(resource_path('views/default/components/notifications.blade.php'));
+
+    expect($payload)->toHaveKey('data')
+        ->and($payload['data'])->toHaveKeys(['title', 'message', 'link'])
+        ->and($payload)->toHaveKeys(['title', 'message', 'action_url'])
+        ->and($view)->toContain("data_get(\$payload, 'data.title'")
+        ->and($view)->toContain("'action_url'");
 });
