@@ -175,6 +175,12 @@ class SocialMediaAgentServiceProvider extends ServiceProvider implements Extensi
                         Route::post('api/posts/{post}/regenerate', [SocialMediaAgentPostController::class, 'regenerateContent'])->name('api.posts.regenerate');
                         Route::post('api/posts/generate-image', [SocialMediaAgentController::class, 'generatePostImage'])->name('api.posts.generate-image');
                         Route::get('api/generation-status', [SocialMediaAgentController::class, 'getGenerationStatus'])->name('api.generation-status');
+
+                        Route::get('{agent}', static function (SocialMediaAgent $agent) {
+                            return redirect()->route('dashboard.user.social-media.agent.posts', [
+                                'agent' => $agent->id,
+                            ]);
+                        })->name('show');
                     });
             });
 
