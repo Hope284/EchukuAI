@@ -68,19 +68,18 @@ jobs:
 
               [ -d "$backup_root" ] || return 0
 
-              mapfile -t deploy_backups < <(find "$backup_root" -mindepth 1 -maxdepth 1 -type d -name 'dzeva-fix-*' -printf '%T@ %p\n' | sort -n | awk '{ $1=""; sub(/^ /, ""); print }')
-              local backup_count="${#deploy_backups[@]}"
-              if [ "$backup_count" -le "$keep_count" ]; then
-                return 0
-              fi
+              old_backups="$(find "$backup_root" -mindepth 1 -maxdepth 1 -type d -name 'dzeva-fix-*' -printf '%T@ %p\n' | sort -n | head -n -"$keep_count" | sed 's/^[^ ]* //' || true)"
+              [ -n "$old_backups" ] || return 0
 
-              local remove_count=$((backup_count - keep_count))
-              echo "Pruning $remove_count old DZEVA deploy backup(s) to preserve production disk space."
-              for ((i = 0; i < remove_count; i++)); do
-                case "${deploy_backups[$i]}" in
-                  "$backup_root"/dzeva-fix-*) sudo rm -rf -- "${deploy_backups[$i]}" ;;
-                  *) echo "Refusing to prune unexpected backup path: ${deploy_backups[$i]}"; exit 1 ;;
-                esac
+              echo "Pruning old DZEVA deploy backups to preserve production disk space."
+              printf '%s\n' "$old_backups" | while IFS= read -r backup_dir; do
+                [ -n "$backup_dir" ] || continue
+                if [ "${backup_dir#/home/ubuntu/backups/dzeva-fix-}" != "$backup_dir" ]; then
+                  sudo rm -rf -- "$backup_dir"
+                else
+                  echo "Refusing to prune unexpected backup path: $backup_dir"
+                  exit 1
+                fi
               done
             }
 
