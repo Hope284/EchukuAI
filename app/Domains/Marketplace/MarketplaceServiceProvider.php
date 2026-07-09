@@ -268,18 +268,14 @@ class MarketplaceServiceProvider extends ServiceProvider
         $this->router()
             ->group([
                 'middleware' => ['web', 'auth'],
-            ], function (Router $route) {
-                $route->get('dashboard/marketplace/extension/{slug}/install', function (string $slug) {
-                    return $this
-                        ->app
-                        ->make(ExtensionInstallService::class)
+            ], static function (Router $route) {
+                $route->get('dashboard/marketplace/extension/{slug}/install', static function (string $slug) {
+                    return app(ExtensionInstallService::class)
                         ->install($slug);
                 })->name('marketplace.extension.install');
 
-                $route->get('dashboard/marketplace/extension/{slug}/uninstall', function (string $slug) {
-                    return $this
-                        ->app
-                        ->make(ExtensionUninstallService::class)
+                $route->get('dashboard/marketplace/extension/{slug}/uninstall', static function (string $slug) {
+                    return app(ExtensionUninstallService::class)
                         ->uninstall($slug);
                 })->name('marketplace.extension.uninstall');
             });

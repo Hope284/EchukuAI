@@ -19,7 +19,7 @@ Route::middleware('guest')->group(function () {
     Route::post('login', [AuthenticatedSessionController::class, 'store']);
 
     Route::get('verify-otp', [AuthenticatedSessionController::class, 'verifyOtpCode'])->name('verify-otp');
-    Route::post('verify-otp', [AuthenticatedSessionController::class, 'verifyOtp'])->name('verify-otp');
+    Route::post('verify-otp', [AuthenticatedSessionController::class, 'verifyOtp'])->name('verify-otp.store');
 
     Route::get('forgot-password', [AuthenticationController::class, 'PasswordResetCreate'])
         ->name('forgot_password');
@@ -29,16 +29,16 @@ Route::middleware('guest')->group(function () {
     Route::post('forgot-password/save', [MailController::class, 'passwordResetCallbackSave']);
 
     // Social Login
-    Route::get('github/redirect', function () {
+    Route::get('github/redirect', static function () {
         return Socialite::driver('github')->redirect();
     })->name('login.github');
-    Route::get('google/redirect', function () {
+    Route::get('google/redirect', static function () {
         return Socialite::driver('google')->redirect();
     })->name('login.google');
-    Route::get('twitter/redirect', function () {
+    Route::get('twitter/redirect', static function () {
         return Socialite::driver('twitter')->redirect();
     })->name('login.twitter');
-    Route::get('/facebook/redirect', function () {
+    Route::get('/facebook/redirect', static function () {
         return Socialite::driver('facebook')->redirect();
     })->name('login.facebook');
 

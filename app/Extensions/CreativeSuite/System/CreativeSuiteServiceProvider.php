@@ -93,7 +93,7 @@ class CreativeSuiteServiceProvider extends ServiceProvider implements UninstallE
                 $router->post('document/duplicate', [CreativeSuiteDocumentController::class, 'duplicate'])->name('document.duplicate');
                 $router->post('document/name', [CreativeSuiteDocumentController::class, 'name'])->name('document.name');
                 $router->post('document/delete', [CreativeSuiteDocumentController::class, 'destroy'])->name('document.delete');
-                $router->get('document/{document}', [CreativeSuiteDocumentController::class, 'show'])->name('document.update-or-create');
+                $router->get('document/{document}', [CreativeSuiteDocumentController::class, 'show'])->name('document.show');
 
                 $router->post('ai/editor', [CreativeSuiteAIController::class, 'editor'])->name('ai.editor');
                 $router->get('ai/editor/{task}/status', [CreativeSuiteAIController::class, 'status'])->name('ai.editor.status');

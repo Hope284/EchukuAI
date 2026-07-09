@@ -43,8 +43,8 @@ class OpenAIRealtimeChatServiceProvider extends ServiceProvider
                     'prefix' => 'dashboard/user/',
                     'as'     => 'dashboard.user.',
                 ], function (Router $router) {
-                    $router->post('realtime/chat/checkBalance', [RealtimeVoiceChatController::class, 'checkBalance']);
-                    $router->post('realtime/chat/session', [RealtimeVoiceChatController::class, 'session']);
+                    $router->post('realtime/chat/checkBalance', [RealtimeVoiceChatController::class, 'checkBalance'])->name('realtime.chat.check-balance');
+                    $router->post('realtime/chat/session', [RealtimeVoiceChatController::class, 'session'])->name('realtime.chat.session');
                 });
             });
 

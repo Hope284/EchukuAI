@@ -62,6 +62,31 @@ jobs:
             set -euo pipefail
             cd /var/www/dzeva
 
+            prune_old_deploy_backups() {
+              local backup_root="/home/ubuntu/backups"
+              local keep_count=4
+
+              [ -d "$backup_root" ] || return 0
+
+              mapfile -t deploy_backups < <(find "$backup_root" -mindepth 1 -maxdepth 1 -type d -name 'dzeva-fix-*' -printf '%T@ %p\n' | sort -n | awk '{ $1=""; sub(/^ /, ""); print }')
+              local backup_count="${#deploy_backups[@]}"
+              if [ "$backup_count" -le "$keep_count" ]; then
+                return 0
+              fi
+
+              local remove_count=$((backup_count - keep_count))
+              echo "Pruning $remove_count old DZEVA deploy backup(s) to preserve production disk space."
+              for ((i = 0; i < remove_count; i++)); do
+                case "${deploy_backups[$i]}" in
+                  "$backup_root"/dzeva-fix-*) sudo rm -rf -- "${deploy_backups[$i]}" ;;
+                  *) echo "Refusing to prune unexpected backup path: ${deploy_backups[$i]}"; exit 1 ;;
+                esac
+              done
+            }
+
+            prune_old_deploy_backups
+            df -h /
+
             dirty_files="$(git status --porcelain)"
             if [ -n "$dirty_files" ]; then
               allowed_dirty_pattern='^[[:space:]]*[MADRCUD?]{1,2}[[:space:]]+(version\.txt|public/vendor/|public/images/integrations/)'
@@ -181,7 +206,7 @@ jobs:
             sudo -u www-data php artisan optimize:clear
             fix_laravel_permissions
             sudo -u www-data php artisan config:cache
-            sudo -u www-data php artisan route:clear
+            sudo -u www-data php artisan route:cache
             sudo -u www-data php artisan route:list --path=strategic
             sudo -u www-data php artisan route:list --path=partner
             sudo -u www-data php artisan route:list --path=affiliate

@@ -190,7 +190,7 @@ Route::middleware(['auth', 'updateUserActivity'])
                     ->group(function () {
                         Route::get('/', [UserController::class, 'openAIList'])->name('list')->middleware(CheckTemplateTypeAndPlan::class);
                         Route::get('/favorite-openai', [UserController::class, 'openAIFavoritesList'])->name('list.favorites');
-                        Route::post('/favorite', [UserController::class, 'openAIFavorite']);
+                        Route::post('/favorite', [UserController::class, 'openAIFavorite'])->name('favorite');
 
                         Route::get('generator/realtime', [GeneratorController::class, 'realtime'])->name('realtime.chat');
                         Route::get('generator/check/status', [UserController::class, 'checkStatus'])->name('check.status');
@@ -214,11 +214,11 @@ Route::middleware(['auth', 'updateUserActivity'])
                         // Generators Generate
                         Route::post('/generate', [AIController::class, 'buildOutput'])->name('output');
 
-                        Route::get('/generate', [AIController::class, 'streamedTextOutput']);
+                        Route::get('/generate', [AIController::class, 'streamedTextOutput'])->name('generate');
 
-                        Route::post('/getYoutubeCaptions', [AIController::class, 'getYoutubeCaptions']);
+                        Route::post('/getYoutubeCaptions', [AIController::class, 'getYoutubeCaptions'])->name('youtube-captions');
 
-                        Route::post('/check/videoprogress', [AIController::class, 'checkVideoProgress']);
+                        Route::post('/check/videoprogress', [AIController::class, 'checkVideoProgress'])->name('video-progress');
 
                         Route::get('/rewrite', [AIController::class, 'reWrite'])->name('rewriter')->middleware(CheckTemplateTypeAndPlan::class);
 
@@ -227,16 +227,16 @@ Route::middleware(['auth', 'updateUserActivity'])
                         Route::post('/image/generate', [AIController::class, 'chatImageOutput'])->name('chat.image');
 
                         // Fine Tune
-                        Route::post('/add-fine-tune', [AIFineTuneController::class, 'addFineTune']);
-                        Route::post('/delete-fine-tune', [AIFineTuneController::class, 'deleteFineTune']);
+                        Route::post('/add-fine-tune', [AIFineTuneController::class, 'addFineTune'])->name('fine-tune.add');
+                        Route::post('/delete-fine-tune', [AIFineTuneController::class, 'deleteFineTune'])->name('fine-tune.delete');
 
                         // Low systems
-                        Route::post('/low/generate_save', [AIController::class, 'lowGenerateSave']);
-                        Route::post('message/title_save', [AIController::class, 'messageTitleSave']);
+                        Route::post('/low/generate_save', [AIController::class, 'lowGenerateSave'])->name('low.generate-save');
+                        Route::post('message/title_save', [AIController::class, 'messageTitleSave'])->name('message.title-save');
 
-                        Route::post('/generate-speech', [TTSController::class, 'generateSpeech']);
+                        Route::post('/generate-speech', [TTSController::class, 'generateSpeech'])->name('speech.generate');
 
-                        Route::post('/update-writing', [AIController::class, 'updateWriting']);
+                        Route::post('/update-writing', [AIController::class, 'updateWriting'])->name('writing.update');
 
                         // Documents
                         Route::prefix('documents')->name('documents.')->group(function () {
@@ -263,21 +263,21 @@ Route::middleware(['auth', 'updateUserActivity'])
                         Route::prefix('chat')->name('chat.')->group(function () {
                             Route::get('/ai-chat-list', [AIChatController::class, 'openAIChatList'])->name('list')->middleware(CheckTemplateTypeAndPlan::class);
                             Route::get('/ai-chat/{slug?}', [AIChatController::class, 'openAIChat'])->name('chat')->middleware(CheckTemplateTypeAndPlan::class);
-                            Route::match(['get', 'post'], '/chat-send', [AIChatController::class, 'chatOutput']);
-                            Route::match(['get', 'post'], '/chatbot-send', [AIChatController::class, 'chatbotOutput']);
-                            Route::post('/open-chat-area-container', [AIChatController::class, 'openChatAreaContainer']);
+                            Route::match(['get', 'post'], '/chat-send', [AIChatController::class, 'chatOutput'])->name('chat-send');
+                            Route::match(['get', 'post'], '/chatbot-send', [AIChatController::class, 'chatbotOutput'])->name('chatbot-send');
+                            Route::post('/open-chat-area-container', [AIChatController::class, 'openChatAreaContainer'])->name('open-chat-area-container');
                             Route::post('/open-chatbot-area', [AIChatController::class, 'openChatBotArea'])->name('open-chatbot-area');
-                            Route::post('/start-new-chat', [AIChatController::class, 'startNewChat']);
-                            Route::post('/start-new-doc-chat', [AIChatController::class, 'startNewDocChat']);
-                            Route::post('/start-new-chatbot', [AIChatController::class, 'startNewChatBot']);
-                            Route::post('/search', [AIChatController::class, 'search']);
+                            Route::post('/start-new-chat', [AIChatController::class, 'startNewChat'])->name('start-new-chat');
+                            Route::post('/start-new-doc-chat', [AIChatController::class, 'startNewDocChat'])->name('start-new-doc-chat');
+                            Route::post('/start-new-chatbot', [AIChatController::class, 'startNewChatBot'])->name('start-new-chatbot');
+                            Route::post('/search', [AIChatController::class, 'search'])->name('search');
                             Route::get('/get-chats', [AIChatController::class, 'getChats'])->name('get-chats');
-                            Route::post('/delete-chat', [AIChatController::class, 'deleteChat']);
-                            Route::post('/clear-chats', [AIChatController::class, 'clearChats']);
-                            Route::post('/rename-chat', [AIChatController::class, 'renameChat']);
-                            Route::post('/pin-conversation', [AIChatController::class, 'pinConversation']);
+                            Route::post('/delete-chat', [AIChatController::class, 'deleteChat'])->name('delete-chat');
+                            Route::post('/clear-chats', [AIChatController::class, 'clearChats'])->name('clear-chats');
+                            Route::post('/rename-chat', [AIChatController::class, 'renameChat'])->name('rename-chat');
+                            Route::post('/pin-conversation', [AIChatController::class, 'pinConversation'])->name('pin-conversation');
 
-                            Route::post('/transaudio', [AIChatController::class, 'transAudio']);
+                            Route::post('/transaudio', [AIChatController::class, 'transAudio'])->name('transaudio');
 
                             Route::controller(PromptController::class)->group(static function () {
                                 Route::post('prompts', 'getAll')->name('prompts');
@@ -287,12 +287,12 @@ Route::middleware(['auth', 'updateUserActivity'])
                             });
 
                             // routes/web.php
-                            Route::get('/generate-pdf', [ExportChatController::class, 'generatePdf']);
-                            Route::get('/generate-word', [ExportChatController::class, 'generateWord']);
-                            Route::get('/generate-txt', [ExportChatController::class, 'generateTxt']);
+                            Route::get('/generate-pdf', [ExportChatController::class, 'generatePdf'])->name('generate-pdf');
+                            Route::get('/generate-word', [ExportChatController::class, 'generateWord'])->name('generate-word');
+                            Route::get('/generate-txt', [ExportChatController::class, 'generateTxt'])->name('generate-txt');
 
                             // Low systems
-                            Route::post('/low/chat_save', [AIChatController::class, 'lowChatSave']);
+                            Route::post('/low/chat_save', [AIChatController::class, 'lowChatSave'])->name('low.chat-save');
                         });
 
                         Route::prefix('articlewizard')->name('articlewizard.')->group(function () {
@@ -365,8 +365,8 @@ Route::middleware(['auth', 'updateUserActivity'])
                 // Affiliates
                 Route::prefix('affiliates')->name('affiliates.')->group(function () {
                     Route::get('/', [UserController::class, 'affiliatesList'])->name('index');
-                    Route::post('/send-invitation', [UserController::class, 'affiliatesListSendInvitation']);
-                    Route::post('/send-request', [UserController::class, 'affiliatesListSendRequest']);
+                    Route::post('/send-invitation', [UserController::class, 'affiliatesListSendInvitation'])->name('send-invitation');
+                    Route::post('/send-request', [UserController::class, 'affiliatesListSendRequest'])->name('send-request');
                     Route::get('/users', [UserController::class, 'affiliatesUsers'])->name('users');
                 });
 
@@ -544,8 +544,8 @@ Route::middleware(['auth', 'updateUserActivity'])
                 // Openai management
                 Route::prefix('openai')->name('openai.')->group(function () {
                     Route::get('/', [AdminController::class, 'openAIList'])->name('list');
-                    Route::post('/update-status', [AdminController::class, 'openAIListUpdateStatus']);
-                    Route::post('/update-package-status', [AdminController::class, 'openAIListUpdatePackageStatus']);
+                    Route::post('/update-status', [AdminController::class, 'openAIListUpdateStatus'])->name('update-status');
+                    Route::post('/update-package-status', [AdminController::class, 'openAIListUpdatePackageStatus'])->name('update-package-status');
 
                     Route::prefix('custom')->name('custom.')->group(function () {
                         Route::get('/', [AdminController::class, 'openAICustomList'])->name('list');
@@ -650,8 +650,8 @@ Route::middleware(['auth', 'updateUserActivity'])
                     Route::get('/', [AdminController::class, 'howitWorks'])->name('index');
                     Route::get('/create-or-update/{id?}', [AdminController::class, 'howitWorksNewOrEdit'])->name('HowitWorksNewOrEdit');
                     Route::get('/delete/{id}', [AdminController::class, 'howitWorksDelete'])->name('delete');
-                    Route::post('/save', [AdminController::class, 'howitWorksSave']);
-                    Route::post('/bottom-line', [AdminController::class, 'howitWorksBottomLineSave']);
+                    Route::post('/save', [AdminController::class, 'howitWorksSave'])->name('save');
+                    Route::post('/bottom-line', [AdminController::class, 'howitWorksBottomLineSave'])->name('bottom-line');
                 });
 
                 Route::group([
@@ -677,22 +677,22 @@ Route::middleware(['auth', 'updateUserActivity'])
                 // Settings
                 Route::prefix('settings')->name('settings.')->group(function () {
                     Route::get('/general', [SettingsController::class, 'general'])->name('general');
-                    Route::post('/general-save', [SettingsController::class, 'generalSave']);
+                    Route::post('/general-save', [SettingsController::class, 'generalSave'])->name('general.save');
 
                     Route::get('searchapi', [SearchapiSettingController::class, 'index'])->name('searchapi');
-                    Route::post('searchapi', [SearchapiSettingController::class, 'update']);
+                    Route::post('searchapi', [SearchapiSettingController::class, 'update'])->name('searchapi.update');
 
                     Route::get('/openai', [SettingsController::class, 'openai'])->name('openai');
                     Route::get('/openai/test', [SettingsController::class, 'openaiTest'])->name('openai.test');
-                    Route::post('/openai-save', [SettingsController::class, 'openaiSave']);
+                    Route::post('/openai-save', [SettingsController::class, 'openaiSave'])->name('openai.save');
 
                     Route::get('/x-ai', [SettingsController::class, 'xAI'])->name('x-ai');
                     Route::get('/x-ai/test', [SettingsController::class, 'xAiTest'])->name('x-ai.test');
-                    Route::post('/x-ai-save', [SettingsController::class, 'xAiSave']);
+                    Route::post('/x-ai-save', [SettingsController::class, 'xAiSave'])->name('x-ai.save');
 
                     Route::get('anthropic', [SettingsController::class, 'anthropic'])->name('anthropic');
                     Route::get('anthropic/test', [SettingsController::class, 'anthropicTest'])->name('anthropic.test');
-                    Route::post('anthropic', [SettingsController::class, 'anthropicSave']);
+                    Route::post('anthropic', [SettingsController::class, 'anthropicSave'])->name('anthropic.save');
 
                     Route::get('deepseek', [SettingsController::class, 'deepseek'])->name('deepseek');
                     Route::get('deepseek/test', [SettingsController::class, 'deepseekTest'])->name('deepseek.test');
@@ -700,23 +700,23 @@ Route::middleware(['auth', 'updateUserActivity'])
 
                     Route::get('gemini', [SettingsController::class, 'gemini'])->name('gemini');
                     Route::get('gemini/test', [SettingsController::class, 'geminiTest'])->name('gemini.test');
-                    Route::post('gemini', [SettingsController::class, 'geminiSave']);
+                    Route::post('gemini', [SettingsController::class, 'geminiSave'])->name('gemini.save');
 
                     Route::get('/stablediffusion', [SettingsController::class, 'stablediffusion'])->name('stablediffusion');
                     Route::get('/stablediffusion/test', [SettingsController::class, 'stablediffusionTest'])->name('stablediffusion.test');
-                    Route::post('/stablediffusion-save', [SettingsController::class, 'stablediffusionSave']);
+                    Route::post('/stablediffusion-save', [SettingsController::class, 'stablediffusionSave'])->name('stablediffusion.save');
 
                     Route::get('/unsplashapi', [SettingsController::class, 'unsplashapi'])->name('unsplashapi');
                     Route::get('/unsplashapi/test', [SettingsController::class, 'unsplashapiTest'])->name('unsplashapi.test');
-                    Route::post('/unsplashapi-save', [SettingsController::class, 'unsplashapiSave']);
+                    Route::post('/unsplashapi-save', [SettingsController::class, 'unsplashapiSave'])->name('unsplashapi.save');
 
                     Route::get('/pexelsapi', [SettingsController::class, 'pexelsapi'])->name('pexelsapi');
                     Route::get('/pexelsapi/test', [SettingsController::class, 'pexelsapiTest'])->name('pexelsapi.test');
-                    Route::post('/pexelsapi-save', [SettingsController::class, 'pexelsapiSave']);
+                    Route::post('/pexelsapi-save', [SettingsController::class, 'pexelsapiSave'])->name('pexelsapi.save');
 
                     Route::get('/pixabayapi', [SettingsController::class, 'pixabayapi'])->name('pixabayapi');
                     Route::get('/pixabayapi/test', [SettingsController::class, 'pixabayapiTest'])->name('pixabayapi.test');
-                    Route::post('/pixabayapi-save', [SettingsController::class, 'pixabayapiSave']);
+                    Route::post('/pixabayapi-save', [SettingsController::class, 'pixabayapiSave'])->name('pixabayapi.save');
 
                     Route::get('fal-ai', [CommonFalAISettingController::class, 'index'])->name('fal-ai');
                     Route::post('fal-ai', [CommonFalAISettingController::class, 'update'])->name('fal-ai.update');
@@ -728,10 +728,10 @@ Route::middleware(['auth', 'updateUserActivity'])
 
                     Route::get('/serperapi', [SettingsController::class, 'serperapi'])->name('serperapi');
                     Route::get('/serperapi/test', [SettingsController::class, 'serperapiTest'])->name('serperapi.test');
-                    Route::post('/serperapi-save', [SettingsController::class, 'serperapiSave']);
+                    Route::post('/serperapi-save', [SettingsController::class, 'serperapiSave'])->name('serperapi.save');
 
                     Route::get('/tts', [SettingsController::class, 'tts'])->name('tts');
-                    Route::post('/tts-save', [SettingsController::class, 'ttsSave']);
+                    Route::post('/tts-save', [SettingsController::class, 'ttsSave'])->name('tts.save');
 
                     Route::prefix('/tts/elevenlabs/library')->name('tts.elevenlabs.library.')->group(function () {
                         Route::get('/', [ElevenLabsLibraryController::class, 'index'])->name('index');
@@ -740,18 +740,18 @@ Route::middleware(['auth', 'updateUserActivity'])
                     });
 
                     Route::get('/aimlapi', [SettingsController::class, 'aimlapi'])->name('aimlapi');
-                    Route::post('/aimlapi-save', [SettingsController::class, 'aimlapiSave']);
+                    Route::post('/aimlapi-save', [SettingsController::class, 'aimlapiSave'])->name('aimlapi.save');
 
                     Route::get('/payment', [SettingsController::class, 'payment'])->name('payment');
-                    Route::post('/payment-save', [SettingsController::class, 'paymentSave']);
+                    Route::post('/payment-save', [SettingsController::class, 'paymentSave'])->name('payment.save');
 
-                    Route::post('/affiliate-status-save/{id}', [SettingsController::class, 'affiliateStatusSave']);
+                    Route::post('/affiliate-status-save/{id}', [SettingsController::class, 'affiliateStatusSave'])->name('affiliate-status.save');
 
                     Route::get('/privacy', [SettingsController::class, 'privacy'])->name('privacy');
-                    Route::post('/privacy-save', [SettingsController::class, 'privacySave']);
+                    Route::post('/privacy-save', [SettingsController::class, 'privacySave'])->name('privacy.save');
 
-                    Route::post('/get-privacy-terms-content', [SettingsController::class, 'getPrivacyTermsContent']);
-                    Route::post('/get-meta-content', [SettingsController::class, 'getMetaContent']);
+                    Route::post('/get-privacy-terms-content', [SettingsController::class, 'getPrivacyTermsContent'])->name('privacy-terms.content');
+                    Route::post('/get-meta-content', [SettingsController::class, 'getMetaContent'])->name('meta.content');
                 });
 
                 // Affiliates
@@ -777,16 +777,16 @@ Route::middleware(['auth', 'updateUserActivity'])
                     Route::resource('content-box', ContentBoxController::class)->only(['index', 'edit', 'update']);
 
                     Route::get('/', [AdminController::class, 'frontendSettings'])->name('settings');
-                    Route::post('/settings-save', [AdminController::class, 'frontendSettingsSave']);
+                    Route::post('/settings-save', [AdminController::class, 'frontendSettingsSave'])->name('settings.save');
 
                     Route::get('/section-settings', [AdminController::class, 'frontendSectionSettings'])->name('sectionsettings');
-                    Route::post('/section-settings-save', [AdminController::class, 'frontendSectionSettingsSave']);
+                    Route::post('/section-settings-save', [AdminController::class, 'frontendSectionSettingsSave'])->name('sectionsettings.save');
 
                     Route::get('/menu', [AdminController::class, 'menuSettings'])->name('menusettings');
-                    Route::post('/menu-save', [AdminController::class, 'menuSettingsSave']);
+                    Route::post('/menu-save', [AdminController::class, 'menuSettingsSave'])->name('menusettings.save');
 
                     Route::get('/auth', [AdminController::class, 'authSettings'])->name('authsettings');
-                    Route::post('/auth-save', [AdminController::class, 'authsettingsSave']);
+                    Route::post('/auth-save', [AdminController::class, 'authsettingsSave'])->name('authsettings.save');
 
                     // Frequently Asked Questions (F.A.Q) Section faq
                     Route::prefix('faq')->name('faq.')->group(function () {
@@ -865,10 +865,10 @@ Route::middleware(['auth', 'updateUserActivity'])
         Route::prefix('support')->name('support.')->group(function () {
             Route::get('/my-requests', [SupportController::class, 'list'])->name('list')->middleware(CheckTemplateTypeAndPlan::class);
             Route::get('/new-support-request', [SupportController::class, 'newTicket'])->name('new');
-            Route::post('/new-support-request/send', [SupportController::class, 'newTicketSend']);
+            Route::post('/new-support-request/send', [SupportController::class, 'newTicketSend'])->name('new.send');
 
             Route::get('/requests/{ticket_id}', [SupportController::class, 'viewTicket'])->name('view');
-            Route::post('/requests-action/send-message', [SupportController::class, 'viewTicketSendMessage']);
+            Route::post('/requests-action/send-message', [SupportController::class, 'viewTicketSendMessage'])->name('message.send');
         });
 
         // Admin Area2
@@ -886,12 +886,13 @@ Route::middleware(['auth', 'updateUserActivity'])
                 Route::get('email-templates/{id}/send', [EmailTemplatesController::class, 'sendView'])
                     ->name('email-templates.send');
 
-                Route::post('email-templates/{id}/send', [EmailTemplatesController::class, 'sendQueue']);
+                Route::post('email-templates/{id}/send', [EmailTemplatesController::class, 'sendQueue'])
+                    ->name('email-templates.send.queue');
 
                 Route::resource('email-templates', EmailTemplatesController::class);
                 // delete email template route
                 Route::get('email-templates/{id}/delete', [EmailTemplatesController::class, 'delete'])
-                    ->name('email-templates.destroy');
+                    ->name('email-templates.delete');
 
                 // Blog
                 Route::prefix('blog')->name('blog.')->group(function () {
@@ -929,14 +930,14 @@ Route::middleware(['auth', 'updateUserActivity'])
         // });
 
         // Search
-        Route::get('/api/search/recent-search-keys', [SearchController::class, 'recentSearchKeys']);
-        Route::get('/api/search/recent-lunch', [SearchController::class, 'recentLunch']);
+        Route::get('/api/search/recent-search-keys', [SearchController::class, 'recentSearchKeys'])->name('api.search.recent-search-keys');
+        Route::get('/api/search/recent-lunch', [SearchController::class, 'recentLunch'])->name('api.search.recent-lunch');
 
-        Route::post('/api/search', [SearchController::class, 'search']);
-        Route::delete('/api/search/delete-search-key/{key}', [SearchController::class, 'deleteSearchkey']);
+        Route::post('/api/search', [SearchController::class, 'search'])->name('api.search');
+        Route::delete('/api/search/delete-search-key/{key}', [SearchController::class, 'deleteSearchkey'])->name('api.search.delete-search-key');
 
-        Route::post('/api/global-search', [GlobalSearchController::class, 'search']);
-        Route::get('/api/global-search/ai', [GlobalSearchController::class, 'aiStream']);
+        Route::post('/api/global-search', [GlobalSearchController::class, 'search'])->name('api.global-search');
+        Route::get('/api/global-search/ai', [GlobalSearchController::class, 'aiStream'])->name('api.global-search.ai');
     });
 
 Route::group(['prefix' => config('elseyyid-location.prefix'), 'middleware' => config('elseyyid-location.middlewares'), 'as' => 'elseyyid.translations.'], function () {

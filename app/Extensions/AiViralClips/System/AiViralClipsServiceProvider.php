@@ -50,12 +50,12 @@ class AiViralClipsServiceProvider extends ServiceProvider implements UninstallEx
 
         Route::group([
             'middleware' => ['web', 'auth'],
-        ], function () {
+        ], static function () {
             Route::group([
                 'prefix' => 'dashboard/user/viral-clips',
                 'as'     => 'dashboard.user.viral-clips.',
-            ], function () {
-                Route::get('', function () {
+            ], static function () {
+                Route::get('', static function () {
                     return view('ai-viral-clips::index');
                 })->name('index');
             });

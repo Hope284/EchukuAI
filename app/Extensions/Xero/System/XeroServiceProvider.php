@@ -112,7 +112,7 @@ class XeroServiceProvider extends ServiceProvider implements UninstallExtensionS
                 } catch (Throwable $e) {
                 }
 
-                $router->get('xero', function () {
+                $router->get('xero', static function () {
                     try {
                         if (! Xero::isConnected()) {
                             return redirect('xero/connect');
@@ -125,7 +125,7 @@ class XeroServiceProvider extends ServiceProvider implements UninstallExtensionS
                     } catch (Throwable $e) {
                     }
                 });
-                $router->get('xero/connect', function () {
+                $router->get('xero/connect', static function () {
                     try {
                         return Xero::connect();
                     } catch (Throwable $e) {

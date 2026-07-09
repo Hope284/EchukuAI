@@ -83,7 +83,7 @@
                                     variant="ghost-shadow"
                                     hover-variant="danger"
                                     size="none"
-                                    href="{{ route('dashboard.email-templates.destroy', $entry->id) }}"
+                                    href="{{ route('dashboard.email-templates.delete', $entry->id) }}"
                                     onclick="return confirm('Are you sure? This is permanent and will delete all documents related to email template.')"
                                     title="{{ __('Delete') }}"
                                 >
