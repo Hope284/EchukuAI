@@ -88,7 +88,7 @@ jobs:
 
             dirty_files="$(git status --porcelain)"
             if [ -n "$dirty_files" ]; then
-              allowed_dirty_pattern='^[[:space:]]*[MADRCUD?]{1,2}[[:space:]]+(version\.txt|public/vendor/|public/images/integrations/)'
+              allowed_dirty_pattern='^[[:space:]]*[MADRCUD?]{1,2}[[:space:]]+(version\.txt|public/vendor/|public/images/integrations/|public/uploads/|public/upload/)'
               unsafe_dirty="$(printf '%s\n' "$dirty_files" | grep -Ev "$allowed_dirty_pattern" || true)"
 
               if [ -z "$unsafe_dirty" ]; then
@@ -114,9 +114,10 @@ jobs:
               fi
             fi
 
-            if [ -n "$(git status --porcelain)" ]; then
+            remaining_unsafe_dirty="$(git status --porcelain | grep -Ev "$allowed_dirty_pattern" || true)"
+            if [ -n "$remaining_unsafe_dirty" ]; then
               echo "Production worktree has uncommitted changes; deployment stopped."
-              git status --short
+              printf '%s\n' "$remaining_unsafe_dirty"
               exit 1
             fi
 
