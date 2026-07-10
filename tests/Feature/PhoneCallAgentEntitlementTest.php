@@ -11,6 +11,10 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Cache;
 use Laravel\Cashier\Subscription;
 
+afterEach(function () {
+    Cache::flush();
+});
+
 function dzevaPhoneCallPlan(array $attributes = []): Plan
 {
     return Plan::factory()->create(array_merge([
