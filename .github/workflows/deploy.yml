@@ -31,10 +31,14 @@ jobs:
         run: |
           set -euo pipefail
           find app config database packages routes resources/views tests -type f -name '*.php' -print0 |
-            while IFS= read -r -d '' file; do
-              echo "Linting ${file}"
-              timeout 30s php -l "${file}"
-            done
+            xargs -0 -n1 -P "$(nproc)" sh -c '
+              file="$1"
+              timeout 30s php -l "$file" >/dev/null || {
+                echo "::error file=${file}::PHP syntax check failed or timed out"
+                php -l "$file"
+                exit 1
+              }
+            ' sh
 
       - name: Validate extension manifests
         run: find app/Extensions -type f -name 'extension.json' -print0 | xargs -0 -n1 jq empty
