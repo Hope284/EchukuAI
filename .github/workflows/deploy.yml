@@ -27,7 +27,14 @@ jobs:
         run: composer install --prefer-dist --no-interaction --no-progress
 
       - name: Validate PHP syntax
-        run: find app config database packages routes resources/views tests -type f -name '*.php' -print0 | xargs -0 -n1 php -l
+        shell: bash
+        run: |
+          set -euo pipefail
+          find app config database packages routes resources/views tests -type f -name '*.php' -print0 |
+            while IFS= read -r -d '' file; do
+              echo "Linting ${file}"
+              timeout 30s php -l "${file}"
+            done
 
       - name: Validate extension manifests
         run: find app/Extensions -type f -name 'extension.json' -print0 | xargs -0 -n1 jq empty
