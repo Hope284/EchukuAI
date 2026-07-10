@@ -204,38 +204,38 @@ jobs:
             configure_upload_runtime() {
               sudo install -d -o ubuntu -g www-data -m 2775 public/uploads public/uploads/media public/uploads/media/images public/uploads/media/videos public/uploads/media/other public/uploads/media/others public/uploads/media/voices public/uploads/guest public/uploads/thumbnail/default public/upload public/upload/images public/upload/images/avatar public/upload/images/blog
               sudo tee /etc/php/8.3/fpm/conf.d/99-dzeva-uploads.ini >/dev/null <<'EOF'
-upload_max_filesize = 100M
-post_max_size = 100M
-max_file_uploads = 50
-max_execution_time = 300
-memory_limit = 512M
-EOF
+            upload_max_filesize = 100M
+            post_max_size = 100M
+            max_file_uploads = 50
+            max_execution_time = 300
+            memory_limit = 512M
+            EOF
               sudo tee /etc/php/8.3/cli/conf.d/99-dzeva-uploads.ini >/dev/null <<'EOF'
-upload_max_filesize = 100M
-post_max_size = 100M
-max_file_uploads = 50
-max_execution_time = 300
-memory_limit = 512M
-EOF
+            upload_max_filesize = 100M
+            post_max_size = 100M
+            max_file_uploads = 50
+            max_execution_time = 300
+            memory_limit = 512M
+            EOF
               for writable_dir in public/uploads public/uploads/media public/uploads/media/images public/uploads/media/videos public/uploads/media/voices public/upload public/upload/images public/upload/images/avatar public/upload/images/blog; do
                 sudo -u www-data test -w "$writable_dir"
               done
             }
             configure_phone_call_agent_relay() {
               sudo tee /etc/supervisor/conf.d/dzeva-phone-call-agent-relay.conf >/dev/null <<'EOF'
-[program:dzeva-phone-call-agent-relay]
-directory=/var/www/dzeva
-command=/usr/bin/php /var/www/dzeva/artisan phone-call-agent:relay-server --host=127.0.0.1 --port=8090
-user=www-data
-autostart=true
-autorestart=true
-startsecs=3
-stopwaitsecs=10
-redirect_stderr=true
-stdout_logfile=/var/www/dzeva/storage/logs/phone-call-agent-relay.log
-stdout_logfile_maxbytes=10MB
-stdout_logfile_backups=5
-EOF
+            [program:dzeva-phone-call-agent-relay]
+            directory=/var/www/dzeva
+            command=/usr/bin/php /var/www/dzeva/artisan phone-call-agent:relay-server --host=127.0.0.1 --port=8090
+            user=www-data
+            autostart=true
+            autorestart=true
+            startsecs=3
+            stopwaitsecs=10
+            redirect_stderr=true
+            stdout_logfile=/var/www/dzeva/storage/logs/phone-call-agent-relay.log
+            stdout_logfile_maxbytes=10MB
+            stdout_logfile_backups=5
+            EOF
               sudo supervisorctl reread
               sudo supervisorctl update
               sudo supervisorctl restart dzeva-phone-call-agent-relay || sudo supervisorctl start dzeva-phone-call-agent-relay
@@ -251,59 +251,59 @@ EOF
               fi
               sudo cp "$site_conf" "$backup_dir/nginx-before-runtime.conf"
               sudo python3 - "$site_conf" <<'PY'
-from pathlib import Path
-import re
-import sys
+            from pathlib import Path
+            import re
+            import sys
 
-path = Path(sys.argv[1])
-text = path.read_text()
+            path = Path(sys.argv[1])
+            text = path.read_text()
 
-def server_blocks(source: str):
-    blocks = []
-    for match in re.finditer(r'(?m)^\s*server\s*\{', source):
-        depth = 0
-        start = match.start()
-        for index in range(match.end() - 1, len(source)):
-            char = source[index]
-            if char == '{':
-                depth += 1
-            elif char == '}':
-                depth -= 1
-                if depth == 0:
-                    blocks.append((start, index + 1, source[start:index + 1]))
-                    break
-    return blocks
+            def server_blocks(source: str):
+                blocks = []
+                for match in re.finditer(r'(?m)^\s*server\s*\{', source):
+                    depth = 0
+                    start = match.start()
+                    for index in range(match.end() - 1, len(source)):
+                        char = source[index]
+                        if char == '{':
+                            depth += 1
+                        elif char == '}':
+                            depth -= 1
+                            if depth == 0:
+                                blocks.append((start, index + 1, source[start:index + 1]))
+                                break
+                return blocks
 
-blocks = [block for block in server_blocks(text) if 'dzeva.com' in block[2]]
-if not blocks:
-    raise SystemExit('No nginx server block contains dzeva.com')
+            blocks = [block for block in server_blocks(text) if 'dzeva.com' in block[2]]
+            if not blocks:
+                raise SystemExit('No nginx server block contains dzeva.com')
 
-target = next((block for block in blocks if 'listen 443' in block[2] or 'ssl' in block[2]), blocks[0])
-start, end, block = target
-insertions = []
+            target = next((block for block in blocks if 'listen 443' in block[2] or 'ssl' in block[2]), blocks[0])
+            start, end, block = target
+            insertions = []
 
-if 'client_max_body_size' not in block:
-    insertions.append('    client_max_body_size 100M;\n')
+            if 'client_max_body_size' not in block:
+                insertions.append('    client_max_body_size 100M;\n')
 
-if 'location /api/phone-call-agent/ws/twilio/' not in block:
-    insertions.append('''
-    location /api/phone-call-agent/ws/twilio/ {
-        proxy_pass http://127.0.0.1:8090;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "Upgrade";
-        proxy_set_header Host $host;
-        proxy_read_timeout 3600s;
-        proxy_send_timeout 3600s;
-        proxy_buffering off;
-    }
-''')
+            if 'location /api/phone-call-agent/ws/twilio/' not in block:
+                insertions.append('''
+                location /api/phone-call-agent/ws/twilio/ {
+                    proxy_pass http://127.0.0.1:8090;
+                    proxy_http_version 1.1;
+                    proxy_set_header Upgrade $http_upgrade;
+                    proxy_set_header Connection "Upgrade";
+                    proxy_set_header Host $host;
+                    proxy_read_timeout 3600s;
+                    proxy_send_timeout 3600s;
+                    proxy_buffering off;
+                }
+                ''')
 
-if insertions:
-    replacement = block[:-1] + '\n' + ''.join(insertions) + '}'
-    text = text[:start] + replacement + text[end:]
-    path.write_text(text)
-PY
+            if insertions:
+                replacement = block[:-1] + '\n' + ''.join(insertions) + '}'
+                text = text[:start] + replacement + text[end:]
+                path.write_text(text)
+            PY
               sudo nginx -t
             }
             fix_laravel_permissions
