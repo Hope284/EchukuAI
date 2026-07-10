@@ -7,6 +7,7 @@ use App\Models\Gateways;
 use App\Models\Plan;
 use App\Models\Extension;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
 
@@ -77,6 +78,43 @@ class DzevaProductionAuditCommand extends Command
         $subscriptionPlans = Plan::query()->where('active', 1)->where('type', 'subscription')->count();
         $prepaidPlans = Plan::query()->where('active', 1)->where('type', 'prepaid')->count();
         $this->info("active plans: subscription={$subscriptionPlans}; prepaid={$prepaidPlans}");
+
+        $phoneCallEligiblePlans = [
+            'Scale',
+            'Enterprise',
+            'Scale Yearly',
+            'Enterprise Yearly',
+            'Lifetime Access',
+        ];
+
+        foreach (Plan::query()->whereIn('name', $phoneCallEligiblePlans)->orderBy('name')->get() as $plan) {
+            $enabled = $plan->checkOpenAiItem('ext_phone_call_agent') && (int) $plan->phone_call_agent_seconds_limit === -1;
+            $this->{$enabled ? 'info' : 'error'}("phone-call entitlement {$plan->name}: " . ($enabled ? 'ready' : 'missing'));
+            $failed = $failed || ! $enabled;
+        }
+
+        $lifetimePlan = Plan::query()
+            ->where('name', 'Lifetime Access')
+            ->where('price', 5000)
+            ->first();
+
+        if ($lifetimePlan && Schema::hasTable('user_orders') && Schema::hasTable('subscriptions')) {
+            $missingLifetimeSubscriptions = DB::table('user_orders')
+                ->where('plan_id', $lifetimePlan->id)
+                ->where('status', 'Success')
+                ->where('type', 'subscription')
+                ->whereNotNull('user_id')
+                ->whereNotNull('order_id')
+                ->whereNotExists(static function ($query): void {
+                    $query->selectRaw('1')
+                        ->from('subscriptions')
+                        ->whereColumn('subscriptions.stripe_id', 'user_orders.order_id');
+                })
+                ->count();
+
+            $this->{$missingLifetimeSubscriptions === 0 ? 'info' : 'error'}("lifetime subscription repairs pending: {$missingLifetimeSubscriptions}");
+            $failed = $failed || $missingLifetimeSubscriptions > 0;
+        }
 
         foreach (Gateways::query()->where('is_active', 1)->orderBy('code')->get() as $gateway) {
             $complete = GatewayProducts::query()

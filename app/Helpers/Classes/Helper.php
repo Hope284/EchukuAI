@@ -5,6 +5,7 @@ namespace App\Helpers\Classes;
 use App\Domains\Engine\Enums\EngineEnum;
 use App\Domains\Entity\Enums\EntityEnum;
 use App\Domains\Marketplace\Repositories\Contracts\ExtensionRepositoryInterface;
+use App\Enums\Plan\FrequencyEnum;
 use App\Enums\Roles;
 use App\Helpers\Classes\RateLimiter\RateLimiter;
 use App\Models\Currency;
@@ -59,6 +60,8 @@ class Helper
         return Cache::remember($cacheKey, 3, static function () use ($userId) {
             return Subscription::query()
                 ->with('plan')
+                ->leftJoin('plans as active_plan', 'active_plan.id', '=', 'subscriptions.plan_id')
+                ->select('subscriptions.*')
                 ->where('user_id', $userId)
                 ->whereIn('stripe_status', [
                     'active',
@@ -72,6 +75,22 @@ class Helper
                     'iyzico_approved',
                     'paystack_approved',
                 ])
+                ->where(static function ($query) {
+                    $query->whereNull('subscriptions.ends_at')
+                        ->orWhere('subscriptions.ends_at', '>', now());
+                })
+                ->orderByRaw(
+                    'CASE active_plan.frequency WHEN ? THEN 0 WHEN ? THEN 1 WHEN ? THEN 2 WHEN ? THEN 3 WHEN ? THEN 4 ELSE 5 END',
+                    [
+                        FrequencyEnum::LIFETIME->value,
+                        FrequencyEnum::LIFETIME_YEARLY->value,
+                        FrequencyEnum::LIFETIME_MONTHLY->value,
+                        FrequencyEnum::YEARLY->value,
+                        FrequencyEnum::MONTHLY->value,
+                    ],
+                )
+                ->orderByDesc('subscriptions.updated_at')
+                ->orderByDesc('subscriptions.id')
                 ->first();
         });
     }

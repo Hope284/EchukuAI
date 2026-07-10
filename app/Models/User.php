@@ -199,7 +199,20 @@ class User extends Authenticatable
             'paypal_approved',
             'iyzico_approved',
             'paystack_approved',
-        ]);
+        ])->where(static function ($query) {
+            $query->whereNull('subscriptions.ends_at')
+                ->orWhere('subscriptions.ends_at', '>', now());
+        })->orderByRaw(
+            'CASE plans.frequency WHEN ? THEN 0 WHEN ? THEN 1 WHEN ? THEN 2 WHEN ? THEN 3 WHEN ? THEN 4 ELSE 5 END',
+            [
+                FrequencyEnum::LIFETIME->value,
+                FrequencyEnum::LIFETIME_YEARLY->value,
+                FrequencyEnum::LIFETIME_MONTHLY->value,
+                FrequencyEnum::YEARLY->value,
+                FrequencyEnum::MONTHLY->value,
+            ],
+        )->orderByDesc('subscriptions.updated_at')
+            ->orderByDesc('subscriptions.id');
     }
 
     public function fullName(): string
