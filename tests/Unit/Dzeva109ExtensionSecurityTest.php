@@ -108,3 +108,18 @@ it('keeps social media agent notifications compatible with the 10.9 notification
         ->and($view)->toContain("data_get(\$payload, 'data.title'")
         ->and($view)->toContain("'action_url'");
 });
+
+it('ships the AI Agent channel views referenced by the 10.9 channel routes', function () {
+    expect(file_exists(app_path('Extensions/AIAgent/resources/views/channels/index.blade.php')))->toBeTrue()
+        ->and(file_exists(app_path('Extensions/AIAgent/resources/views/channels/create.blade.php')))->toBeTrue()
+        ->and(view()->exists('ai-agent::channels.index'))->toBeTrue()
+        ->and(view()->exists('ai-agent::channels.create'))->toBeTrue();
+});
+
+it('keeps Phone Call Agent enabled for premium DZEVA plans', function () {
+    $seeder = file_get_contents(database_path('seeders/DzevaPlanSeeder.php'));
+
+    expect($seeder)->toContain("'ext_phone_call_agent'")
+        ->and($seeder)->toContain('enablePhoneCallAgentEntitlements')
+        ->and($seeder)->toContain('phone_call_agent_seconds_limit');
+});

@@ -360,6 +360,40 @@ class DzevaPlanSeeder extends Seeder
             'ai_agent_message_limit'    => -1,
             'ai_agent_memory_limit'     => -1,
         ]);
+
+        $this->enablePhoneCallAgentEntitlements();
+    }
+
+    private function enablePhoneCallAgentEntitlements(): void
+    {
+        $eligiblePlanNames = [
+            'Scale',
+            'Enterprise',
+            'Scale Yearly',
+            'Enterprise Yearly',
+            'Lifetime Access',
+        ];
+
+        Plan::query()
+            ->whereIn('name', $eligiblePlanNames)
+            ->each(function (Plan $plan): void {
+                $plan->plan_ai_tools = $this->enablePlanFeature($plan->plan_ai_tools, 'ext_phone_call_agent');
+                $plan->plan_features = $this->enablePlanFeature($plan->plan_features, 'ext_phone_call_agent');
+                $plan->phone_call_agent_seconds_limit = -1;
+                $plan->save();
+            });
+    }
+
+    /**
+     * @param  array<string, mixed>|null  $features
+     * @return array<string, mixed>
+     */
+    private function enablePlanFeature(?array $features, string $key): array
+    {
+        $features ??= [];
+        $features[$key] = true;
+
+        return $features;
     }
 
     private function seedPrepaidCapabilityPlans(): void
