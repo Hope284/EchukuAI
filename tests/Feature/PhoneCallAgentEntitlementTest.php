@@ -103,3 +103,37 @@ test('premium entitlement sync repairs successful lifetime orders missing subscr
         ->and($subscription->ends_at)->toBeNull()
         ->and($user->fresh()->activePlan()?->checkOpenAiItem('ext_phone_call_agent'))->toBeTrue();
 });
+
+test('premium entitlement sync keeps deployment healthy when historic credit sync cannot run', function () {
+    $user = User::factory()->create();
+    $lifetime = dzevaPhoneCallPlan([
+        'name'         => 'Lifetime Access',
+        'is_team_plan' => true,
+        'ai_models'    => [
+            'invalid' => [
+                'not-a-real-dzeva-model' => [
+                    'credit'      => 1,
+                    'isUnlimited' => true,
+                ],
+            ],
+        ],
+    ]);
+
+    Subscription::query()->create([
+        'user_id'       => $user->id,
+        'plan_id'       => $lifetime->id,
+        'name'          => (string) $lifetime->id,
+        'stripe_id'     => 'FLS-HISTORIC-LIFETIME',
+        'stripe_status' => 'paystack_approved',
+        'stripe_price'  => 'Not Needed',
+        'quantity'      => 1,
+        'ends_at'       => null,
+        'paid_with'     => 'paystack',
+    ]);
+
+    $exitCode = Artisan::call('dzeva:sync-premium-entitlements');
+
+    expect($exitCode)->toBe(0)
+        ->and(Artisan::output())->toContain('Skipped premium credit sync')
+        ->and($user->fresh()->activePlan()?->id)->toBe($lifetime->id);
+});

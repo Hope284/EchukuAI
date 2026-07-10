@@ -9,6 +9,7 @@ use App\Models\UserOrder;
 use App\Services\PaymentGateways\Contracts\CreditUpdater;
 use Illuminate\Console\Command;
 use Laravel\Cashier\Subscription;
+use Throwable;
 
 class SyncDzevaPremiumEntitlements extends Command
 {
@@ -58,8 +59,17 @@ class SyncDzevaPremiumEntitlements extends Command
                     continue;
                 }
 
-                self::creditIncreaseSubscribePlan($subscription->user, $plan);
-                $updated++;
+                try {
+                    self::creditIncreaseSubscribePlan($subscription->user, $plan);
+                    $updated++;
+                } catch (Throwable $exception) {
+                    $this->warn(sprintf(
+                        'Skipped premium credit sync for subscription %s/user %s: %s',
+                        $subscription->id,
+                        $subscription->user_id,
+                        $exception->getMessage(),
+                    ));
+                }
             }
         });
 
