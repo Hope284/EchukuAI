@@ -39,6 +39,7 @@ jobs:
                 exit 1
               }
             ' sh
+          python3 -m py_compile tools/deploy/configure_dzeva_nginx_runtime.py
 
       - name: Validate extension manifests
         run: find app/Extensions -type f -name 'extension.json' -print0 | xargs -0 -n1 jq empty
@@ -264,6 +265,7 @@ jobs:
             configure_upload_runtime
             configure_nginx_dzeva_runtime
             configure_phone_call_agent_relay
+            sudo -u www-data php artisan dzeva:auth-smoke
             php artisan queue:restart || true
             sudo supervisorctl restart dzeva-worker:* || true
             sudo systemctl restart php8.3-fpm

@@ -12,6 +12,7 @@ it('keeps production upload and realtime voice streaming runtime setup in the de
         ->and($workflow)->toContain('phone-call-agent:relay-server --host=127.0.0.1 --port=8090')
         ->and($workflow)->toContain('tools/deploy/configure_dzeva_nginx_runtime.py')
         ->and($workflow)->toContain('supervisorctl status dzeva-phone-call-agent-relay')
+        ->and($workflow)->toContain('php artisan dzeva:auth-smoke')
         ->and($nginxRuntime)->toContain('client_max_body_size 100M')
         ->and($nginxRuntime)->toContain('/api/phone-call-agent/ws/twilio/')
         ->and($nginxRuntime)->toContain('proxy_set_header Upgrade $http_upgrade');
