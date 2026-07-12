@@ -578,8 +578,9 @@ class AIChatController extends Controller
             ->where('user_id', auth()->user()->id)
             ->get();
         $message = false;
+        $settings_two = $this->settings_two;
 
-        return view('panel.user.openai_chat.list', compact('aiList', 'categoryList', 'favData', 'message'));
+        return view('panel.user.openai_chat.list', compact('aiList', 'categoryList', 'favData', 'message', 'settings_two'));
     }
 
     public function openChatBotArea(Request $request): JsonResponse
