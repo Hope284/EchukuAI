@@ -7,6 +7,7 @@ namespace App\Console\Commands;
 use App\Enums\Roles;
 use App\Models\ParentAffiliate;
 use App\Models\User;
+use Illuminate\Contracts\Debug\ExceptionHandler as ExceptionHandlerContract;
 use Illuminate\Contracts\Http\Kernel as HttpKernel;
 use Illuminate\Console\Command;
 use Illuminate\Http\Request;
@@ -148,6 +149,7 @@ class DzevaAuthenticatedSmokeCommand extends Command
         $uri = route($routeName, [], false);
         $status = null;
         $response = null;
+        $originalExceptionHandler = app(ExceptionHandlerContract::class);
 
         DB::beginTransaction();
 
@@ -167,6 +169,35 @@ class DzevaAuthenticatedSmokeCommand extends Command
 
             Auth::guard('web')->setUser($user);
 
+            app()->instance(
+                ExceptionHandlerContract::class,
+                new class($originalExceptionHandler) implements ExceptionHandlerContract {
+                    public function __construct(private readonly ExceptionHandlerContract $inner)
+                    {
+                    }
+
+                    public function report(Throwable $e)
+                    {
+                        $this->inner->report($e);
+                    }
+
+                    public function shouldReport(Throwable $e)
+                    {
+                        return $this->inner->shouldReport($e);
+                    }
+
+                    public function render($request, Throwable $e)
+                    {
+                        throw $e;
+                    }
+
+                    public function renderForConsole($output, Throwable $e)
+                    {
+                        $this->inner->renderForConsole($output, $e);
+                    }
+                }
+            );
+
             $response = $kernel->handle($request);
             $status = $response->getStatusCode();
 
@@ -183,6 +214,7 @@ class DzevaAuthenticatedSmokeCommand extends Command
 
             return $this->rollbackSmokeTransaction(false);
         } finally {
+            app()->instance(ExceptionHandlerContract::class, $originalExceptionHandler);
             Auth::guard('web')->forgetUser();
         }
 
