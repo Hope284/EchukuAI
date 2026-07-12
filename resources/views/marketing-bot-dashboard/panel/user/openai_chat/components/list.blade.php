@@ -27,7 +27,7 @@
         >
             <!-- link to the chat -->
             @php
-                $type = AccessType::tryFrom($entry->plan ?? 'premium');
+                $type = AccessType::tryFrom((string) ($entry->plan ?? '')) ?? AccessType::REGULAR;
             @endphp
             <a
                 @class([

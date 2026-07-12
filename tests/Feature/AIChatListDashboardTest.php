@@ -47,10 +47,15 @@ it('provides stream settings required by the legacy AI chat list dashboard', fun
         'aiList'  => $data['aiList'],
         'favData' => $data['favData'],
     ])->render();
+    $socialMediaAgentView = file_get_contents(resource_path('views/social-media-agent-dashboard/panel/user/openai_chat/components/list.blade.php'));
+    $marketingBotView = file_get_contents(resource_path('views/marketing-bot-dashboard/panel/user/openai_chat/components/list.blade.php'));
 
     expect($view->name())->toBe('panel.user.openai_chat.list')
         ->and($data)->toHaveKey('settings_two')
         ->and($data['settings_two'])->toBeInstanceOf(SettingTwo::class)
         ->and($data['aiList']->pluck('name')->all())->toContain('General Chat')
-        ->and($html)->toContain('General Chat');
+        ->and($html)->toContain('General Chat')
+        ->and($socialMediaAgentView)->toContain('@php use App\Enums\AccessType; @endphp')
+        ->and($socialMediaAgentView)->toContain("AccessType::tryFrom((string) (\$entry->plan ?? '')) ?? AccessType::REGULAR")
+        ->and($marketingBotView)->toContain("AccessType::tryFrom((string) (\$entry->plan ?? '')) ?? AccessType::REGULAR");
 });

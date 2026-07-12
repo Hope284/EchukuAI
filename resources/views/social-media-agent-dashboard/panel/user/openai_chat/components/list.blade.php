@@ -1,3 +1,4 @@
+@php use App\Enums\AccessType; @endphp
 <div class="lqd-chats-list grid grid-cols-1 gap-1.5 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
     @foreach ($aiList as $entry)
         <x-card
@@ -25,7 +26,7 @@
         >
             <!-- link to the chat -->
             @php
-                $type = AccessType::tryFrom($entry->plan ?? 'premium');
+                $type = AccessType::tryFrom((string) ($entry->plan ?? '')) ?? AccessType::REGULAR;
             @endphp
             <a
                 @class([
