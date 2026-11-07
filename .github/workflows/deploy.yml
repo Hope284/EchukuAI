@@ -3,7 +3,29 @@ name: Deploy DZEVA Production
 on:
   push:
     branches: [main]
+  pull_request:
+    branches: [main]
   workflow_dispatch:
+    inputs:
+      target:
+        description: Production deployment target
+        type: choice
+        required: true
+        default: aws
+        options:
+          - aws
+          - oracle
+      oracle_confirmation:
+        description: For Oracle, select DEPLOY to authorize the production update
+        type: choice
+        required: true
+        default: NO
+        options:
+          - NO
+          - DEPLOY
+
+permissions:
+  contents: read
 
 concurrency:
   group: dzeva-production
@@ -58,16 +80,75 @@ jobs:
       - name: Run Laravel tests
         run: php artisan test
 
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install frontend dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Build frontend assets
+        run: npm run build
+
   deploy:
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     needs: validate
     runs-on: ubuntu-latest
+    environment:
+      name: ${{ github.event_name == 'workflow_dispatch' && inputs.target == 'oracle' && 'oracle-production' || 'aws-production' }}
     steps:
+      - name: Require explicit Oracle deployment confirmation
+        if: github.event_name == 'workflow_dispatch' && inputs.target == 'oracle'
+        shell: bash
+        env:
+          ORACLE_CONFIRMATION: ${{ inputs.oracle_confirmation }}
+        run: |
+          set -euo pipefail
+          if [[ "$ORACLE_CONFIRMATION" != "DEPLOY" ]]; then
+            echo "Oracle deployment requires selecting DEPLOY in the dispatch form."
+            exit 1
+          fi
+
+      - name: Verify deployment secrets
+        shell: bash
+        env:
+          DEPLOY_TARGET: ${{ github.event_name == 'workflow_dispatch' && inputs.target || 'aws' }}
+          ORACLE_HOST: ${{ secrets.ORACLE_HOST }}
+          ORACLE_USER: ${{ secrets.ORACLE_USER }}
+          ORACLE_SSH_KEY: ${{ secrets.ORACLE_SSH_KEY }}
+          ORACLE_SSH_FINGERPRINT: ${{ secrets.ORACLE_SSH_FINGERPRINT }}
+          ORACLE_PUBLIC_IP: ${{ secrets.ORACLE_PUBLIC_IP }}
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+          EC2_USER: ${{ secrets.EC2_USER }}
+          EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
+        run: |
+          set -euo pipefail
+          if [[ "$DEPLOY_TARGET" == "oracle" ]]; then
+            if [[ -z "$ORACLE_HOST" || -z "$ORACLE_USER" || -z "$ORACLE_SSH_KEY" || -z "$ORACLE_SSH_FINGERPRINT" || -z "$ORACLE_PUBLIC_IP" ]]; then
+              echo "Oracle deployment secrets are incomplete in the oracle-production environment."
+              exit 1
+            fi
+            python3 -c 'import ipaddress,sys; ipaddress.IPv4Address(sys.argv[1])' "$ORACLE_PUBLIC_IP"
+          else
+            if [[ -z "$EC2_HOST" || -z "$EC2_USER" || -z "$EC2_SSH_KEY" ]]; then
+              echo "AWS deployment secrets are incomplete."
+              exit 1
+            fi
+          fi
+
       - name: Deploy over SSH
-        uses: appleboy/ssh-action@v1.2.0
+        uses: appleboy/ssh-action@7eaf76671a0d7eec5d98ee897acda4f968735a17 # v1.2.0
+        env:
+          DZEVA_DEPLOY_SHA: ${{ github.sha }}
         with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_SSH_KEY }}
+          host: ${{ github.event_name == 'workflow_dispatch' && inputs.target == 'oracle' && secrets.ORACLE_HOST || secrets.EC2_HOST }}
+          username: ${{ github.event_name == 'workflow_dispatch' && inputs.target == 'oracle' && secrets.ORACLE_USER || secrets.EC2_USER }}
+          key: ${{ github.event_name == 'workflow_dispatch' && inputs.target == 'oracle' && secrets.ORACLE_SSH_KEY || secrets.EC2_SSH_KEY }}
+          fingerprint: ${{ github.event_name == 'workflow_dispatch' && inputs.target == 'oracle' && secrets.ORACLE_SSH_FINGERPRINT || secrets.EC2_SSH_FINGERPRINT }}
+          envs: DZEVA_DEPLOY_SHA
           script_stop: true
           command_timeout: 30m
           script: |
@@ -186,6 +267,10 @@ jobs:
             git fetch origin main
             git checkout main
             git pull --ff-only origin main
+            if [ "$(git rev-parse HEAD)" != "$DZEVA_DEPLOY_SHA" ]; then
+              echo "Deployment stopped because origin/main advanced after this workflow validated its commit."
+              exit 1
+            fi
             fix_laravel_permissions() {
               sudo install -d -o ubuntu -g www-data -m 2775 public public/vendor public/vendor/chatbot public/vendor/chatbot/js public/vendor/chatbot/images public/vendor/chatbot/icons storage/framework/cache/data storage/framework/cache/locks storage/framework/views storage/framework/sessions storage/framework/testing bootstrap/cache public/uploads public/uploads/media public/uploads/media/images public/uploads/media/videos public/uploads/media/other public/uploads/media/others public/uploads/media/voices public/uploads/guest public/uploads/thumbnail/default public/upload public/upload/images public/upload/images/avatar public/upload/images/blog vendor/magicai/magicai-healthy/resources/views
               sudo chown ubuntu:www-data public
@@ -272,14 +357,24 @@ jobs:
             sudo systemctl reload nginx
 
       - name: Verify live routes
+        env:
+          DZEVA_TARGET: ${{ github.event_name == 'workflow_dispatch' && inputs.target || 'aws' }}
+          ORACLE_PUBLIC_IP: ${{ secrets.ORACLE_PUBLIC_IP }}
         shell: bash
         run: |
           set -euo pipefail
 
+          oracle_resolve=()
+          if [[ "$DZEVA_TARGET" == "oracle" ]]; then
+            : "${ORACLE_PUBLIC_IP:?ORACLE_PUBLIC_IP must be configured for the Oracle environment}"
+            python3 -c 'import ipaddress,sys; ipaddress.IPv4Address(sys.argv[1])' "$ORACLE_PUBLIC_IP"
+            oracle_resolve=(--resolve "dzeva.com:443:${ORACLE_PUBLIC_IP}" --resolve "www.dzeva.com:443:${ORACLE_PUBLIC_IP}")
+          fi
+
           check_url() {
             local url="$1"
             local status
-            status="$(curl --silent --show-error --location --max-time 45 --output /dev/null --write-out '%{http_code}' "$url")"
+            status="$(curl --silent --show-error --location --max-time 45 --output /dev/null --write-out '%{http_code}' "${oracle_resolve[@]}" "$url")"
             echo "$url -> $status"
             case "$status" in
               200|301|302|303|307|308) ;;
